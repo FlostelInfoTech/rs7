@@ -7,7 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-10-07
+
 ### Added
+- **Complex Field Builders** - Builder patterns for HL7 composite data types:
+  - `XpnBuilder` - Extended Person Name (family, given, middle, suffix, prefix, degree)
+  - `XadBuilder` - Extended Address (street, city, state, postal code, country, type)
+  - `XtnBuilder` - Extended Telecommunication (phone, email, use code, equipment type)
+  - `CxBuilder` - Extended Composite ID (ID number, check digit, assigning authority, identifier type)
+  - `XcnBuilder` - Extended Composite Name for Persons (ID, name components, credentials)
+  - Fluent API for building properly formatted composite fields
+  - Automatic component separator (^) handling and trailing component trimming
+  - New example: `complex_fields.rs` demonstrating all field builders
+  - 7 comprehensive unit tests for all builder types
+  - Exported from `builders::fields` module
+
+- **Pharmacy Message Builders** - Fluent builder API for pharmacy messages:
+  - `RdeO11Builder` - Pharmacy/Treatment Encoded Order
+  - `RasO17Builder` - Pharmacy/Treatment Administration
+  - `RdsO13Builder` - Pharmacy/Treatment Dispense
+  - `RgvO15Builder` - Pharmacy/Treatment Give
+  - `RraO18Builder` - Pharmacy/Treatment Administration Acknowledgment
+  - `RrdO14Builder` - Pharmacy/Treatment Dispense Information
+  - Consistent fluent API with existing builders (ADT, ORU, ORM, etc.)
+  - Examples added to `message_builders.rs`
+  - Exported from `builders::pharmacy` module
+
+- **Laboratory Message Builders** - Fluent builder API for laboratory messages:
+  - `OulR21Builder` - Unsolicited Laboratory Observation
+  - `OmlO21Builder` - Laboratory Order
+  - Consistent fluent API with existing builders (ADT, ORU, ORM, etc.)
+  - Examples added to `message_builders.rs`
+  - Exported from `builders::laboratory` module
+
 - **Laboratory Message Schemas** - Support for 2 laboratory message types across all HL7 versions (2.3-2.7):
   - OUL (Unsolicited Laboratory Observation): R21
   - OML (Laboratory Order): O21
@@ -22,6 +54,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Total of 15 new schema files (3 types × 5 versions)
   - 4 new schema loader tests
   - Total message schema count: 41 types (was 38)
+
+- **Additional ADT Builders** - Expanded ADT builder API with 12 new message variants:
+  - `AdtA05Builder` - Pre-admit a Patient
+  - `AdtA06Builder` - Change Outpatient to Inpatient
+  - `AdtA07Builder` - Change Inpatient to Outpatient
+  - `AdtA09Builder` - Patient Departing - Tracking
+  - `AdtA10Builder` - Patient Arriving - Tracking
+  - `AdtA11Builder` - Cancel Admit/Visit Notification
+  - `AdtA12Builder` - Cancel Transfer
+  - `AdtA13Builder` - Cancel Discharge/End Visit
+  - `AdtA17Builder` - Swap Patients
+  - `AdtA28Builder` - Add Person Information
+  - `AdtA31Builder` - Update Person Information
+  - `AdtA40Builder` - Merge Patient - Patient Identifier List
+  - All builders use composition pattern for code reuse
+  - Fluent API consistent with existing ADT builders (A01, A02, A03, A04, A08)
+  - Comprehensive examples added to `message_builders.rs` for all 17 ADT variants
+  - Total ADT builders: 17 variants (A01-A13, A17, A28, A31, A40)
 
 ## [0.1.3] - 2025-10-07
 
@@ -76,7 +126,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Message Builders** - Fluent builder API for creating HL7 messages programmatically:
-  - `AdtBuilder` with support for A01, A02, A03, A04, A08
+  - `AdtBuilder` with support for A01, A02, A03, A04, A08 (expanded to A05-A13 in later version)
   - `OruR01Builder` for observation results
   - `OrmO01Builder` for orders
   - `SiuS12Builder` for scheduling
@@ -117,6 +167,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test coverage
 - Documentation and examples
 
-[Unreleased]: https://github.com/yourusername/rs7/compare/v0.1.1...HEAD
-[0.1.1]: https://github.com/yourusername/rs7/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/yourusername/rs7/releases/tag/v0.1.0
+[Unreleased]: https://gitlab.flostel.com/alexshao/rs7/compare/v0.2.0...HEAD
+[0.2.0]: https://gitlab.flostel.com/alexshao/rs7/compare/v0.1.3...v0.2.0
+[0.1.3]: https://gitlab.flostel.com/alexshao/rs7/compare/v0.1.1...v0.1.3
+[0.1.1]: https://gitlab.flostel.com/alexshao/rs7/compare/v0.1.0...v0.1.1
+[0.1.0]: https://gitlab.flostel.com/alexshao/rs7/releases/tag/v0.1.0

@@ -112,3 +112,117 @@ impl MdmT01Builder {
         Ok(self.base.build())
     }
 }
+
+/// Builder for MDM^T02 - Original Document Notification and Content
+pub struct MdmT02Builder {
+    base: MdmT01Builder,
+}
+
+impl MdmT02Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = MdmT01Builder::new(version);
+        base.base = MessageBuilder::new(version, "MDM", "T02");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn document_type(mut self, doc_type: &str) -> Self {
+        self.base = self.base.document_type(doc_type);
+        self
+    }
+
+    pub fn unique_document_number(mut self, number: &str) -> Self {
+        self.base = self.base.unique_document_number(number);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for MDM^T04 - Document Status Change Notification
+pub struct MdmT04Builder {
+    base: MdmT01Builder,
+}
+
+impl MdmT04Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = MdmT01Builder::new(version);
+        base.base = MessageBuilder::new(version, "MDM", "T04");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn document_type(mut self, doc_type: &str) -> Self {
+        self.base = self.base.document_type(doc_type);
+        self
+    }
+
+    pub fn unique_document_number(mut self, number: &str) -> Self {
+        self.base = self.base.unique_document_number(number);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}

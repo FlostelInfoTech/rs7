@@ -110,3 +110,174 @@ impl SiuS12Builder {
         Ok(self.base.build())
     }
 }
+
+/// Builder for SIU^S13 - Notification of Appointment Rescheduling
+pub struct SiuS13Builder {
+    base: SiuS12Builder,
+}
+
+impl SiuS13Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = SiuS12Builder::new(version);
+        base.base = MessageBuilder::new(version, "SIU", "S13");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn placer_appointment_id(mut self, id: &str) -> Self {
+        self.base = self.base.placer_appointment_id(id);
+        self
+    }
+
+    pub fn filler_appointment_id(mut self, id: &str) -> Self {
+        self.base = self.base.filler_appointment_id(id);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for SIU^S14 - Notification of Appointment Modification
+pub struct SiuS14Builder {
+    base: SiuS12Builder,
+}
+
+impl SiuS14Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = SiuS12Builder::new(version);
+        base.base = MessageBuilder::new(version, "SIU", "S14");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn placer_appointment_id(mut self, id: &str) -> Self {
+        self.base = self.base.placer_appointment_id(id);
+        self
+    }
+
+    pub fn filler_appointment_id(mut self, id: &str) -> Self {
+        self.base = self.base.filler_appointment_id(id);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for SIU^S15 - Notification of Appointment Cancellation
+pub struct SiuS15Builder {
+    base: SiuS12Builder,
+}
+
+impl SiuS15Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = SiuS12Builder::new(version);
+        base.base = MessageBuilder::new(version, "SIU", "S15");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn placer_appointment_id(mut self, id: &str) -> Self {
+        self.base = self.base.placer_appointment_id(id);
+        self
+    }
+
+    pub fn filler_appointment_id(mut self, id: &str) -> Self {
+        self.base = self.base.filler_appointment_id(id);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}

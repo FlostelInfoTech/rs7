@@ -5,9 +5,12 @@
 
 pub mod adt;
 pub mod dft;
+pub mod fields;
+pub mod laboratory;
 pub mod mdm;
 pub mod orm;
 pub mod oru;
+pub mod pharmacy;
 pub mod qry;
 pub mod siu;
 

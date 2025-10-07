@@ -113,3 +113,60 @@ impl DftP03Builder {
         Ok(self.base.build())
     }
 }
+
+/// Builder for DFT^P11 - Post Detail Financial Transactions - Expanded
+pub struct DftP11Builder {
+    base: DftP03Builder,
+}
+
+impl DftP11Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = DftP03Builder::new(version);
+        base.base = MessageBuilder::new(version, "DFT", "P11");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn transaction_code(mut self, code: &str) -> Self {
+        self.base = self.base.transaction_code(code);
+        self
+    }
+
+    pub fn transaction_amount(mut self, amount: &str) -> Self {
+        self.base = self.base.transaction_amount(amount);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}

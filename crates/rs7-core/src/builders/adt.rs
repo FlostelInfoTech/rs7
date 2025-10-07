@@ -43,9 +43,69 @@ impl AdtBuilder {
         AdtA04Builder::new(version)
     }
 
+    /// Create ADT^A05 - Pre-admit a Patient
+    pub fn a05(version: Version) -> AdtA05Builder {
+        AdtA05Builder::new(version)
+    }
+
+    /// Create ADT^A06 - Change Outpatient to Inpatient
+    pub fn a06(version: Version) -> AdtA06Builder {
+        AdtA06Builder::new(version)
+    }
+
+    /// Create ADT^A07 - Change Inpatient to Outpatient
+    pub fn a07(version: Version) -> AdtA07Builder {
+        AdtA07Builder::new(version)
+    }
+
     /// Create ADT^A08 - Update Patient Information
     pub fn a08(version: Version) -> AdtA08Builder {
         AdtA08Builder::new(version)
+    }
+
+    /// Create ADT^A11 - Cancel Admit/Visit Notification
+    pub fn a11(version: Version) -> AdtA11Builder {
+        AdtA11Builder::new(version)
+    }
+
+    /// Create ADT^A12 - Cancel Transfer
+    pub fn a12(version: Version) -> AdtA12Builder {
+        AdtA12Builder::new(version)
+    }
+
+    /// Create ADT^A13 - Cancel Discharge/End Visit
+    pub fn a13(version: Version) -> AdtA13Builder {
+        AdtA13Builder::new(version)
+    }
+
+    /// Create ADT^A09 - Patient Departing - Tracking
+    pub fn a09(version: Version) -> AdtA09Builder {
+        AdtA09Builder::new(version)
+    }
+
+    /// Create ADT^A10 - Patient Arriving - Tracking
+    pub fn a10(version: Version) -> AdtA10Builder {
+        AdtA10Builder::new(version)
+    }
+
+    /// Create ADT^A17 - Swap Patients
+    pub fn a17(version: Version) -> AdtA17Builder {
+        AdtA17Builder::new(version)
+    }
+
+    /// Create ADT^A28 - Add Person Information
+    pub fn a28(version: Version) -> AdtA28Builder {
+        AdtA28Builder::new(version)
+    }
+
+    /// Create ADT^A31 - Update Person Information
+    pub fn a31(version: Version) -> AdtA31Builder {
+        AdtA31Builder::new(version)
+    }
+
+    /// Create ADT^A40 - Merge Patient - Patient Identifier List
+    pub fn a40(version: Version) -> AdtA40Builder {
+        AdtA40Builder::new(version)
     }
 }
 
@@ -473,6 +533,640 @@ impl AdtA08Builder {
 
     pub fn sex(mut self, sex: &str) -> Self {
         self.base = self.base.sex(sex);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for ADT^A05 - Pre-admit a Patient
+pub struct AdtA05Builder {
+    base: AdtA01Builder,
+}
+
+impl AdtA05Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = AdtA01Builder::new(version);
+        base.base = MessageBuilder::new(version, "ADT", "A05");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn date_of_birth(mut self, dob: &str) -> Self {
+        self.base = self.base.date_of_birth(dob);
+        self
+    }
+
+    pub fn sex(mut self, sex: &str) -> Self {
+        self.base = self.base.sex(sex);
+        self
+    }
+
+    pub fn patient_class(mut self, class: &str) -> Self {
+        self.base = self.base.patient_class(class);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for ADT^A06 - Change Outpatient to Inpatient
+pub struct AdtA06Builder {
+    base: AdtA01Builder,
+}
+
+impl AdtA06Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = AdtA01Builder::new(version);
+        base.base = MessageBuilder::new(version, "ADT", "A06");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn patient_class(mut self, class: &str) -> Self {
+        self.base = self.base.patient_class(class);
+        self
+    }
+
+    pub fn assigned_location(mut self, location: &str) -> Self {
+        self.base = self.base.assigned_location(location);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for ADT^A07 - Change Inpatient to Outpatient
+pub struct AdtA07Builder {
+    base: AdtA01Builder,
+}
+
+impl AdtA07Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = AdtA01Builder::new(version);
+        base.base = MessageBuilder::new(version, "ADT", "A07");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn patient_class(mut self, class: &str) -> Self {
+        self.base = self.base.patient_class(class);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for ADT^A11 - Cancel Admit/Visit Notification
+pub struct AdtA11Builder {
+    base: AdtA01Builder,
+}
+
+impl AdtA11Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = AdtA01Builder::new(version);
+        base.base = MessageBuilder::new(version, "ADT", "A11");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for ADT^A12 - Cancel Transfer
+pub struct AdtA12Builder {
+    base: AdtA01Builder,
+}
+
+impl AdtA12Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = AdtA01Builder::new(version);
+        base.base = MessageBuilder::new(version, "ADT", "A12");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for ADT^A13 - Cancel Discharge/End Visit
+pub struct AdtA13Builder {
+    base: AdtA01Builder,
+}
+
+impl AdtA13Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = AdtA01Builder::new(version);
+        base.base = MessageBuilder::new(version, "ADT", "A13");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for ADT^A09 - Patient Departing - Tracking
+pub struct AdtA09Builder {
+    base: AdtA01Builder,
+}
+
+impl AdtA09Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = AdtA01Builder::new(version);
+        base.base = MessageBuilder::new(version, "ADT", "A09");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn patient_class(mut self, class: &str) -> Self {
+        self.base = self.base.patient_class(class);
+        self
+    }
+
+    pub fn assigned_location(mut self, location: &str) -> Self {
+        self.base = self.base.assigned_location(location);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for ADT^A10 - Patient Arriving - Tracking
+pub struct AdtA10Builder {
+    base: AdtA01Builder,
+}
+
+impl AdtA10Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = AdtA01Builder::new(version);
+        base.base = MessageBuilder::new(version, "ADT", "A10");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn patient_class(mut self, class: &str) -> Self {
+        self.base = self.base.patient_class(class);
+        self
+    }
+
+    pub fn assigned_location(mut self, location: &str) -> Self {
+        self.base = self.base.assigned_location(location);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for ADT^A17 - Swap Patients
+pub struct AdtA17Builder {
+    base: AdtA01Builder,
+}
+
+impl AdtA17Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = AdtA01Builder::new(version);
+        base.base = MessageBuilder::new(version, "ADT", "A17");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for ADT^A28 - Add Person Information
+pub struct AdtA28Builder {
+    base: AdtA01Builder,
+}
+
+impl AdtA28Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = AdtA01Builder::new(version);
+        base.base = MessageBuilder::new(version, "ADT", "A28");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn date_of_birth(mut self, dob: &str) -> Self {
+        self.base = self.base.date_of_birth(dob);
+        self
+    }
+
+    pub fn sex(mut self, sex: &str) -> Self {
+        self.base = self.base.sex(sex);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for ADT^A31 - Update Person Information
+pub struct AdtA31Builder {
+    base: AdtA01Builder,
+}
+
+impl AdtA31Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = AdtA01Builder::new(version);
+        base.base = MessageBuilder::new(version, "ADT", "A31");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
+        self
+    }
+
+    pub fn date_of_birth(mut self, dob: &str) -> Self {
+        self.base = self.base.date_of_birth(dob);
+        self
+    }
+
+    pub fn sex(mut self, sex: &str) -> Self {
+        self.base = self.base.sex(sex);
+        self
+    }
+
+    pub fn build(self) -> Result<Message> {
+        self.base.build()
+    }
+}
+
+/// Builder for ADT^A40 - Merge Patient - Patient Identifier List
+pub struct AdtA40Builder {
+    base: AdtA01Builder,
+}
+
+impl AdtA40Builder {
+    pub fn new(version: Version) -> Self {
+        let mut base = AdtA01Builder::new(version);
+        base.base = MessageBuilder::new(version, "ADT", "A40");
+        Self { base }
+    }
+
+    pub fn sending_application(mut self, app: &str) -> Self {
+        self.base = self.base.sending_application(app);
+        self
+    }
+
+    pub fn sending_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.sending_facility(facility);
+        self
+    }
+
+    pub fn receiving_application(mut self, app: &str) -> Self {
+        self.base = self.base.receiving_application(app);
+        self
+    }
+
+    pub fn receiving_facility(mut self, facility: &str) -> Self {
+        self.base = self.base.receiving_facility(facility);
+        self
+    }
+
+    pub fn patient_id(mut self, id: &str) -> Self {
+        self.base = self.base.patient_id(id);
+        self
+    }
+
+    pub fn patient_name(mut self, family: &str, given: &str) -> Self {
+        self.base = self.base.patient_name(family, given);
         self
     }
 
