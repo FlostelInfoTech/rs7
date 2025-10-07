@@ -77,6 +77,9 @@ fn load_embedded_schema(version: &str, schema_key: &str) -> Option<MessageSchema
         ("v2_3", "RAS_O17") => parse_schema_json(include_str!("../schemas/v2_3/RAS_O17.json")),
         ("v2_3", "MFN_M01") => parse_schema_json(include_str!("../schemas/v2_3/MFN_M01.json")),
         ("v2_3", "RDS_O13") => parse_schema_json(include_str!("../schemas/v2_3/RDS_O13.json")),
+        ("v2_3", "RGV_O15") => parse_schema_json(include_str!("../schemas/v2_3/RGV_O15.json")),
+        ("v2_3", "RRD_O14") => parse_schema_json(include_str!("../schemas/v2_3/RRD_O14.json")),
+        ("v2_3", "RRA_O18") => parse_schema_json(include_str!("../schemas/v2_3/RRA_O18.json")),
 
         // V2.4 schemas - ADT messages
         ("v2_4", "ADT_A01") => parse_schema_json(include_str!("../schemas/v2_4/ADT_A01.json")),
@@ -118,6 +121,9 @@ fn load_embedded_schema(version: &str, schema_key: &str) -> Option<MessageSchema
         ("v2_4", "RAS_O17") => parse_schema_json(include_str!("../schemas/v2_4/RAS_O17.json")),
         ("v2_4", "MFN_M01") => parse_schema_json(include_str!("../schemas/v2_4/MFN_M01.json")),
         ("v2_4", "RDS_O13") => parse_schema_json(include_str!("../schemas/v2_4/RDS_O13.json")),
+        ("v2_4", "RGV_O15") => parse_schema_json(include_str!("../schemas/v2_4/RGV_O15.json")),
+        ("v2_4", "RRD_O14") => parse_schema_json(include_str!("../schemas/v2_4/RRD_O14.json")),
+        ("v2_4", "RRA_O18") => parse_schema_json(include_str!("../schemas/v2_4/RRA_O18.json")),
 
         // V2.5 schemas - ADT messages
         ("v2_5", "ADT_A01") => parse_schema_json(include_str!("../schemas/v2_5/ADT_A01.json")),
@@ -159,6 +165,9 @@ fn load_embedded_schema(version: &str, schema_key: &str) -> Option<MessageSchema
         ("v2_5", "RAS_O17") => parse_schema_json(include_str!("../schemas/v2_5/RAS_O17.json")),
         ("v2_5", "MFN_M01") => parse_schema_json(include_str!("../schemas/v2_5/MFN_M01.json")),
         ("v2_5", "RDS_O13") => parse_schema_json(include_str!("../schemas/v2_5/RDS_O13.json")),
+        ("v2_5", "RGV_O15") => parse_schema_json(include_str!("../schemas/v2_5/RGV_O15.json")),
+        ("v2_5", "RRD_O14") => parse_schema_json(include_str!("../schemas/v2_5/RRD_O14.json")),
+        ("v2_5", "RRA_O18") => parse_schema_json(include_str!("../schemas/v2_5/RRA_O18.json")),
 
         // V2.6 schemas - ADT messages
         ("v2_6", "ADT_A01") => parse_schema_json(include_str!("../schemas/v2_6/ADT_A01.json")),
@@ -200,6 +209,9 @@ fn load_embedded_schema(version: &str, schema_key: &str) -> Option<MessageSchema
         ("v2_6", "RAS_O17") => parse_schema_json(include_str!("../schemas/v2_6/RAS_O17.json")),
         ("v2_6", "MFN_M01") => parse_schema_json(include_str!("../schemas/v2_6/MFN_M01.json")),
         ("v2_6", "RDS_O13") => parse_schema_json(include_str!("../schemas/v2_6/RDS_O13.json")),
+        ("v2_6", "RGV_O15") => parse_schema_json(include_str!("../schemas/v2_6/RGV_O15.json")),
+        ("v2_6", "RRD_O14") => parse_schema_json(include_str!("../schemas/v2_6/RRD_O14.json")),
+        ("v2_6", "RRA_O18") => parse_schema_json(include_str!("../schemas/v2_6/RRA_O18.json")),
 
         // V2.7 schemas - ADT messages
         ("v2_7", "ADT_A01") => parse_schema_json(include_str!("../schemas/v2_7/ADT_A01.json")),
@@ -241,6 +253,9 @@ fn load_embedded_schema(version: &str, schema_key: &str) -> Option<MessageSchema
         ("v2_7", "RAS_O17") => parse_schema_json(include_str!("../schemas/v2_7/RAS_O17.json")),
         ("v2_7", "MFN_M01") => parse_schema_json(include_str!("../schemas/v2_7/MFN_M01.json")),
         ("v2_7", "RDS_O13") => parse_schema_json(include_str!("../schemas/v2_7/RDS_O13.json")),
+        ("v2_7", "RGV_O15") => parse_schema_json(include_str!("../schemas/v2_7/RGV_O15.json")),
+        ("v2_7", "RRD_O14") => parse_schema_json(include_str!("../schemas/v2_7/RRD_O14.json")),
+        ("v2_7", "RRA_O18") => parse_schema_json(include_str!("../schemas/v2_7/RRA_O18.json")),
 
         _ => None,
     }
@@ -278,6 +293,7 @@ pub fn list_available_schemas(version: Version) -> Vec<String> {
         "BAR^P01".to_string(), "BAR^P02".to_string(),
         // Pharmacy
         "RDE^O11".to_string(), "RAS^O17".to_string(), "RDS^O13".to_string(),
+        "RGV^O15".to_string(), "RRD^O14".to_string(), "RRA^O18".to_string(),
         // Master File
         "MFN^M01".to_string(),
     ];
@@ -401,6 +417,60 @@ mod tests {
             let schema = load_schema(version, "RDE", "O11").unwrap();
             assert_eq!(schema.message_type, "RDE");
             assert_eq!(schema.trigger_event, "O11");
+        }
+    }
+
+    #[test]
+    fn test_load_rgv_o15_schema() {
+        let schema = load_schema(Version::V2_5, "RGV", "O15").unwrap();
+        assert_eq!(schema.message_type, "RGV");
+        assert_eq!(schema.trigger_event, "O15");
+        assert!(schema.segments.contains_key("MSH"));
+        assert!(schema.segments.contains_key("PID"));
+        assert!(schema.segments.contains_key("ORC"));
+        assert!(schema.segments.contains_key("RXG"));
+    }
+
+    #[test]
+    fn test_load_rrd_o14_schema() {
+        let schema = load_schema(Version::V2_5, "RRD", "O14").unwrap();
+        assert_eq!(schema.message_type, "RRD");
+        assert_eq!(schema.trigger_event, "O14");
+        assert!(schema.segments.contains_key("MSH"));
+        assert!(schema.segments.contains_key("ORC"));
+        assert!(schema.segments.contains_key("RXD"));
+    }
+
+    #[test]
+    fn test_load_rra_o18_schema() {
+        let schema = load_schema(Version::V2_5, "RRA", "O18").unwrap();
+        assert_eq!(schema.message_type, "RRA");
+        assert_eq!(schema.trigger_event, "O18");
+        assert!(schema.segments.contains_key("MSH"));
+        assert!(schema.segments.contains_key("MSA"));
+    }
+
+    #[test]
+    fn test_load_pharmacy_schemas_all_versions() {
+        // Test RGV_O15 across all versions
+        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7] {
+            let schema = load_schema(version, "RGV", "O15").unwrap();
+            assert_eq!(schema.message_type, "RGV");
+            assert_eq!(schema.trigger_event, "O15");
+        }
+
+        // Test RRD_O14 across all versions
+        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7] {
+            let schema = load_schema(version, "RRD", "O14").unwrap();
+            assert_eq!(schema.message_type, "RRD");
+            assert_eq!(schema.trigger_event, "O14");
+        }
+
+        // Test RRA_O18 across all versions
+        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7] {
+            let schema = load_schema(version, "RRA", "O18").unwrap();
+            assert_eq!(schema.message_type, "RRA");
+            assert_eq!(schema.trigger_event, "O18");
         }
     }
 }

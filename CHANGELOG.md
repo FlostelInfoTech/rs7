@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Additional Pharmacy Schemas** - Support for 3 more pharmacy message types across all HL7 versions (2.3-2.7):
+  - RGV (Pharmacy/Treatment Give): O15
+  - RRD (Pharmacy/Treatment Dispense Information): O14
+  - RRA (Pharmacy/Treatment Administration Acknowledgment): O18
+  - Total of 15 new schema files (3 types × 5 versions)
+  - 4 new schema loader tests
+  - Total message schema count: 41 types (was 38)
+
 ## [0.1.3] - 2025-10-07
 
 ### Added

@@ -1,0 +1,136 @@
+{
+  "message_type": "RRD",
+  "trigger_event": "O14",
+  "version": "2.3",
+  "description": "Pharmacy/Treatment Dispense Information",
+  "segments": {
+    "MSH": {
+      "name": "Message Header",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "1": {
+          "name": "Field Separator",
+          "data_type": "ST",
+          "required": true,
+          "repeating": false,
+          "max_length": 1
+        },
+        "2": {
+          "name": "Encoding Characters",
+          "data_type": "ST",
+          "required": true,
+          "repeating": false,
+          "max_length": 4
+        },
+        "9": {
+          "name": "Message Type",
+          "data_type": "MSG",
+          "required": true,
+          "repeating": false,
+          "max_length": 15
+        },
+        "11": {
+          "name": "Processing ID",
+          "data_type": "PT",
+          "required": true,
+          "repeating": false,
+          "max_length": 3,
+          "table_id": "0103"
+        }
+      }
+    },
+    "PID": {
+      "name": "Patient Identification",
+      "required": false,
+      "repeating": false,
+      "fields": {
+        "3": {
+          "name": "Patient Identifier List",
+          "data_type": "CX",
+          "required": true,
+          "repeating": true,
+          "max_length": 250
+        },
+        "5": {
+          "name": "Patient Name",
+          "data_type": "XPN",
+          "required": true,
+          "repeating": true,
+          "max_length": 250
+        }
+      }
+    },
+    "ORC": {
+      "name": "Common Order",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "1": {
+          "name": "Order Control",
+          "data_type": "ID",
+          "required": true,
+          "repeating": false,
+          "max_length": 2,
+          "table_id": "0119"
+        },
+        "2": {
+          "name": "Placer Order Number",
+          "data_type": "EI",
+          "required": false,
+          "repeating": false,
+          "max_length": 22
+        },
+        "3": {
+          "name": "Filler Order Number",
+          "data_type": "EI",
+          "required": false,
+          "repeating": false,
+          "max_length": 22
+        }
+      }
+    },
+    "RXD": {
+      "name": "Pharmacy/Treatment Dispense",
+      "required": true,
+      "repeating": true,
+      "fields": {
+        "1": {
+          "name": "Dispense Sub-ID Counter",
+          "data_type": "NM",
+          "required": true,
+          "repeating": false,
+          "max_length": 4
+        },
+        "2": {
+          "name": "Dispense/Give Code",
+          "data_type": "CE",
+          "required": true,
+          "repeating": false,
+          "max_length": 250
+        },
+        "3": {
+          "name": "Date/Time Dispensed",
+          "data_type": "TS",
+          "required": true,
+          "repeating": false,
+          "max_length": 26
+        },
+        "4": {
+          "name": "Actual Dispense Amount",
+          "data_type": "NM",
+          "required": true,
+          "repeating": false,
+          "max_length": 20
+        },
+        "5": {
+          "name": "Actual Dispense Units",
+          "data_type": "CE",
+          "required": false,
+          "repeating": false,
+          "max_length": 250
+        }
+      }
+    }
+  }
+}

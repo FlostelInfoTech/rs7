@@ -1,0 +1,136 @@
+{
+  "message_type": "RGV",
+  "trigger_event": "O15",
+  "version": "2.5",
+  "description": "Pharmacy/Treatment Give",
+  "segments": {
+    "MSH": {
+      "name": "Message Header",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "1": {
+          "name": "Field Separator",
+          "data_type": "ST",
+          "required": true,
+          "repeating": false,
+          "max_length": 1
+        },
+        "2": {
+          "name": "Encoding Characters",
+          "data_type": "ST",
+          "required": true,
+          "repeating": false,
+          "max_length": 4
+        },
+        "9": {
+          "name": "Message Type",
+          "data_type": "MSG",
+          "required": true,
+          "repeating": false,
+          "max_length": 15
+        },
+        "11": {
+          "name": "Processing ID",
+          "data_type": "PT",
+          "required": true,
+          "repeating": false,
+          "max_length": 3,
+          "table_id": "0103"
+        }
+      }
+    },
+    "PID": {
+      "name": "Patient Identification",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "3": {
+          "name": "Patient Identifier List",
+          "data_type": "CX",
+          "required": true,
+          "repeating": true,
+          "max_length": 250
+        },
+        "5": {
+          "name": "Patient Name",
+          "data_type": "XPN",
+          "required": true,
+          "repeating": true,
+          "max_length": 250
+        }
+      }
+    },
+    "ORC": {
+      "name": "Common Order",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "1": {
+          "name": "Order Control",
+          "data_type": "ID",
+          "required": true,
+          "repeating": false,
+          "max_length": 2,
+          "table_id": "0119"
+        }
+      }
+    },
+    "RXG": {
+      "name": "Pharmacy/Treatment Give",
+      "required": true,
+      "repeating": true,
+      "fields": {
+        "1": {
+          "name": "Give Sub-ID Counter",
+          "data_type": "NM",
+          "required": true,
+          "repeating": false,
+          "max_length": 4
+        },
+        "2": {
+          "name": "Dispense Sub-ID Counter",
+          "data_type": "NM",
+          "required": false,
+          "repeating": false,
+          "max_length": 4
+        },
+        "3": {
+          "name": "Quantity/Timing",
+          "data_type": "TQ",
+          "required": false,
+          "repeating": false,
+          "max_length": 200
+        },
+        "4": {
+          "name": "Give Code",
+          "data_type": "CE",
+          "required": true,
+          "repeating": false,
+          "max_length": 250
+        },
+        "5": {
+          "name": "Give Amount - Minimum",
+          "data_type": "NM",
+          "required": true,
+          "repeating": false,
+          "max_length": 20
+        },
+        "6": {
+          "name": "Give Amount - Maximum",
+          "data_type": "NM",
+          "required": false,
+          "repeating": false,
+          "max_length": 20
+        },
+        "7": {
+          "name": "Give Units",
+          "data_type": "CE",
+          "required": true,
+          "repeating": false,
+          "max_length": 250
+        }
+      }
+    }
+  }
+}

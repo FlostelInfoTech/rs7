@@ -11,6 +11,7 @@ use crate::{
 
 /// Builder for ADT messages
 pub struct AdtBuilder {
+    #[allow(dead_code)]
     base: MessageBuilder,
 }
 

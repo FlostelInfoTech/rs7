@@ -20,6 +20,7 @@ pub struct OruR01Builder {
     processing_id: String,
     patient_id: Option<String>,
     patient_name: Option<(String, String)>,
+    #[allow(dead_code)]
     order_control: String,
     filler_order_number: Option<String>,
     observations: Vec<Observation>,
