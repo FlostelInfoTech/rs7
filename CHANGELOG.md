@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Vocabulary/Code Set Validation** - Validation against HL7 standard tables:
+  - TableRegistry with 13 built-in HL7 tables
+  - Table 0001: Administrative Sex (M, F, O, U, etc.)
+  - Table 0002: Marital Status
+  - Table 0004: Patient Class (I, O, E, etc.)
+  - Table 0007: Admission Type
+  - Table 0061: Check Digit Scheme
+  - Table 0063: Relationship
+  - Table 0078: Interpretation Codes
+  - Table 0085: Observation Result Status
+  - Table 0103: Processing ID (P, D, T)
+  - Table 0119: Order Control Codes (NW, CA, OK, etc.)
+  - Table 0201: Telecommunication Use Code
+  - Table 0203: Identifier Type (MR, SS, DL, etc.)
+  - Table 0301: Universal ID Type
+  - Support for custom/local tables
+  - Deprecated code detection
+  - Integration with schema-based validation
+  - Field-to-table mapping via schema table_id field
+- New examples: `vocabulary_validation.rs` and `complete_validation.rs`
+- 8 new tests for vocabulary validation (total: 102 tests)
+
 - **Data Type Validation** - Format validation for all HL7 data types:
   - Date/Time types (DT, TM, DTM, TS) with format verification
   - Numeric types (NM, SI) with range and format validation

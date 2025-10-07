@@ -23,9 +23,19 @@
 //! - String types (ST, TX, FT)
 //! - Coded elements (CE, CWE, CNE, ID)
 //! - Composite types (XPN, XAD, XTN, CX, EI, HD)
+//!
+//! ## Vocabulary Validation
+//!
+//! The validator includes support for HL7 standard tables including:
+//! - Table 0001: Administrative Sex
+//! - Table 0004: Patient Class
+//! - Table 0103: Processing ID
+//! - Table 0085: Observation Result Status
+//! - And many more standard HL7 tables
 
 pub mod datatype;
 pub mod schema_loader;
+pub mod vocabulary;
 
 use rs7_core::{
     error::Result,
@@ -39,6 +49,7 @@ use std::collections::HashMap;
 
 pub use datatype::{validate_data_type, DataTypeValidation};
 pub use schema_loader::{load_schema, list_available_schemas};
+pub use vocabulary::{TableRegistry, Hl7Table, VocabularyValidation};
 
 /// Validation result
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -127,6 +138,7 @@ impl ValidationWarning {
 pub struct Validator {
     version: Version,
     schema: Option<MessageSchema>,
+    table_registry: TableRegistry,
 }
 
 impl Validator {
@@ -135,6 +147,7 @@ impl Validator {
         Self {
             version,
             schema: None,
+            table_registry: TableRegistry::new(),
         }
     }
 
@@ -143,6 +156,7 @@ impl Validator {
         Self {
             version,
             schema: Some(schema),
+            table_registry: TableRegistry::new(),
         }
     }
 
@@ -152,7 +166,18 @@ impl Validator {
         Ok(Self {
             version,
             schema: Some(schema),
+            table_registry: TableRegistry::new(),
         })
+    }
+
+    /// Get a reference to the table registry
+    pub fn table_registry(&self) -> &TableRegistry {
+        &self.table_registry
+    }
+
+    /// Get a mutable reference to the table registry (for adding custom tables)
+    pub fn table_registry_mut(&mut self) -> &mut TableRegistry {
+        &mut self.table_registry
     }
 
     /// Validate a message
@@ -295,7 +320,7 @@ impl Validator {
                         let validation = datatype::validate_data_type(value, data_type);
                         if !validation.is_valid() {
                             result.add_error(ValidationError::new(
-                                field_location,
+                                field_location.clone(),
                                 format!(
                                     "Invalid {} format: {}",
                                     field_def.data_type,
@@ -303,6 +328,20 @@ impl Validator {
                                 ),
                                 ValidationErrorType::InvalidDataType,
                             ));
+                        }
+                    }
+
+                    // Validate vocabulary/code set
+                    if let Some(table_id) = &field_def.table_id {
+                        let vocab_validation = self.table_registry.validate(table_id, value);
+                        if !vocab_validation.is_valid() {
+                            if let Some(err_msg) = vocab_validation.error_message() {
+                                result.add_error(ValidationError::new(
+                                    field_location.clone(),
+                                    err_msg.to_string(),
+                                    ValidationErrorType::InvalidValue,
+                                ));
+                            }
                         }
                     }
                 }
@@ -337,6 +376,8 @@ pub struct FieldDefinition {
     pub required: bool,
     pub repeating: bool,
     pub max_length: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub table_id: Option<String>,
 }
 
 #[cfg(test)]

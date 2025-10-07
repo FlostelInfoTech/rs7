@@ -9,6 +9,7 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 - **✅ Message Validation**: Validate messages against HL7 standards with detailed error reporting
 - **✅ Schema-Based Validation**: Comprehensive schemas for all HL7 versions (2.3-2.7)
 - **✅ Data Type Validation**: Format checking for all HL7 data types (dates, times, numerics, coded values, etc.)
+- **✅ Vocabulary Validation**: Code set validation against HL7 standard tables (gender, patient class, processing ID, etc.)
 - **✅ Terser API**: Easy field access using path notation (e.g., `PID-5-1`, `OBX(2)-5`)
 - **✅ Encoding/Escaping**: Proper handling of HL7 escape sequences
 - **✅ Message Builders**: Fluent API for creating messages (ADT, ORU, ORM, SIU, MDM, DFT, QRY)
@@ -143,6 +144,15 @@ let validation = validate_data_type("20240315", DataType::DT);
 if validation.is_valid() {
     println!("Valid date!");
 }
+
+// Vocabulary validation
+use rs7_validator::TableRegistry;
+
+let registry = TableRegistry::new();
+let vocab_result = registry.validate("0001", "M"); // Table 0001: Administrative Sex
+if vocab_result.is_valid() {
+    println!("Valid gender code!");
+}
 ```
 
 ### MLLP Server
@@ -193,6 +203,8 @@ The `examples/` directory contains complete working examples:
 - `schema_validation.rs` - Validate messages using schemas
 - `datatype_validation.rs` - Data type format validation examples
 - `enhanced_validation.rs` - Complete validation with data type checking
+- `vocabulary_validation.rs` - HL7 table/code set validation examples
+- `complete_validation.rs` - Full validation with data types and vocabulary
 - `mllp_server.rs` - MLLP server that receives messages and sends ACKs
 - `mllp_client.rs` - MLLP client that sends messages
 
@@ -205,6 +217,8 @@ cargo run --example message_builders
 cargo run --example schema_validation
 cargo run --example datatype_validation
 cargo run --example enhanced_validation
+cargo run --example vocabulary_validation
+cargo run --example complete_validation
 cargo run --example mllp_server
 cargo run --example mllp_client  # In another terminal
 ```
@@ -324,7 +338,7 @@ Contributions are welcome! Please:
 - [x] Additional message type schemas (ADT A02-A40, SIU, MDM, DFT, QRY) ✅
 - [x] Message builders (ADT, ORM, ORU, SIU, MDM, DFT, QRY) ✅
 - [x] Enhanced data type validation (format checking) ✅
-- [ ] Vocabulary/code set validation
+- [x] Vocabulary/code set validation ✅
 - [ ] More message schemas (BAR, RAS, RDE, etc.)
 - [ ] Additional builder methods (more ADT variants, complex fields)
 - [ ] HL7 FHIR conversion utilities
