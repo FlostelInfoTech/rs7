@@ -13,7 +13,7 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 - **✅ Terser API**: Easy field access using path notation (e.g., `PID-5-1`, `OBX(2)-5`)
 - **✅ Encoding/Escaping**: Proper handling of HL7 escape sequences
 - **✅ Message Builders**: Fluent API for creating messages (ADT, ORU, ORM, SIU, MDM, DFT, QRY)
-- **✅ Message Types**: Support for ADT (A01-A40), SIU (S12-S15), MDM (T01-T04), DFT (P03, P11), QRY (A19, Q01-Q02), ORM, ORU, ACK, and other message types
+- **✅ Message Types**: Support for ADT (A01-A40), SIU (S12-S15), MDM (T01-T04), DFT (P03, P11), QRY (A19, Q01-Q02), BAR (P01-P02), RDE, RAS, RDS, MFN, ORM, ORU, ACK, and other message types
 - **✅ ACK Generation**: Automatic acknowledgment message creation
 - **✅ MLLP Support**: Network transmission using Minimal Lower Layer Protocol
 - **🚀 Fast and Safe**: Built with Rust for performance and memory safety
@@ -298,6 +298,22 @@ Message
 - **Q01** - Query Sent for Immediate Response
 - **Q02** - Query Sent for Deferred Response
 
+### BAR - Billing Account Record
+- **P01** - Add Patient Account
+- **P02** - Purge Patient Accounts
+
+### RDE - Pharmacy/Treatment Encoded Order
+- **O11** - Pharmacy/Treatment Encoded Order
+
+### RAS - Pharmacy/Treatment Administration
+- **O17** - Pharmacy/Treatment Administration
+
+### RDS - Pharmacy/Treatment Dispense
+- **O13** - Pharmacy/Treatment Dispense
+
+### MFN - Master File Notification
+- **M01** - Master File Not Otherwise Specified
+
 ### Other Message Types
 - **ORM** - Order Messages (Pharmacy, Lab, etc.)
 - **ORU** - Observation Results (Lab results, etc.)
@@ -339,8 +355,11 @@ Contributions are welcome! Please:
 - [x] Message builders (ADT, ORM, ORU, SIU, MDM, DFT, QRY) ✅
 - [x] Enhanced data type validation (format checking) ✅
 - [x] Vocabulary/code set validation ✅
-- [ ] More message schemas (BAR, RAS, RDE, etc.)
+- [x] More message schemas (BAR, RAS, RDE, RDS, MFN) ✅
+- [ ] Additional pharmacy schemas (RGV, RRD, RRA)
+- [ ] Laboratory message schemas (OUL, OML)
 - [ ] Additional builder methods (more ADT variants, complex fields)
+- [ ] Message builders for pharmacy types (RDE, RAS, RDS)
 - [ ] HL7 FHIR conversion utilities
 - [ ] Performance optimizations
 - [ ] WebAssembly support

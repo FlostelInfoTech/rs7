@@ -34,12 +34,12 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
-authors = ["Your Name <your.email@example.com>"]
+authors = ["Alex Shao <alex.fanshao@gmail.com>"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/yourusername/rs7"
-homepage = "https://github.com/yourusername/rs7"
+repository = "https://gitlab.flostel.com/alexshao/rs7"
+homepage = "https://gitlab.flostel.com/alexshao/rs7"
 documentation = "https://docs.rs/rs7"
 keywords = ["hl7", "healthcare", "medical", "interoperability"]
 categories = ["parsing", "network-programming", "healthcare"]

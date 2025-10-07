@@ -1,0 +1,114 @@
+{
+  "message_type": "MFN",
+  "trigger_event": "M01",
+  "version": "2.3",
+  "description": "Master File Not Otherwise Specified",
+  "segments": {
+    "MSH": {
+      "name": "Message Header",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "1": {
+          "name": "Field Separator",
+          "data_type": "ST",
+          "required": true,
+          "repeating": false,
+          "max_length": 1
+        },
+        "2": {
+          "name": "Encoding Characters",
+          "data_type": "ST",
+          "required": true,
+          "repeating": false,
+          "max_length": 4
+        },
+        "9": {
+          "name": "Message Type",
+          "data_type": "MSG",
+          "required": true,
+          "repeating": false,
+          "max_length": 15
+        },
+        "11": {
+          "name": "Processing ID",
+          "data_type": "PT",
+          "required": true,
+          "repeating": false,
+          "max_length": 3,
+          "table_id": "0103"
+        }
+      }
+    },
+    "MFI": {
+      "name": "Master File Identification",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "1": {
+          "name": "Master File Identifier",
+          "data_type": "CE",
+          "required": true,
+          "repeating": false,
+          "max_length": 250
+        },
+        "2": {
+          "name": "Master File Application Identifier",
+          "data_type": "HD",
+          "required": false,
+          "repeating": true,
+          "max_length": 227
+        },
+        "3": {
+          "name": "File-Level Event Code",
+          "data_type": "ID",
+          "required": true,
+          "repeating": false,
+          "max_length": 3
+        },
+        "4": {
+          "name": "Entered Date/Time",
+          "data_type": "TS",
+          "required": false,
+          "repeating": false,
+          "max_length": 26
+        }
+      }
+    },
+    "MFE": {
+      "name": "Master File Entry",
+      "required": true,
+      "repeating": true,
+      "fields": {
+        "1": {
+          "name": "Record-Level Event Code",
+          "data_type": "ID",
+          "required": true,
+          "repeating": false,
+          "max_length": 3
+        },
+        "2": {
+          "name": "MFN Control ID",
+          "data_type": "ST",
+          "required": false,
+          "repeating": false,
+          "max_length": 20
+        },
+        "3": {
+          "name": "Effective Date/Time",
+          "data_type": "TS",
+          "required": false,
+          "repeating": false,
+          "max_length": 26
+        },
+        "4": {
+          "name": "Primary Key Value - MFE",
+          "data_type": "CE",
+          "required": true,
+          "repeating": true,
+          "max_length": 250
+        }
+      }
+    }
+  }
+}

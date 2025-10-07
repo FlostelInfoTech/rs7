@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2025-10-07
+
 ### Added
+- **Additional Message Schemas** - Support for 6 new message types across all HL7 versions (2.3-2.7):
+  - BAR (Billing Account Record): P01, P02
+  - RDE (Pharmacy/Treatment Encoded Order): O11
+  - RAS (Pharmacy/Treatment Administration): O17
+  - RDS (Pharmacy/Treatment Dispense): O13
+  - MFN (Master File Notification): M01
+  - Total of 30 new schema files (6 types × 5 versions)
+  - 6 new schema loader tests
+  - Updated `list_available_schemas()` function
+  - Total message schema count: 38 types (was 32)
+
 - **Vocabulary/Code Set Validation** - Validation against HL7 standard tables:
   - TableRegistry with 13 built-in HL7 tables
   - Table 0001: Administrative Sex (M, F, O, U, etc.)
@@ -28,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Integration with schema-based validation
   - Field-to-table mapping via schema table_id field
 - New examples: `vocabulary_validation.rs` and `complete_validation.rs`
-- 8 new tests for vocabulary validation (total: 102 tests)
+- 8 new tests for vocabulary validation (total: 101 tests across all crates)
 
 - **Data Type Validation** - Format validation for all HL7 data types:
   - Date/Time types (DT, TM, DTM, TS) with format verification
