@@ -14,18 +14,30 @@
 //! - **ORU** (1 schema): R01 (Observation Results)
 //! - **ORM** (1 schema): O01 (Orders)
 //! - **ACK** (1 schema): General Acknowledgment
+//!
+//! ## Data Type Validation
+//!
+//! The validator supports format validation for all HL7 data types including:
+//! - Date/Time types (DT, TM, DTM, TS)
+//! - Numeric types (NM, SI)
+//! - String types (ST, TX, FT)
+//! - Coded elements (CE, CWE, CNE, ID)
+//! - Composite types (XPN, XAD, XTN, CX, EI, HD)
 
+pub mod datatype;
 pub mod schema_loader;
 
 use rs7_core::{
     error::Result,
     message::Message,
     segment::Segment,
+    types::DataType,
     Version,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+pub use datatype::{validate_data_type, DataTypeValidation};
 pub use schema_loader::{load_schema, list_available_schemas};
 
 /// Validation result
@@ -256,19 +268,40 @@ impl Validator {
                 ));
             }
 
-            // Validate max length if field exists
+            // Validate field if it exists
             if let Some(f) = field {
+                let field_location = format!("{}-{}", location_prefix, field_idx);
+
+                // Validate max length
                 if let Some(max_len) = field_def.max_length {
                     if let Some(value) = f.value() {
                         if value.len() > max_len {
                             result.add_error(ValidationError::new(
-                                format!("{}-{}", location_prefix, field_idx),
+                                field_location.clone(),
                                 format!(
                                     "Field exceeds maximum length ({} > {})",
                                     value.len(),
                                     max_len
                                 ),
                                 ValidationErrorType::InvalidLength,
+                            ));
+                        }
+                    }
+                }
+
+                // Validate data type format
+                if let Some(value) = f.value() {
+                    if let Some(data_type) = DataType::from_str(&field_def.data_type) {
+                        let validation = datatype::validate_data_type(value, data_type);
+                        if !validation.is_valid() {
+                            result.add_error(ValidationError::new(
+                                field_location,
+                                format!(
+                                    "Invalid {} format: {}",
+                                    field_def.data_type,
+                                    validation.error_message().unwrap_or("unknown error")
+                                ),
+                                ValidationErrorType::InvalidDataType,
                             ));
                         }
                     }

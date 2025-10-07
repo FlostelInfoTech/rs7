@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Data Type Validation** - Format validation for all HL7 data types:
+  - Date/Time types (DT, TM, DTM, TS) with format verification
+  - Numeric types (NM, SI) with range and format validation
+  - String types (ST, TX, FT) with basic validation
+  - Identifier types (ID, EI, CX, HD) with format rules
+  - Coded elements (CE, CWE, CNE) with component structure validation
+  - Composite types (XPN, XAD, XTN) for names, addresses, and telecom
+  - Message type (MSG) and processing type (PT) validation
+  - Numeric array (NA) validation
+- Integrated data type validation into the schema-based validator
+- New examples: `datatype_validation.rs` and `enhanced_validation.rs`
+- Comprehensive test suite for data type validation (19 new tests)
+
 ## [0.1.1] - 2025-10-07
 
 ### Added

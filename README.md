@@ -8,8 +8,10 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 - **✅ Multiple HL7 Versions**: Support for HL7 v2.3, v2.4, v2.5, v2.6, v2.7, and v2.7.1
 - **✅ Message Validation**: Validate messages against HL7 standards with detailed error reporting
 - **✅ Schema-Based Validation**: Comprehensive schemas for all HL7 versions (2.3-2.7)
+- **✅ Data Type Validation**: Format checking for all HL7 data types (dates, times, numerics, coded values, etc.)
 - **✅ Terser API**: Easy field access using path notation (e.g., `PID-5-1`, `OBX(2)-5`)
 - **✅ Encoding/Escaping**: Proper handling of HL7 escape sequences
+- **✅ Message Builders**: Fluent API for creating messages (ADT, ORU, ORM, SIU, MDM, DFT, QRY)
 - **✅ Message Types**: Support for ADT (A01-A40), SIU (S12-S15), MDM (T01-T04), DFT (P03, P11), QRY (A19, Q01-Q02), ORM, ORU, ACK, and other message types
 - **✅ ACK Generation**: Automatic acknowledgment message creation
 - **✅ MLLP Support**: Network transmission using Minimal Lower Layer Protocol
@@ -121,7 +123,7 @@ use rs7_core::Version;
 let validator = Validator::new(Version::V2_5);
 let result = validator.validate(&message);
 
-// Schema-based validation
+// Schema-based validation with data type checking
 let validator = Validator::for_message_type(Version::V2_5, "ADT", "A01")?;
 let result = validator.validate(&message);
 
@@ -131,6 +133,15 @@ if result.is_valid() {
     for error in &result.errors {
         println!("Error at {}: {}", error.location, error.message);
     }
+}
+
+// Data type validation
+use rs7_core::types::DataType;
+use rs7_validator::validate_data_type;
+
+let validation = validate_data_type("20240315", DataType::DT);
+if validation.is_valid() {
+    println!("Valid date!");
 }
 ```
 
@@ -180,6 +191,8 @@ The `examples/` directory contains complete working examples:
 - `create_message.rs` - Build messages programmatically (manual)
 - `message_builders.rs` - Build messages using the builder API
 - `schema_validation.rs` - Validate messages using schemas
+- `datatype_validation.rs` - Data type format validation examples
+- `enhanced_validation.rs` - Complete validation with data type checking
 - `mllp_server.rs` - MLLP server that receives messages and sends ACKs
 - `mllp_client.rs` - MLLP client that sends messages
 
@@ -190,6 +203,8 @@ cargo run --example parse_adt
 cargo run --example create_message
 cargo run --example message_builders
 cargo run --example schema_validation
+cargo run --example datatype_validation
+cargo run --example enhanced_validation
 cargo run --example mllp_server
 cargo run --example mllp_client  # In another terminal
 ```
@@ -308,7 +323,7 @@ Contributions are welcome! Please:
 - [x] Complete schema definitions for all HL7 versions (v2.3-2.7) ✅
 - [x] Additional message type schemas (ADT A02-A40, SIU, MDM, DFT, QRY) ✅
 - [x] Message builders (ADT, ORM, ORU, SIU, MDM, DFT, QRY) ✅
-- [ ] Enhanced data type validation (format checking)
+- [x] Enhanced data type validation (format checking) ✅
 - [ ] Vocabulary/code set validation
 - [ ] More message schemas (BAR, RAS, RDE, etc.)
 - [ ] Additional builder methods (more ADT variants, complex fields)
