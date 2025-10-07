@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Laboratory Message Schemas** - Support for 2 laboratory message types across all HL7 versions (2.3-2.7):
+  - OUL (Unsolicited Laboratory Observation): R21
+  - OML (Laboratory Order): O21
+  - Total of 10 new schema files (2 types × 5 versions)
+  - 3 new schema loader tests
+  - Total message schema count: 43 types (was 41)
+
 - **Additional Pharmacy Schemas** - Support for 3 more pharmacy message types across all HL7 versions (2.3-2.7):
   - RGV (Pharmacy/Treatment Give): O15
   - RRD (Pharmacy/Treatment Dispense Information): O14

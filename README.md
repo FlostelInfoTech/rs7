@@ -13,7 +13,7 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 - **✅ Terser API**: Easy field access using path notation (e.g., `PID-5-1`, `OBX(2)-5`)
 - **✅ Encoding/Escaping**: Proper handling of HL7 escape sequences
 - **✅ Message Builders**: Fluent API for creating messages (ADT, ORU, ORM, SIU, MDM, DFT, QRY)
-- **✅ Message Types**: Support for ADT (A01-A40), SIU (S12-S15), MDM (T01-T04), DFT (P03, P11), QRY (A19, Q01-Q02), BAR (P01-P02), Pharmacy (RDE, RAS, RDS, RGV, RRD, RRA), MFN, ORM, ORU, ACK, and other message types
+- **✅ Message Types**: Support for ADT (A01-A40), SIU (S12-S15), MDM (T01-T04), DFT (P03, P11), QRY (A19, Q01-Q02), BAR (P01-P02), Pharmacy (RDE, RAS, RDS, RGV, RRD, RRA), Laboratory (OUL, OML), MFN, ORM, ORU, ACK, and other message types
 - **✅ ACK Generation**: Automatic acknowledgment message creation
 - **✅ MLLP Support**: Network transmission using Minimal Lower Layer Protocol
 - **🚀 Fast and Safe**: Built with Rust for performance and memory safety
@@ -320,6 +320,12 @@ Message
 ### RRA - Pharmacy/Treatment Administration Acknowledgment
 - **O18** - Pharmacy/Treatment Administration Acknowledgment
 
+### OUL - Unsolicited Laboratory Observation
+- **R21** - Unsolicited Laboratory Observation
+
+### OML - Laboratory Order
+- **O21** - Laboratory Order
+
 ### MFN - Master File Notification
 - **M01** - Master File Not Otherwise Specified
 
@@ -366,7 +372,7 @@ Contributions are welcome! Please:
 - [x] Vocabulary/code set validation ✅
 - [x] More message schemas (BAR, RAS, RDE, RDS, MFN) ✅
 - [x] Additional pharmacy schemas (RGV, RRD, RRA) ✅
-- [ ] Laboratory message schemas (OUL, OML)
+- [x] Laboratory message schemas (OUL, OML) ✅
 - [ ] Additional builder methods (more ADT variants, complex fields)
 - [ ] Message builders for pharmacy types (RDE, RAS, RDS)
 - [ ] HL7 FHIR conversion utilities

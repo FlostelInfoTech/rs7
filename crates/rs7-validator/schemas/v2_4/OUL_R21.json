@@ -1,0 +1,200 @@
+{
+  "message_type": "OUL",
+  "trigger_event": "R21",
+  "version": "2.4",
+  "description": "Unsolicited Laboratory Observation",
+  "segments": {
+    "MSH": {
+      "name": "Message Header",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "1": {
+          "name": "Field Separator",
+          "data_type": "ST",
+          "required": true,
+          "repeating": false,
+          "max_length": 1
+        },
+        "2": {
+          "name": "Encoding Characters",
+          "data_type": "ST",
+          "required": true,
+          "repeating": false,
+          "max_length": 4
+        },
+        "9": {
+          "name": "Message Type",
+          "data_type": "MSG",
+          "required": true,
+          "repeating": false,
+          "max_length": 15
+        },
+        "11": {
+          "name": "Processing ID",
+          "data_type": "PT",
+          "required": true,
+          "repeating": false,
+          "max_length": 3,
+          "table_id": "0103"
+        }
+      }
+    },
+    "PID": {
+      "name": "Patient Identification",
+      "required": false,
+      "repeating": false,
+      "fields": {
+        "3": {
+          "name": "Patient Identifier List",
+          "data_type": "CX",
+          "required": true,
+          "repeating": true,
+          "max_length": 250
+        },
+        "5": {
+          "name": "Patient Name",
+          "data_type": "XPN",
+          "required": true,
+          "repeating": true,
+          "max_length": 250
+        }
+      }
+    },
+    "OBR": {
+      "name": "Observation Request",
+      "required": true,
+      "repeating": true,
+      "fields": {
+        "1": {
+          "name": "Set ID - OBR",
+          "data_type": "SI",
+          "required": true,
+          "repeating": false,
+          "max_length": 4
+        },
+        "2": {
+          "name": "Placer Order Number",
+          "data_type": "EI",
+          "required": false,
+          "repeating": false,
+          "max_length": 22
+        },
+        "3": {
+          "name": "Filler Order Number",
+          "data_type": "EI",
+          "required": false,
+          "repeating": false,
+          "max_length": 22
+        },
+        "4": {
+          "name": "Universal Service Identifier",
+          "data_type": "CE",
+          "required": true,
+          "repeating": false,
+          "max_length": 250
+        },
+        "7": {
+          "name": "Observation Date/Time",
+          "data_type": "TS",
+          "required": false,
+          "repeating": false,
+          "max_length": 26
+        },
+        "25": {
+          "name": "Result Status",
+          "data_type": "ID",
+          "required": false,
+          "repeating": false,
+          "max_length": 1,
+          "table_id": "0123"
+        }
+      }
+    },
+    "OBX": {
+      "name": "Observation/Result",
+      "required": false,
+      "repeating": true,
+      "fields": {
+        "1": {
+          "name": "Set ID - OBX",
+          "data_type": "SI",
+          "required": false,
+          "repeating": false,
+          "max_length": 4
+        },
+        "2": {
+          "name": "Value Type",
+          "data_type": "ID",
+          "required": true,
+          "repeating": false,
+          "max_length": 2
+        },
+        "3": {
+          "name": "Observation Identifier",
+          "data_type": "CE",
+          "required": true,
+          "repeating": false,
+          "max_length": 250
+        },
+        "4": {
+          "name": "Observation Sub-ID",
+          "data_type": "ST",
+          "required": false,
+          "repeating": false,
+          "max_length": 20
+        },
+        "5": {
+          "name": "Observation Value",
+          "data_type": "Varies",
+          "required": false,
+          "repeating": true,
+          "max_length": 65536
+        },
+        "6": {
+          "name": "Units",
+          "data_type": "CE",
+          "required": false,
+          "repeating": false,
+          "max_length": 250
+        },
+        "11": {
+          "name": "Observation Result Status",
+          "data_type": "ID",
+          "required": true,
+          "repeating": false,
+          "max_length": 1,
+          "table_id": "0085"
+        }
+      }
+    },
+    "SPM": {
+      "name": "Specimen",
+      "required": false,
+      "repeating": true,
+      "fields": {
+        "1": {
+          "name": "Set ID - SPM",
+          "data_type": "SI",
+          "required": false,
+          "repeating": false,
+          "max_length": 4
+        },
+        "2": {
+          "name": "Specimen ID",
+          "data_type": "EIP",
+          "required": false,
+          "repeating": false,
+          "max_length": 80
+        },
+        "4": {
+          "name": "Specimen Type",
+          "data_type": "CWE",
+          "required": false,
+          "repeating": false,
+          "max_length": 250
+        }
+      }
+    }
+  }
+}

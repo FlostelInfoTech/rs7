@@ -80,6 +80,8 @@ fn load_embedded_schema(version: &str, schema_key: &str) -> Option<MessageSchema
         ("v2_3", "RGV_O15") => parse_schema_json(include_str!("../schemas/v2_3/RGV_O15.json")),
         ("v2_3", "RRD_O14") => parse_schema_json(include_str!("../schemas/v2_3/RRD_O14.json")),
         ("v2_3", "RRA_O18") => parse_schema_json(include_str!("../schemas/v2_3/RRA_O18.json")),
+        ("v2_3", "OUL_R21") => parse_schema_json(include_str!("../schemas/v2_3/OUL_R21.json")),
+        ("v2_3", "OML_O21") => parse_schema_json(include_str!("../schemas/v2_3/OML_O21.json")),
 
         // V2.4 schemas - ADT messages
         ("v2_4", "ADT_A01") => parse_schema_json(include_str!("../schemas/v2_4/ADT_A01.json")),
@@ -124,6 +126,8 @@ fn load_embedded_schema(version: &str, schema_key: &str) -> Option<MessageSchema
         ("v2_4", "RGV_O15") => parse_schema_json(include_str!("../schemas/v2_4/RGV_O15.json")),
         ("v2_4", "RRD_O14") => parse_schema_json(include_str!("../schemas/v2_4/RRD_O14.json")),
         ("v2_4", "RRA_O18") => parse_schema_json(include_str!("../schemas/v2_4/RRA_O18.json")),
+        ("v2_4", "OUL_R21") => parse_schema_json(include_str!("../schemas/v2_4/OUL_R21.json")),
+        ("v2_4", "OML_O21") => parse_schema_json(include_str!("../schemas/v2_4/OML_O21.json")),
 
         // V2.5 schemas - ADT messages
         ("v2_5", "ADT_A01") => parse_schema_json(include_str!("../schemas/v2_5/ADT_A01.json")),
@@ -168,6 +172,8 @@ fn load_embedded_schema(version: &str, schema_key: &str) -> Option<MessageSchema
         ("v2_5", "RGV_O15") => parse_schema_json(include_str!("../schemas/v2_5/RGV_O15.json")),
         ("v2_5", "RRD_O14") => parse_schema_json(include_str!("../schemas/v2_5/RRD_O14.json")),
         ("v2_5", "RRA_O18") => parse_schema_json(include_str!("../schemas/v2_5/RRA_O18.json")),
+        ("v2_5", "OUL_R21") => parse_schema_json(include_str!("../schemas/v2_5/OUL_R21.json")),
+        ("v2_5", "OML_O21") => parse_schema_json(include_str!("../schemas/v2_5/OML_O21.json")),
 
         // V2.6 schemas - ADT messages
         ("v2_6", "ADT_A01") => parse_schema_json(include_str!("../schemas/v2_6/ADT_A01.json")),
@@ -212,6 +218,8 @@ fn load_embedded_schema(version: &str, schema_key: &str) -> Option<MessageSchema
         ("v2_6", "RGV_O15") => parse_schema_json(include_str!("../schemas/v2_6/RGV_O15.json")),
         ("v2_6", "RRD_O14") => parse_schema_json(include_str!("../schemas/v2_6/RRD_O14.json")),
         ("v2_6", "RRA_O18") => parse_schema_json(include_str!("../schemas/v2_6/RRA_O18.json")),
+        ("v2_6", "OUL_R21") => parse_schema_json(include_str!("../schemas/v2_6/OUL_R21.json")),
+        ("v2_6", "OML_O21") => parse_schema_json(include_str!("../schemas/v2_6/OML_O21.json")),
 
         // V2.7 schemas - ADT messages
         ("v2_7", "ADT_A01") => parse_schema_json(include_str!("../schemas/v2_7/ADT_A01.json")),
@@ -256,6 +264,8 @@ fn load_embedded_schema(version: &str, schema_key: &str) -> Option<MessageSchema
         ("v2_7", "RGV_O15") => parse_schema_json(include_str!("../schemas/v2_7/RGV_O15.json")),
         ("v2_7", "RRD_O14") => parse_schema_json(include_str!("../schemas/v2_7/RRD_O14.json")),
         ("v2_7", "RRA_O18") => parse_schema_json(include_str!("../schemas/v2_7/RRA_O18.json")),
+        ("v2_7", "OUL_R21") => parse_schema_json(include_str!("../schemas/v2_7/OUL_R21.json")),
+        ("v2_7", "OML_O21") => parse_schema_json(include_str!("../schemas/v2_7/OML_O21.json")),
 
         _ => None,
     }
@@ -294,6 +304,8 @@ pub fn list_available_schemas(version: Version) -> Vec<String> {
         // Pharmacy
         "RDE^O11".to_string(), "RAS^O17".to_string(), "RDS^O13".to_string(),
         "RGV^O15".to_string(), "RRD^O14".to_string(), "RRA^O18".to_string(),
+        // Laboratory
+        "OUL^R21".to_string(), "OML^O21".to_string(),
         // Master File
         "MFN^M01".to_string(),
     ];
@@ -471,6 +483,46 @@ mod tests {
             let schema = load_schema(version, "RRA", "O18").unwrap();
             assert_eq!(schema.message_type, "RRA");
             assert_eq!(schema.trigger_event, "O18");
+        }
+    }
+
+    #[test]
+    fn test_load_oul_r21_schema() {
+        let schema = load_schema(Version::V2_5, "OUL", "R21").unwrap();
+        assert_eq!(schema.message_type, "OUL");
+        assert_eq!(schema.trigger_event, "R21");
+        assert!(schema.segments.contains_key("MSH"));
+        assert!(schema.segments.contains_key("OBR"));
+        assert!(schema.segments.contains_key("OBX"));
+        assert!(schema.segments.contains_key("SPM"));
+    }
+
+    #[test]
+    fn test_load_oml_o21_schema() {
+        let schema = load_schema(Version::V2_5, "OML", "O21").unwrap();
+        assert_eq!(schema.message_type, "OML");
+        assert_eq!(schema.trigger_event, "O21");
+        assert!(schema.segments.contains_key("MSH"));
+        assert!(schema.segments.contains_key("PID"));
+        assert!(schema.segments.contains_key("ORC"));
+        assert!(schema.segments.contains_key("OBR"));
+        assert!(schema.segments.contains_key("SPM"));
+    }
+
+    #[test]
+    fn test_load_laboratory_schemas_all_versions() {
+        // Test OUL_R21 across all versions
+        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7] {
+            let schema = load_schema(version, "OUL", "R21").unwrap();
+            assert_eq!(schema.message_type, "OUL");
+            assert_eq!(schema.trigger_event, "R21");
+        }
+
+        // Test OML_O21 across all versions
+        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7] {
+            let schema = load_schema(version, "OML", "O21").unwrap();
+            assert_eq!(schema.message_type, "OML");
+            assert_eq!(schema.trigger_event, "O21");
         }
     }
 }

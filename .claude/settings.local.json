@@ -11,7 +11,8 @@
       "Bash(cargo run:*)",
       "Bash(cargo --version)",
       "Bash(rustc --version)",
-      "Bash(do cp v2_5/RGV_O15.json $version/)"
+      "Bash(do cp v2_5/RGV_O15.json $version/)",
+      "Bash(do cp v2_5/OUL_R21.json $version/)"
     ],
     "deny": [],
     "ask": []
