@@ -2,10 +2,12 @@
 //!
 //! This crate provides the foundational types used throughout the rs7 library:
 //! - Message structure hierarchy (Message, Segment, Field, Component, Subcomponent)
+//! - Message builders for creating HL7 messages programmatically
 //! - Encoding characters and delimiters
 //! - Error types
 //! - Common traits
 
+pub mod builders;
 pub mod delimiters;
 pub mod encoding;
 pub mod error;

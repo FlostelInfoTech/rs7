@@ -60,7 +60,31 @@ let given_name = terser.get("PID-5-2")?;    // "JOHN"
 let dob = terser.get("PID-7")?;             // "19800101"
 ```
 
-### Creating a Message
+### Creating a Message with Builders
+
+```rust
+use rs7_core::builders::adt::AdtBuilder;
+use rs7_core::Version;
+
+// Use the fluent builder API
+let message = AdtBuilder::a01(Version::V2_5)
+    .sending_application("MyApp")
+    .sending_facility("MyFacility")
+    .receiving_application("RecApp")
+    .receiving_facility("RecFacility")
+    .patient_id("12345")
+    .patient_name("DOE", "JOHN")
+    .date_of_birth("19800101")
+    .sex("M")
+    .patient_class("I")
+    .assigned_location("ER^101^1")
+    .build()?;
+
+// Encode to HL7
+let hl7_string = message.encode();
+```
+
+### Creating a Message Manually
 
 ```rust
 use rs7_core::{Message, Segment, Field, Delimiters};
@@ -153,7 +177,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 The `examples/` directory contains complete working examples:
 
 - `parse_adt.rs` - Parse and analyze an ADT^A01 message
-- `create_message.rs` - Build messages programmatically
+- `create_message.rs` - Build messages programmatically (manual)
+- `message_builders.rs` - Build messages using the builder API
 - `schema_validation.rs` - Validate messages using schemas
 - `mllp_server.rs` - MLLP server that receives messages and sends ACKs
 - `mllp_client.rs` - MLLP client that sends messages
@@ -163,6 +188,7 @@ Run examples:
 ```bash
 cargo run --example parse_adt
 cargo run --example create_message
+cargo run --example message_builders
 cargo run --example schema_validation
 cargo run --example mllp_server
 cargo run --example mllp_client  # In another terminal
@@ -281,10 +307,11 @@ Contributions are welcome! Please:
 
 - [x] Complete schema definitions for all HL7 versions (v2.3-2.7) ✅
 - [x] Additional message type schemas (ADT A02-A40, SIU, MDM, DFT, QRY) ✅
-- [ ] Additional message type builders (ADT, ORM, ORU, etc.)
+- [x] Message builders (ADT, ORM, ORU, SIU, MDM, DFT, QRY) ✅
 - [ ] Enhanced data type validation (format checking)
 - [ ] Vocabulary/code set validation
 - [ ] More message schemas (BAR, RAS, RDE, etc.)
+- [ ] Additional builder methods (more ADT variants, complex fields)
 - [ ] HL7 FHIR conversion utilities
 - [ ] Performance optimizations
 - [ ] WebAssembly support
