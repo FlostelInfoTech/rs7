@@ -1,0 +1,85 @@
+[package]
+name = "rs7"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Comprehensive HL7 v2.x library for Rust - parsing, validation, and MLLP support"
+
+[dependencies]
+rs7-core.workspace = true
+rs7-parser.workspace = true
+rs7-validator.workspace = true
+rs7-terser.workspace = true
+rs7-mllp.workspace = true
+
+[dev-dependencies]
+chrono.workspace = true
+tokio.workspace = true
+
+[workspace]
+members = [
+    "crates/rs7-core",
+    "crates/rs7-parser",
+    "crates/rs7-validator",
+    "crates/rs7-terser",
+    "crates/rs7-mllp",
+    "crates/rs7-macros",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["Your Name <your.email@example.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/yourusername/rs7"
+homepage = "https://github.com/yourusername/rs7"
+documentation = "https://docs.rs/rs7"
+keywords = ["hl7", "healthcare", "medical", "interoperability"]
+categories = ["parsing", "network-programming", "healthcare"]
+
+[workspace.dependencies]
+# Parsing
+nom = "8.0.0"
+
+# Async runtime for MLLP
+tokio = { version = "1.40", features = ["full"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+
+# Error handling
+thiserror = "2.0.17"
+anyhow = "1.0"
+
+# Serialization for specs
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Date/Time handling
+chrono = "0.4"
+
+# Testing
+proptest = "1.5"
+
+# Procedural macros
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = { version = "2.0", features = ["full"] }
+
+# Internal crates
+rs7-core = { path = "crates/rs7-core" }
+rs7-parser = { path = "crates/rs7-parser" }
+rs7-validator = { path = "crates/rs7-validator" }
+rs7-terser = { path = "crates/rs7-terser" }
+rs7-mllp = { path = "crates/rs7-mllp" }
+rs7-macros = { path = "crates/rs7-macros" }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

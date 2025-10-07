@@ -1,0 +1,67 @@
+{
+  "message_type": "ADT",
+  "trigger_event": "A02",
+  "version": "2.7",
+  "description": "Transfer a Patient",
+  "segments": {
+    "MSH": {
+      "name": "Message Header",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "1": {"name": "Field Separator", "data_type": "ST", "required": true, "repeating": false, "max_length": 1},
+        "2": {"name": "Encoding Characters", "data_type": "ST", "required": true, "repeating": false, "max_length": 4},
+        "3": {"name": "Sending Application", "data_type": "HD", "required": false, "repeating": false, "max_length": 227},
+        "4": {"name": "Sending Facility", "data_type": "HD", "required": false, "repeating": false, "max_length": 227},
+        "5": {"name": "Receiving Application", "data_type": "HD", "required": false, "repeating": false, "max_length": 227},
+        "6": {"name": "Receiving Facility", "data_type": "HD", "required": false, "repeating": false, "max_length": 227},
+        "7": {"name": "Date/Time Of Message", "data_type": "TS", "required": false, "repeating": false, "max_length": 26},
+        "8": {"name": "Security", "data_type": "ST", "required": false, "repeating": false, "max_length": 40},
+        "9": {"name": "Message Type", "data_type": "MSG", "required": true, "repeating": false, "max_length": 15},
+        "10": {"name": "Message Control ID", "data_type": "ST", "required": true, "repeating": false, "max_length": 20},
+        "11": {"name": "Processing ID", "data_type": "PT", "required": true, "repeating": false, "max_length": 3},
+        "12": {"name": "Version ID", "data_type": "VID", "required": true, "repeating": false, "max_length": 60}
+      }
+    },
+    "EVN": {
+      "name": "Event Type",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "1": {"name": "Event Type Code", "data_type": "ID", "required": true, "repeating": false, "max_length": 3},
+        "2": {"name": "Recorded Date/Time", "data_type": "TS", "required": true, "repeating": false, "max_length": 26},
+        "3": {"name": "Date/Time Planned Event", "data_type": "TS", "required": false, "repeating": false, "max_length": 26},
+        "4": {"name": "Event Reason Code", "data_type": "IS", "required": false, "repeating": false, "max_length": 3},
+        "5": {"name": "Operator ID", "data_type": "XCN", "required": false, "repeating": true, "max_length": 250}
+      }
+    },
+    "PID": {
+      "name": "Patient Identification",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "1": {"name": "Set ID - PID", "data_type": "SI", "required": false, "repeating": false, "max_length": 4},
+        "3": {"name": "Patient Identifier List", "data_type": "CX", "required": true, "repeating": true, "max_length": 250},
+        "5": {"name": "Patient Name", "data_type": "XPN", "required": true, "repeating": true, "max_length": 250},
+        "7": {"name": "Date/Time of Birth", "data_type": "TS", "required": false, "repeating": false, "max_length": 26},
+        "8": {"name": "Administrative Sex", "data_type": "IS", "required": false, "repeating": false, "max_length": 1},
+        "11": {"name": "Patient Address", "data_type": "XAD", "required": false, "repeating": true, "max_length": 250},
+        "18": {"name": "Patient Account Number", "data_type": "CX", "required": false, "repeating": false, "max_length": 250}
+      }
+    },
+    "PV1": {
+      "name": "Patient Visit",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "1": {"name": "Set ID - PV1", "data_type": "SI", "required": false, "repeating": false, "max_length": 4},
+        "2": {"name": "Patient Class", "data_type": "IS", "required": true, "repeating": false, "max_length": 1},
+        "3": {"name": "Assigned Patient Location", "data_type": "PL", "required": true, "repeating": false, "max_length": 80},
+        "6": {"name": "Prior Patient Location", "data_type": "PL", "required": true, "repeating": false, "max_length": 80},
+        "7": {"name": "Attending Doctor", "data_type": "XCN", "required": false, "repeating": true, "max_length": 250},
+        "19": {"name": "Visit Number", "data_type": "CX", "required": false, "repeating": false, "max_length": 250},
+        "44": {"name": "Admit Date/Time", "data_type": "TS", "required": false, "repeating": false, "max_length": 26}
+      }
+    }
+  }
+}

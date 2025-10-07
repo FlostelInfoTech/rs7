@@ -1,0 +1,12 @@
+{
+  "message_type": "SIU",
+  "trigger_event": "S13",
+  "version": "2.3",
+  "description": "Notification of Appointment Rescheduling",
+  "segments": {
+    "MSH": {"name": "Message Header", "required": true, "repeating": false, "fields": {"1": {"name": "Field Separator", "data_type": "ST", "required": true, "repeating": false, "max_length": 1}, "2": {"name": "Encoding Characters", "data_type": "ST", "required": true, "repeating": false, "max_length": 4}, "9": {"name": "Message Type", "data_type": "MSG", "required": true, "repeating": false, "max_length": 15}, "10": {"name": "Message Control ID", "data_type": "ST", "required": true, "repeating": false, "max_length": 20}, "11": {"name": "Processing ID", "data_type": "PT", "required": true, "repeating": false, "max_length": 3}, "12": {"name": "Version ID", "data_type": "VID", "required": true, "repeating": false, "max_length": 60}}},
+    "SCH": {"name": "Schedule Activity Information", "required": true, "repeating": false, "fields": {"1": {"name": "Placer Appointment ID", "data_type": "EI", "required": false, "repeating": false, "max_length": 75}, "2": {"name": "Filler Appointment ID", "data_type": "EI", "required": false, "repeating": false, "max_length": 75}, "11": {"name": "Appointment Timing Quantity", "data_type": "TQ", "required": false, "repeating": true, "max_length": 200}, "25": {"name": "Filler Status Code", "data_type": "CE", "required": false, "repeating": false, "max_length": 250}}},
+    "PID": {"name": "Patient Identification", "required": false, "repeating": false, "fields": {"3": {"name": "Patient Identifier List", "data_type": "CX", "required": true, "repeating": true, "max_length": 250}, "5": {"name": "Patient Name", "data_type": "XPN", "required": true, "repeating": true, "max_length": 250}}},
+    "RGS": {"name": "Resource Group", "required": true, "repeating": false, "fields": {"1": {"name": "Set ID - RGS", "data_type": "SI", "required": true, "repeating": false, "max_length": 4}}}
+  }
+}

@@ -1,0 +1,19 @@
+[package]
+name = "rs7-terser"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Terser API for easy HL7 field access using path notation"
+
+[dependencies]
+rs7-core.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+rs7-parser.workspace = true

@@ -1,0 +1,13 @@
+{
+  "message_type": "DFT",
+  "trigger_event": "P11",
+  "version": "2.3",
+  "description": "Post Detail Financial Transactions - Expanded",
+  "segments": {
+    "MSH": {"name": "Message Header", "required": true, "repeating": false, "fields": {"1": {"name": "Field Separator", "data_type": "ST", "required": true, "repeating": false, "max_length": 1}, "2": {"name": "Encoding Characters", "data_type": "ST", "required": true, "repeating": false, "max_length": 4}, "9": {"name": "Message Type", "data_type": "MSG", "required": true, "repeating": false, "max_length": 15}, "10": {"name": "Message Control ID", "data_type": "ST", "required": true, "repeating": false, "max_length": 20}, "11": {"name": "Processing ID", "data_type": "PT", "required": true, "repeating": false, "max_length": 3}, "12": {"name": "Version ID", "data_type": "VID", "required": true, "repeating": false, "max_length": 60}}},
+    "EVN": {"name": "Event Type", "required": true, "repeating": false, "fields": {"1": {"name": "Event Type Code", "data_type": "ID", "required": true, "repeating": false, "max_length": 3}, "2": {"name": "Recorded Date/Time", "data_type": "TS", "required": true, "repeating": false, "max_length": 26}}},
+    "PID": {"name": "Patient Identification", "required": true, "repeating": false, "fields": {"3": {"name": "Patient Identifier List", "data_type": "CX", "required": true, "repeating": true, "max_length": 250}, "5": {"name": "Patient Name", "data_type": "XPN", "required": true, "repeating": true, "max_length": 250}, "18": {"name": "Patient Account Number", "data_type": "CX", "required": false, "repeating": false, "max_length": 250}}},
+    "PV1": {"name": "Patient Visit", "required": false, "repeating": false, "fields": {"2": {"name": "Patient Class", "data_type": "IS", "required": true, "repeating": false, "max_length": 1}, "19": {"name": "Visit Number", "data_type": "CX", "required": false, "repeating": false, "max_length": 250}}},
+    "FT1": {"name": "Financial Transaction", "required": true, "repeating": true, "fields": {"1": {"name": "Set ID - FT1", "data_type": "SI", "required": false, "repeating": false, "max_length": 4}, "4": {"name": "Transaction Date", "data_type": "TS", "required": true, "repeating": false, "max_length": 26}, "6": {"name": "Transaction Type", "data_type": "IS", "required": true, "repeating": false, "max_length": 8}, "7": {"name": "Transaction Code", "data_type": "CE", "required": true, "repeating": false, "max_length": 250}}}
+  }
+}

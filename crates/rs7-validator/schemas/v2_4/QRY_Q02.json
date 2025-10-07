@@ -1,0 +1,11 @@
+{
+  "message_type": "QRY",
+  "trigger_event": "Q02",
+  "version": "2.4",
+  "description": "Query Sent for Deferred Response",
+  "segments": {
+    "MSH": {"name": "Message Header", "required": true, "repeating": false, "fields": {"1": {"name": "Field Separator", "data_type": "ST", "required": true, "repeating": false, "max_length": 1}, "2": {"name": "Encoding Characters", "data_type": "ST", "required": true, "repeating": false, "max_length": 4}, "9": {"name": "Message Type", "data_type": "MSG", "required": true, "repeating": false, "max_length": 15}, "10": {"name": "Message Control ID", "data_type": "ST", "required": true, "repeating": false, "max_length": 20}, "11": {"name": "Processing ID", "data_type": "PT", "required": true, "repeating": false, "max_length": 3}, "12": {"name": "Version ID", "data_type": "VID", "required": true, "repeating": false, "max_length": 60}}},
+    "QRD": {"name": "Query Definition", "required": true, "repeating": false, "fields": {"1": {"name": "Query Date/Time", "data_type": "TS", "required": true, "repeating": false, "max_length": 26}, "2": {"name": "Query Format Code", "data_type": "ID", "required": true, "repeating": false, "max_length": 1}, "3": {"name": "Query Priority", "data_type": "ID", "required": true, "repeating": false, "max_length": 1}, "4": {"name": "Query ID", "data_type": "ST", "required": true, "repeating": false, "max_length": 10}, "8": {"name": "Who Subject Filter", "data_type": "XCN", "required": true, "repeating": true, "max_length": 250}, "9": {"name": "What Subject Filter", "data_type": "CE", "required": true, "repeating": true, "max_length": 250}}},
+    "QRF": {"name": "Query Filter", "required": false, "repeating": false, "fields": {"1": {"name": "Where Subject Filter", "data_type": "ST", "required": true, "repeating": true, "max_length": 20}}}
+  }
+}

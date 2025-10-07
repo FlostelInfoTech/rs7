@@ -1,0 +1,20 @@
+[package]
+name = "rs7-parser"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Parser for HL7 v2.x messages using nom"
+
+[dependencies]
+rs7-core.workspace = true
+nom.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true

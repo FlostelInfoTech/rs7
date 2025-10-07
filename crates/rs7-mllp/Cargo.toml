@@ -1,0 +1,22 @@
+[package]
+name = "rs7-mllp"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "MLLP (Minimal Lower Layer Protocol) support for HL7 message transmission"
+
+[dependencies]
+rs7-core.workspace = true
+rs7-parser.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]

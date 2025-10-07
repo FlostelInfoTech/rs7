@@ -1,0 +1,25 @@
+[package]
+name = "rs7-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Core data structures and traits for HL7 v2.x message handling"
+
+[dependencies]
+thiserror.workspace = true
+chrono.workspace = true
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+
+[features]
+default = []
+serde = ["dep:serde", "dep:serde_json", "chrono/serde"]
+
+[dev-dependencies]
+proptest.workspace = true

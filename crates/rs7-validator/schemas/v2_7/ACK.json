@@ -1,0 +1,68 @@
+{
+  "message_type": "ACK",
+  "trigger_event": "",
+  "version": "2.7",
+  "description": "General Acknowledgment",
+  "segments": {
+    "MSH": {
+      "name": "Message Header",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "1": {"name": "Field Separator", "data_type": "ST", "required": true, "repeating": false, "max_length": 1},
+        "2": {"name": "Encoding Characters", "data_type": "ST", "required": true, "repeating": false, "max_length": 4},
+        "3": {"name": "Sending Application", "data_type": "HD", "required": false, "repeating": false, "max_length": 227},
+        "4": {"name": "Sending Facility", "data_type": "HD", "required": false, "repeating": false, "max_length": 227},
+        "5": {"name": "Receiving Application", "data_type": "HD", "required": false, "repeating": false, "max_length": 227},
+        "6": {"name": "Receiving Facility", "data_type": "HD", "required": false, "repeating": false, "max_length": 227},
+        "7": {"name": "Date/Time Of Message", "data_type": "TS", "required": false, "repeating": false, "max_length": 26},
+        "9": {"name": "Message Type", "data_type": "MSG", "required": true, "repeating": false, "max_length": 15},
+        "10": {"name": "Message Control ID", "data_type": "ST", "required": true, "repeating": false, "max_length": 20},
+        "11": {"name": "Processing ID", "data_type": "PT", "required": true, "repeating": false, "max_length": 3},
+        "12": {"name": "Version ID", "data_type": "VID", "required": true, "repeating": false, "max_length": 60}
+      }
+    },
+    "MSA": {
+      "name": "Message Acknowledgment",
+      "required": true,
+      "repeating": false,
+      "fields": {
+        "1": {
+          "name": "Acknowledgment Code",
+          "data_type": "ID",
+          "required": true,
+          "repeating": false,
+          "max_length": 2
+        },
+        "2": {
+          "name": "Message Control ID",
+          "data_type": "ST",
+          "required": true,
+          "repeating": false,
+          "max_length": 20
+        },
+        "3": {
+          "name": "Text Message",
+          "data_type": "ST",
+          "required": false,
+          "repeating": false,
+          "max_length": 80
+        }
+      }
+    },
+    "ERR": {
+      "name": "Error",
+      "required": false,
+      "repeating": true,
+      "fields": {
+        "1": {
+          "name": "Error Code and Location",
+          "data_type": "ELD",
+          "required": false,
+          "repeating": true,
+          "max_length": 493
+        }
+      }
+    }
+  }
+}

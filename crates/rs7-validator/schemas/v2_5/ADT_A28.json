@@ -1,0 +1,12 @@
+{
+  "message_type": "ADT",
+  "trigger_event": "A28",
+  "version": "2.5",
+  "description": "Add Person Information",
+  "segments": {
+    "MSH": {"name": "Message Header", "required": true, "repeating": false, "fields": {"1": {"name": "Field Separator", "data_type": "ST", "required": true, "repeating": false, "max_length": 1}, "2": {"name": "Encoding Characters", "data_type": "ST", "required": true, "repeating": false, "max_length": 4}, "9": {"name": "Message Type", "data_type": "MSG", "required": true, "repeating": false, "max_length": 15}, "10": {"name": "Message Control ID", "data_type": "ST", "required": true, "repeating": false, "max_length": 20}, "11": {"name": "Processing ID", "data_type": "PT", "required": true, "repeating": false, "max_length": 3}, "12": {"name": "Version ID", "data_type": "VID", "required": true, "repeating": false, "max_length": 60}}},
+    "EVN": {"name": "Event Type", "required": true, "repeating": false, "fields": {"1": {"name": "Event Type Code", "data_type": "ID", "required": true, "repeating": false, "max_length": 3}, "2": {"name": "Recorded Date/Time", "data_type": "TS", "required": true, "repeating": false, "max_length": 26}}},
+    "PID": {"name": "Patient Identification", "required": true, "repeating": false, "fields": {"3": {"name": "Patient Identifier List", "data_type": "CX", "required": true, "repeating": true, "max_length": 250}, "5": {"name": "Patient Name", "data_type": "XPN", "required": true, "repeating": true, "max_length": 250}, "7": {"name": "Date/Time of Birth", "data_type": "TS", "required": false, "repeating": false, "max_length": 26}, "8": {"name": "Administrative Sex", "data_type": "IS", "required": false, "repeating": false, "max_length": 1}}},
+    "PV1": {"name": "Patient Visit", "required": false, "repeating": false, "fields": {"2": {"name": "Patient Class", "data_type": "IS", "required": false, "repeating": false, "max_length": 1}}}
+  }
+}
