@@ -31,6 +31,7 @@ rs7/
 ├── rs7-terser    - Path-based field access API
 ├── rs7-mllp      - MLLP protocol for network transmission
 ├── rs7-fhir      - HL7 v2 to FHIR R4 conversion
+├── rs7-wasm      - WebAssembly bindings for JavaScript/TypeScript
 └── rs7-macros    - Derive macros for message types
 ```
 
@@ -231,6 +232,35 @@ println!("{}", json);
 - Procedure (PR1 → Procedure)
 
 See [rs7-fhir/README.md](crates/rs7-fhir/README.md) for complete documentation.
+
+### WebAssembly (JavaScript/TypeScript)
+
+RS7 can be used in browsers and Node.js via WebAssembly:
+
+```bash
+npm install rs7-wasm
+```
+
+```javascript
+import init, { parseMessage, getTerserValue } from 'rs7-wasm';
+
+await init();
+
+const hl7 = `MSH|^~\\&|SendApp|SendFac|RecApp|RecFac|20240315||ADT^A01|12345|P|2.5
+PID|1||MRN123||DOE^JOHN||19800101|M`;
+
+const message = parseMessage(hl7);
+const patientName = getTerserValue(message, "PID-5");
+console.log(patientName); // "DOE^JOHN"
+```
+
+**Features:**
+- Parse and validate HL7 messages in the browser
+- Full TypeScript type definitions
+- Zero-copy parsing for maximum performance
+- Works with all modern browsers and Node.js
+
+See [rs7-wasm/README.md](crates/rs7-wasm/README.md) for complete documentation and examples.
 
 ## Examples
 
@@ -447,7 +477,7 @@ Contributions are welcome! Please:
 - [x] Complex field builder methods (XPN, XAD, XTN, CX, XCN) ✅
 - [x] HL7 FHIR conversion utilities ✅ (9 converters complete - see rs7-fhir/README.md)
 - [x] Performance optimizations ✅ (Cached Terser, optimized parsers, benchmarking suite)
-- [ ] WebAssembly support
+- [x] WebAssembly support ✅ (Full JavaScript/TypeScript bindings - see rs7-wasm/README.md)
 - [ ] CLI tool for message analysis
 
 ## License

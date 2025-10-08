@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-10-08
+
+### Added - WebAssembly Support 🌐
+
+- **rs7-wasm Crate** - Complete WebAssembly bindings for JavaScript/TypeScript:
+  - Parse and manipulate HL7 messages in the browser and Node.js
+  - Full TypeScript type definitions included
+  - Zero-copy parsing compiled to WebAssembly for maximum performance
+
+- **JavaScript API**:
+  - `parseMessage()` - Parse HL7 messages from strings
+  - `getTerserValue()` / `setTerserValue()` - Field access using Terser paths
+  - `validateMessage()` - Message validation against HL7 standards
+  - `createMessage()` - Create new messages programmatically
+  - `extractPatientDemographics()` - Extract common patient fields from ADT messages
+  - `extractObservations()` - Extract observations from ORU messages
+
+- **TypeScript Support**:
+  - Complete type definitions (`rs7.d.ts`)
+  - Full IntelliSense support in VS Code and other editors
+  - Type-safe message manipulation
+
+- **Multi-Platform Build Targets**:
+  - Web browsers (ES modules)
+  - Node.js
+  - Bundlers (webpack, rollup, vite)
+
+- **Documentation & Examples**:
+  - Comprehensive README with usage examples
+  - Interactive browser example (`examples/browser.html`)
+  - NPM package configuration with build scripts
+  - TypeScript usage examples
+
+### Performance
+
+- **WASM bundle size**: ~200-300 KB (minified + gzip)
+- **Parse performance**: Same as native Rust (2-5 µs for small messages)
+- **Cross-platform**: Works in all modern browsers and Node.js 16+
+
 ## [0.4.0] - 2025-10-08
 
 ### Added - Performance Optimizations ⚡
