@@ -1,0 +1,43 @@
+[package]
+name = "rs7-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Command-line interface for RS7 HL7 v2.x library"
+
+[[bin]]
+name = "rs7"
+path = "src/main.rs"
+
+[dependencies]
+rs7-core.workspace = true
+rs7-parser.workspace = true
+rs7-validator.workspace = true
+rs7-terser.workspace = true
+
+# CLI
+clap = { version = "4.5", features = ["derive", "cargo"] }
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Error handling
+anyhow.workspace = true
+thiserror.workspace = true
+
+# Optional FHIR support
+rs7-fhir = { workspace = true, optional = true }
+
+# Terminal colors
+colored = "2.1"
+
+[features]
+default = []
+fhir = ["dep:rs7-fhir"]

@@ -32,11 +32,12 @@ members = [
     "crates/rs7-macros",
     "crates/rs7-fhir",
     "crates/rs7-wasm",
+    "crates/rs7-cli",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.5.0"
+version = "0.6.0"
 edition = "2024"
 authors = ["Alex Shao <alex.fanshao@gmail.com>"]
 license = "MIT OR Apache-2.0"

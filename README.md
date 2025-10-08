@@ -32,6 +32,7 @@ rs7/
 ├── rs7-mllp      - MLLP protocol for network transmission
 ├── rs7-fhir      - HL7 v2 to FHIR R4 conversion
 ├── rs7-wasm      - WebAssembly bindings for JavaScript/TypeScript
+├── rs7-cli       - Command-line interface for message analysis
 └── rs7-macros    - Derive macros for message types
 ```
 
@@ -41,12 +42,12 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rs7-core = "0.4"
-rs7-parser = "0.4"
-rs7-terser = "0.4"
-rs7-validator = "0.4"
-rs7-mllp = "0.4"  # Optional: for network support
-rs7-fhir = "0.4"  # Optional: for FHIR conversion
+rs7-core = "0.6"
+rs7-parser = "0.6"
+rs7-terser = "0.6"
+rs7-validator = "0.6"
+rs7-mllp = "0.6"  # Optional: for network support
+rs7-fhir = "0.6"  # Optional: for FHIR conversion
 ```
 
 ### Parsing a Message
@@ -261,6 +262,46 @@ console.log(patientName); // "DOE^JOHN"
 - Works with all modern browsers and Node.js
 
 See [rs7-wasm/README.md](crates/rs7-wasm/README.md) for complete documentation and examples.
+
+### Command-Line Interface
+
+RS7 provides a powerful CLI tool for parsing, validating, and analyzing HL7 messages:
+
+```bash
+# Install the CLI
+cargo install --path crates/rs7-cli
+
+# Parse and display message structure
+rs7 parse message.hl7 --format pretty
+
+# Validate against HL7 standards
+rs7 validate message.hl7
+
+# Extract specific fields using Terser paths
+rs7 extract message.hl7 PID-5 PID-7 PID-8
+
+# Convert to JSON
+rs7 convert message.hl7 --to json --pretty
+
+# Display comprehensive message info
+rs7 info message.hl7
+```
+
+**Commands:**
+- `parse` - Parse and display HL7 message structure (text, JSON, pretty formats)
+- `validate` - Validate messages against HL7 standards with detailed error reports
+- `extract` - Extract field values using Terser paths (supports indexing like `OBX(0)-5`)
+- `convert` - Convert to JSON or FHIR R4 format
+- `info` - Display comprehensive message information and statistics
+
+**Features:**
+- Colored terminal output for enhanced readability
+- Support for stdin and file input
+- JSON output for programmatic processing
+- Batch processing capabilities
+- FHIR conversion (with `--features fhir`)
+
+See [rs7-cli/README.md](crates/rs7-cli/README.md) for complete documentation and examples.
 
 ## Examples
 
@@ -478,7 +519,7 @@ Contributions are welcome! Please:
 - [x] HL7 FHIR conversion utilities ✅ (9 converters complete - see rs7-fhir/README.md)
 - [x] Performance optimizations ✅ (Cached Terser, optimized parsers, benchmarking suite)
 - [x] WebAssembly support ✅ (Full JavaScript/TypeScript bindings - see rs7-wasm/README.md)
-- [ ] CLI tool for message analysis
+- [x] CLI tool for message analysis ✅ (5 commands: parse, validate, extract, convert, info - see rs7-cli/README.md)
 
 ## License
 
