@@ -1,0 +1,29 @@
+[package]
+name = "rs7-fhir"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "HL7 v2.x to FHIR R4 conversion library with 9 production-ready converters"
+
+[dependencies]
+# Internal crates
+rs7-core.workspace = true
+rs7-parser.workspace = true
+rs7-terser.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Date/Time handling
+chrono.workspace = true
+
+# Error handling
+thiserror.workspace = true
+anyhow.workspace = true

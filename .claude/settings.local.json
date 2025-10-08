@@ -12,7 +12,12 @@
       "Bash(cargo --version)",
       "Bash(rustc --version)",
       "Bash(do cp v2_5/RGV_O15.json $version/)",
-      "Bash(do cp v2_5/OUL_R21.json $version/)"
+      "Bash(do cp v2_5/OUL_R21.json $version/)",
+      "WebSearch",
+      "Bash(cargo:*)",
+      "Bash(git checkout:*)",
+      "Bash(rustc:*)",
+      "Bash(./test_terser.exe)"
     ],
     "deny": [],
     "ask": []

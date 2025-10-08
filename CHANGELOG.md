@@ -7,6 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-10-08
+
+### Added - FHIR R4 Conversion Complete ✅
+
+- **6 New FHIR Resource Definitions:**
+  - `Encounter` - Patient visit/encounter information
+  - `DiagnosticReport` - Diagnostic test reports
+  - `AllergyIntolerance` - Patient allergy and intolerance records
+  - `Medication` / `MedicationAdministration` - Medication information and administration records
+  - `Condition` - Patient conditions, problems, and diagnoses
+  - `Procedure` - Procedures performed on patients
+  - `Period` - Common data type for time periods (start/end)
+
+- **6 New Production-Ready Converters:**
+  - `EncounterConverter`: PV1 segment → FHIR Encounter resource
+    - Patient class mapping (inpatient/outpatient/emergency)
+    - Encounter participants (attending/referring/consulting doctors)
+    - Location, service provider, hospitalization details
+    - Admit/discharge dates and dispositions
+  - `DiagnosticReportConverter`: OBR segment → FHIR DiagnosticReport resource
+    - Universal service identifier mapping
+    - Result status conversion
+    - Automatic linking to Observation results
+  - `AllergyIntoleranceConverter`: AL1 segment → FHIR AllergyIntolerance resource
+    - Allergen type categorization (medication/food/environment)
+    - Severity/criticality mapping
+  - `MedicationConverter`: RXA segment → FHIR MedicationAdministration resource
+    - Medication codes and dosage information
+    - Administration date/time and status
+  - `ConditionConverter`: PRB/DG1 segments → FHIR Condition resource
+    - Problem and diagnosis code mapping
+    - ICD-9/ICD-10 coding system support
+  - `ProcedureConverter`: PR1 segment → FHIR Procedure resource
+    - Procedure code mapping (ICD-9/ICD-10/CPT)
+    - Procedure date/time
+
+- **Documentation:**
+  - `CONVERTERS.md` - Comprehensive converter reference guide with all field mappings
+  - `EXAMPLES.md` - Working examples for ADT and ORU message conversion
+  - Updated `README.md` with complete converter listing
+  - `TERSER_INDEXING.md` - Component indexing documentation
+
+### Fixed
+
+- **Terser Component Indexing** - All converters now correctly use 0-based component indexing:
+  - PatientConverter: Fixed PID-3 (identifiers) and PID-11 (addresses) component access
+  - ObservationConverter: Fixed OBX-3 (code) and OBX-5 (value) component access
+  - PractitionerConverter: Fixed XCN component access for all name and identifier fields
+  - All converters tested and verified with correct indexing
+
+### Changed
+
+- Test suite expanded from 8 to **16 tests** - all passing ✅
+- FHIR resources now include 9 resource types (was 3)
+- Converters now include 9 converters (was 3)
+
+### Summary
+
+This release completes the core FHIR R4 conversion functionality, providing production-ready converters for all major HL7 v2 message types including ADT, ORU, RAS/RDE/RDS (pharmacy), DFT (financial), and MDM (medical documents). All converters are fully tested and include proper error handling, coding system mapping, and resource linking.
+
 ## [0.2.0] - 2025-10-07
 
 ### Added

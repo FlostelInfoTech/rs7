@@ -29,12 +29,12 @@ members = [
     "crates/rs7-validator",
     "crates/rs7-terser",
     "crates/rs7-mllp",
-    "crates/rs7-macros",
+    "crates/rs7-macros", "crates/rs7-fhir",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 authors = ["Alex Shao <alex.fanshao@gmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -77,6 +77,7 @@ rs7-parser = { path = "crates/rs7-parser" }
 rs7-validator = { path = "crates/rs7-validator" }
 rs7-terser = { path = "crates/rs7-terser" }
 rs7-mllp = { path = "crates/rs7-mllp" }
+rs7-fhir = { path = "crates/rs7-fhir" }
 rs7-macros = { path = "crates/rs7-macros" }
 
 [profile.release]

@@ -17,6 +17,7 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 - **✅ Message Types**: Support for ADT (A01-A40), SIU (S12-S15), MDM (T01-T04), DFT (P03, P11), QRY (A19, Q01-Q02), BAR (P01-P02), Pharmacy (RDE, RAS, RDS, RGV, RRD, RRA), Laboratory (OUL, OML), MFN, ORM, ORU, ACK, and other message types
 - **✅ ACK Generation**: Automatic acknowledgment message creation
 - **✅ MLLP Support**: Network transmission using Minimal Lower Layer Protocol
+- **✅ FHIR Conversion**: Convert HL7 v2 messages to FHIR R4 resources (Patient, Observation, Encounter, DiagnosticReport, etc.)
 - **🚀 Fast and Safe**: Built with Rust for performance and memory safety
 - **📦 Modular Design**: Use only the components you need
 
@@ -29,6 +30,7 @@ rs7/
 ├── rs7-validator - Message validation against HL7 standards
 ├── rs7-terser    - Path-based field access API
 ├── rs7-mllp      - MLLP protocol for network transmission
+├── rs7-fhir      - HL7 v2 to FHIR R4 conversion
 └── rs7-macros    - Derive macros for message types
 ```
 
@@ -38,11 +40,12 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rs7-core = "0.1"
-rs7-parser = "0.1"
-rs7-terser = "0.1"
-rs7-validator = "0.1"
-rs7-mllp = "0.1"  # Optional: for network support
+rs7-core = "0.3"
+rs7-parser = "0.3"
+rs7-terser = "0.3"
+rs7-validator = "0.3"
+rs7-mllp = "0.3"  # Optional: for network support
+rs7-fhir = "0.3"  # Optional: for FHIR conversion
 ```
 
 ### Parsing a Message
@@ -194,6 +197,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+### FHIR Conversion
+
+```rust
+use rs7_fhir::prelude::*;
+use rs7_parser::parse_message;
+
+let hl7 = r"MSH|^~\&|SendApp|SendFac|RecApp|RecFac|20240315||ADT^A01|12345|P|2.5
+PID|1||67890^^^MRN||DOE^JOHN^A||19800101|M|||123 Main St^^Boston^MA^02101||555-1234
+PV1||I|ER^101^1||||12345^SMITH^JANE^^^MD";
+
+let message = parse_message(hl7)?;
+
+// Convert to FHIR resources
+let patient = PatientConverter::convert(&message)?;
+let encounter = EncounterConverter::convert(&message)?;
+let practitioner = PractitionerConverter::convert_attending_doctor(&message)?;
+
+// Serialize to JSON
+let json = serde_json::to_string_pretty(&patient)?;
+println!("{}", json);
+```
+
+**Available Converters:**
+- Patient (PID → Patient)
+- Observation (OBX → Observation)
+- Practitioner (PV1/ORC → Practitioner)
+- Encounter (PV1 → Encounter)
+- DiagnosticReport (OBR → DiagnosticReport)
+- AllergyIntolerance (AL1 → AllergyIntolerance)
+- MedicationAdministration (RXA → MedicationAdministration)
+- Condition (PRB/DG1 → Condition)
+- Procedure (PR1 → Procedure)
+
+See [rs7-fhir/README.md](crates/rs7-fhir/README.md) for complete documentation.
+
 ## Examples
 
 The `examples/` directory contains complete working examples:
@@ -209,6 +247,8 @@ The `examples/` directory contains complete working examples:
 - `complete_validation.rs` - Full validation with data types and vocabulary
 - `mllp_server.rs` - MLLP server that receives messages and sends ACKs
 - `mllp_client.rs` - MLLP client that sends messages
+- `convert_adt.rs` (rs7-fhir) - Convert ADT^A01 to FHIR Patient/Encounter
+- `convert_oru.rs` (rs7-fhir) - Convert ORU^R01 to FHIR Observation/DiagnosticReport
 
 Run examples:
 
@@ -224,6 +264,10 @@ cargo run --example vocabulary_validation
 cargo run --example complete_validation
 cargo run --example mllp_server
 cargo run --example mllp_client  # In another terminal
+
+# FHIR conversion examples
+cargo run --example convert_adt -p rs7-fhir
+cargo run --example convert_oru -p rs7-fhir
 ```
 
 ## Terser Path Notation
@@ -380,7 +424,7 @@ Contributions are welcome! Please:
 - [x] Laboratory message builders (OUL, OML) ✅
 - [x] Pharmacy message builders (RDE, RAS, RDS, RGV, RRD, RRA) ✅
 - [x] Complex field builder methods (XPN, XAD, XTN, CX, XCN) ✅
-- [ ] HL7 FHIR conversion utilities
+- [x] HL7 FHIR conversion utilities ✅ (9 converters complete - see rs7-fhir/README.md)
 - [ ] Performance optimizations
 - [ ] WebAssembly support
 - [ ] CLI tool for message analysis
@@ -406,7 +450,7 @@ at your option.
 | Validation | ✅ | ✅ |
 | MLLP | ✅ | ✅ |
 | Message Types | In progress | Comprehensive |
-| HL7 FHIR | Planned | ✅ |
+| HL7 FHIR | ✅ (9 converters) | ✅ |
 
 ## Acknowledgments
 
