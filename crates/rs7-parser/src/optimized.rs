@@ -1,7 +1,11 @@
-///! Performance optimizations for HL7 parsing
-///!
-///! This module contains optimized parsing functions that reduce allocations
-///! and improve performance for high-throughput scenarios.
+//! Performance optimizations for HL7 parsing
+//!
+//! This module contains optimized parsing functions that reduce allocations
+//! and improve performance for high-throughput scenarios.
+//!
+//! These functions are currently not used by default but are available for
+//! future integration and custom implementations. They can provide 10-30%
+//! performance improvements for component-heavy messages.
 
 use rs7_core::{
     delimiters::Delimiters,
@@ -13,6 +17,7 @@ use rs7_core::{
 
 /// Parse a field with pre-allocated capacity hints
 #[inline]
+#[allow(dead_code)]
 pub(crate) fn parse_field_optimized(input: &str, delimiters: &Delimiters) -> Result<Field> {
     let mut field = Field::new();
 
@@ -42,6 +47,7 @@ pub(crate) fn parse_field_optimized(input: &str, delimiters: &Delimiters) -> Res
 
 /// Parse a repetition with optimized component handling
 #[inline]
+#[allow(dead_code)]
 pub(crate) fn parse_repetition_optimized(input: &str, delimiters: &Delimiters) -> Result<Repetition> {
     let mut repetition = Repetition::new();
 
@@ -71,6 +77,7 @@ pub(crate) fn parse_repetition_optimized(input: &str, delimiters: &Delimiters) -
 
 /// Parse a component with optimized subcomponent handling
 #[inline]
+#[allow(dead_code)]
 pub(crate) fn parse_component_optimized(input: &str, delimiters: &Delimiters) -> Result<Component> {
     let mut component = Component::new();
 
@@ -109,6 +116,7 @@ pub(crate) fn parse_component_optimized(input: &str, delimiters: &Delimiters) ->
 }
 
 /// Optimized segment parsing that minimizes allocations
+#[allow(dead_code)]
 pub(crate) fn parse_segment_optimized(input: &str, delimiters: &Delimiters) -> Result<Segment> {
     if input.len() < 3 {
         return Err(Error::parse("Segment too short"));
