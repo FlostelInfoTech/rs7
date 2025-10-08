@@ -2,6 +2,8 @@
 //!
 //! This crate provides parsing functionality for HL7 v2.x messages.
 
+mod optimized;
+
 // nom parser combinators (for future enhancements)
 use rs7_core::{
     delimiters::Delimiters,

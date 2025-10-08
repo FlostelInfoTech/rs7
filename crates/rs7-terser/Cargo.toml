@@ -17,3 +17,8 @@ thiserror.workspace = true
 
 [dev-dependencies]
 rs7-parser.workspace = true
+criterion = "0.5"
+
+[[bench]]
+name = "terser_bench"
+harness = false
