@@ -252,7 +252,7 @@ impl Validator {
         // Validate each segment against schema
         for (i, segment) in message.segments.iter().enumerate() {
             if let Some(seg_def) = schema.segments.get(&segment.id) {
-                self.validate_segment(segment, seg_def, i, result);
+                self.validate_segment(segment, seg_def, i, &message.delimiters, result);
             }
         }
 
@@ -277,6 +277,7 @@ impl Validator {
         segment: &Segment,
         definition: &SegmentDefinition,
         index: usize,
+        delimiters: &rs7_core::delimiters::Delimiters,
         result: &mut ValidationResult,
     ) {
         let location_prefix = format!("{}[{}]", segment.id, index);
@@ -298,19 +299,27 @@ impl Validator {
                 let field_location = format!("{}-{}", location_prefix, field_idx);
 
                 // Validate max length
+                // For repeating fields, check the encoded length (with all repetitions)
+                // For non-repeating fields, check the trimmed value length
                 if let Some(max_len) = field_def.max_length {
-                    if let Some(value) = f.value() {
-                        if value.len() > max_len {
-                            result.add_error(ValidationError::new(
-                                field_location.clone(),
-                                format!(
-                                    "Field exceeds maximum length ({} > {})",
-                                    value.len(),
-                                    max_len
-                                ),
-                                ValidationErrorType::InvalidLength,
-                            ));
-                        }
+                    let field_length = if field_def.repeating {
+                        // For repeating fields, encode to get full length including separators
+                        f.encode(delimiters).len()
+                    } else {
+                        // For non-repeating fields, use the first repetition value (trimmed)
+                        f.value().map(|v| v.trim().len()).unwrap_or(0)
+                    };
+
+                    if field_length > max_len {
+                        result.add_error(ValidationError::new(
+                            field_location.clone(),
+                            format!(
+                                "Field exceeds maximum length ({} > {})",
+                                field_length,
+                                max_len
+                            ),
+                            ValidationErrorType::InvalidLength,
+                        ));
                     }
                 }
 
