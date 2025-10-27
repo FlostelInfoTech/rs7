@@ -1,7 +1,7 @@
-///! Caching layer for Terser to improve performance of repeated field access
-///!
-///! This module provides a cache that stores parsed terser paths and field locations
-///! to avoid repeated path parsing and segment lookups.
+//! Caching layer for Terser to improve performance of repeated field access
+//!
+//! This module provides a cache that stores parsed terser paths and field locations
+//! to avoid repeated path parsing and segment lookups.
 
 use std::collections::HashMap;
 use rs7_core::{

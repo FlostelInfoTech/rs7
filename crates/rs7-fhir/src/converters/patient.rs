@@ -1,6 +1,6 @@
 //! Patient converter - PID segment to FHIR Patient resource
 //!
-//! Based on HL7 v2-to-FHIR mapping: https://build.fhir.org/ig/HL7/v2-to-fhir/ConceptMap-segment-pid-to-patient.html
+//! Based on HL7 v2-to-FHIR mapping: <https://build.fhir.org/ig/HL7/v2-to-fhir/ConceptMap-segment-pid-to-patient.html>
 
 use rs7_core::Message;
 use rs7_terser::Terser;
@@ -42,18 +42,16 @@ impl PatientConverter {
         patient.name = Self::convert_names(&terser)?;
 
         // PID-7: Date of Birth -> Patient.birthDate
-        if let Ok(Some(dob)) = terser.get("PID-7") {
-            if !dob.is_empty() {
+        if let Ok(Some(dob)) = terser.get("PID-7")
+            && !dob.is_empty() {
                 patient.birth_date = Some(Self::convert_date(dob)?);
             }
-        }
 
         // PID-8: Administrative Sex -> Patient.gender
-        if let Ok(Some(sex)) = terser.get("PID-8") {
-            if !sex.is_empty() {
+        if let Ok(Some(sex)) = terser.get("PID-8")
+            && !sex.is_empty() {
                 patient.gender = Some(Self::convert_gender(sex)?);
             }
-        }
 
         // PID-11: Patient Address -> Patient.address
         patient.address = Self::convert_addresses(&terser)?;
@@ -63,11 +61,10 @@ impl PatientConverter {
         patient.telecom = Self::convert_telecom(&terser)?;
 
         // PID-16: Marital Status -> Patient.maritalStatus
-        if let Ok(Some(marital)) = terser.get("PID-16") {
-            if !marital.is_empty() {
+        if let Ok(Some(marital)) = terser.get("PID-16")
+            && !marital.is_empty() {
                 patient.marital_status = Some(Self::convert_marital_status(marital));
             }
-        }
 
         // PID-24: Multiple Birth Indicator -> Patient.multipleBirth
         if let Ok(Some(multiple_birth)) = terser.get("PID-24") {
@@ -79,18 +76,16 @@ impl PatientConverter {
         }
 
         // PID-29: Patient Death Date and Time -> Patient.deceased
-        if let Ok(Some(death_date)) = terser.get("PID-29") {
-            if !death_date.is_empty() {
+        if let Ok(Some(death_date)) = terser.get("PID-29")
+            && !death_date.is_empty() {
                 patient.deceased_date_time = Some(Self::convert_datetime(death_date)?);
             }
-        }
 
         // PID-30: Patient Death Indicator -> Patient.deceased
-        if let Ok(Some(death_ind)) = terser.get("PID-30") {
-            if death_ind == "Y" {
+        if let Ok(Some(death_ind)) = terser.get("PID-30")
+            && death_ind == "Y" {
                 patient.deceased_boolean = Some(true);
             }
-        }
 
         patient.active = Some(true);
 
@@ -129,11 +124,10 @@ impl PatientConverter {
                 } else {
                     format!("PID-3({})-3", rep)
                 };
-                if let Ok(Some(authority)) = terser.get(&authority_path) {
-                    if !authority.is_empty() {
+                if let Ok(Some(authority)) = terser.get(&authority_path)
+                    && !authority.is_empty() {
                         identifier.system = Some(format!("urn:oid:{}", authority));
                     }
-                }
 
                 // PID-3-5: Identifier Type Code (component index 4 in 0-based)
                 let type_path = if rep == 0 {
@@ -141,8 +135,8 @@ impl PatientConverter {
                 } else {
                     format!("PID-3({})-4", rep)
                 };
-                if let Ok(Some(id_type)) = terser.get(&type_path) {
-                    if !id_type.is_empty() {
+                if let Ok(Some(id_type)) = terser.get(&type_path)
+                    && !id_type.is_empty() {
                         identifier.type_ = Some(CodeableConcept {
                             coding: Some(vec![Coding {
                                 system: Some("http://terminology.hl7.org/CodeSystem/v2-0203".to_string()),
@@ -153,7 +147,6 @@ impl PatientConverter {
                             text: Some(id_type.to_string()),
                         });
                     }
-                }
 
                 identifiers.push(identifier);
             } else {
@@ -197,8 +190,8 @@ impl PatientConverter {
                 } else {
                     format!("PID-5({})-1", rep)
                 };
-                if let Ok(Some(given)) = terser.get(&given_path) {
-                    if !given.is_empty() {
+                if let Ok(Some(given)) = terser.get(&given_path)
+                    && !given.is_empty() {
                         let mut given_names = vec![given.to_string()];
 
                         // PID-5-3: Middle Name (component index 2 in 0-based)
@@ -207,15 +200,13 @@ impl PatientConverter {
                         } else {
                             format!("PID-5({})-2", rep)
                         };
-                        if let Ok(Some(middle)) = terser.get(&middle_path) {
-                            if !middle.is_empty() {
+                        if let Ok(Some(middle)) = terser.get(&middle_path)
+                            && !middle.is_empty() {
                                 given_names.push(middle.to_string());
                             }
-                        }
 
                         name.given = Some(given_names);
                     }
-                }
 
                 // PID-5-4: Suffix (component index 3 in 0-based)
                 let suffix_path = if rep == 0 {
@@ -223,11 +214,10 @@ impl PatientConverter {
                 } else {
                     format!("PID-5({})-3", rep)
                 };
-                if let Ok(Some(suffix)) = terser.get(&suffix_path) {
-                    if !suffix.is_empty() {
+                if let Ok(Some(suffix)) = terser.get(&suffix_path)
+                    && !suffix.is_empty() {
                         name.suffix = Some(vec![suffix.to_string()]);
                     }
-                }
 
                 // PID-5-5: Prefix (component index 4 in 0-based)
                 let prefix_path = if rep == 0 {
@@ -235,11 +225,10 @@ impl PatientConverter {
                 } else {
                     format!("PID-5({})-4", rep)
                 };
-                if let Ok(Some(prefix)) = terser.get(&prefix_path) {
-                    if !prefix.is_empty() {
+                if let Ok(Some(prefix)) = terser.get(&prefix_path)
+                    && !prefix.is_empty() {
                         name.prefix = Some(vec![prefix.to_string()]);
                     }
-                }
 
                 // PID-5-7: Name Type Code (component index 6 in 0-based)
                 let type_path = if rep == 0 {
@@ -301,13 +290,11 @@ impl PatientConverter {
                 } else {
                     format!("PID-11({})-1", rep)
                 };
-                if let Ok(Some(other)) = terser.get(&other_path) {
-                    if !other.is_empty() {
-                        if let Some(ref mut lines) = address.line {
+                if let Ok(Some(other)) = terser.get(&other_path)
+                    && !other.is_empty()
+                        && let Some(ref mut lines) = address.line {
                             lines.push(other.to_string());
                         }
-                    }
-                }
 
                 // PID-11-3: City (component index 2 in 0-based)
                 let city_path = if rep == 0 {
@@ -315,11 +302,10 @@ impl PatientConverter {
                 } else {
                     format!("PID-11({})-2", rep)
                 };
-                if let Ok(Some(city)) = terser.get(&city_path) {
-                    if !city.is_empty() {
+                if let Ok(Some(city)) = terser.get(&city_path)
+                    && !city.is_empty() {
                         address.city = Some(city.to_string());
                     }
-                }
 
                 // PID-11-4: State (component index 3 in 0-based)
                 let state_path = if rep == 0 {
@@ -327,11 +313,10 @@ impl PatientConverter {
                 } else {
                     format!("PID-11({})-3", rep)
                 };
-                if let Ok(Some(state)) = terser.get(&state_path) {
-                    if !state.is_empty() {
+                if let Ok(Some(state)) = terser.get(&state_path)
+                    && !state.is_empty() {
                         address.state = Some(state.to_string());
                     }
-                }
 
                 // PID-11-5: Postal Code (component index 4 in 0-based)
                 let zip_path = if rep == 0 {
@@ -339,11 +324,10 @@ impl PatientConverter {
                 } else {
                     format!("PID-11({})-4", rep)
                 };
-                if let Ok(Some(zip)) = terser.get(&zip_path) {
-                    if !zip.is_empty() {
+                if let Ok(Some(zip)) = terser.get(&zip_path)
+                    && !zip.is_empty() {
                         address.postal_code = Some(zip.to_string());
                     }
-                }
 
                 // PID-11-6: Country (component index 5 in 0-based)
                 let country_path = if rep == 0 {
@@ -351,11 +335,10 @@ impl PatientConverter {
                 } else {
                     format!("PID-11({})-5", rep)
                 };
-                if let Ok(Some(country)) = terser.get(&country_path) {
-                    if !country.is_empty() {
+                if let Ok(Some(country)) = terser.get(&country_path)
+                    && !country.is_empty() {
                         address.country = Some(country.to_string());
                     }
-                }
 
                 // PID-11-7: Address Type (component index 6 in 0-based)
                 let type_path = if rep == 0 {
@@ -386,26 +369,24 @@ impl PatientConverter {
         let mut telecoms = Vec::new();
 
         // PID-13: Home Phone
-        if let Ok(Some(home_phone)) = terser.get("PID-13") {
-            if !home_phone.is_empty() {
+        if let Ok(Some(home_phone)) = terser.get("PID-13")
+            && !home_phone.is_empty() {
                 telecoms.push(ContactPoint {
                     system: Some("phone".to_string()),
                     value: Some(home_phone.to_string()),
                     use_: Some("home".to_string()),
                 });
             }
-        }
 
         // PID-14: Business Phone
-        if let Ok(Some(work_phone)) = terser.get("PID-14") {
-            if !work_phone.is_empty() {
+        if let Ok(Some(work_phone)) = terser.get("PID-14")
+            && !work_phone.is_empty() {
                 telecoms.push(ContactPoint {
                     system: Some("phone".to_string()),
                     value: Some(work_phone.to_string()),
                     use_: Some("work".to_string()),
                 });
             }
-        }
 
         Ok(if telecoms.is_empty() { None } else { Some(telecoms) })
     }

@@ -1,7 +1,7 @@
-///! Example demonstrating the performance benefits of CachedTerser
-///!
-///! This example shows how to use CachedTerser for improved performance
-///! when accessing the same fields multiple times.
+//! Example demonstrating the performance benefits of CachedTerser
+//!
+//! This example shows how to use CachedTerser for improved performance
+//! when accessing the same fields multiple times.
 
 use rs7_parser::parse_message;
 use rs7_terser::{Terser, CachedTerser};

@@ -87,8 +87,8 @@ impl PractitionerConverter {
         let mut practitioner = Practitioner::new();
 
         // XCN-1: ID Number -> Practitioner.identifier (component index 0 in 0-based)
-        if let Ok(Some(id_number)) = terser.get(base_path) {
-            if !id_number.is_empty() {
+        if let Ok(Some(id_number)) = terser.get(base_path)
+            && !id_number.is_empty() {
                 let mut identifier = Identifier {
                     use_: Some("official".to_string()),
                     type_: None,
@@ -98,15 +98,14 @@ impl PractitionerConverter {
                 };
 
                 // XCN-9: Assigning Authority (component index 8 in 0-based)
-                if let Ok(Some(authority)) = terser.get(&format!("{}-8", base_path)) {
-                    if !authority.is_empty() {
+                if let Ok(Some(authority)) = terser.get(&format!("{}-8", base_path))
+                    && !authority.is_empty() {
                         identifier.system = Some(format!("urn:oid:{}", authority));
                     }
-                }
 
                 // XCN-13: Identifier Type Code (component index 12 in 0-based)
-                if let Ok(Some(id_type)) = terser.get(&format!("{}-12", base_path)) {
-                    if !id_type.is_empty() {
+                if let Ok(Some(id_type)) = terser.get(&format!("{}-12", base_path))
+                    && !id_type.is_empty() {
                         identifier.type_ = Some(CodeableConcept {
                             coding: Some(vec![Coding {
                                 system: Some("http://terminology.hl7.org/CodeSystem/v2-0203".to_string()),
@@ -117,17 +116,15 @@ impl PractitionerConverter {
                             text: Some(id_type.to_string()),
                         });
                     }
-                }
 
                 practitioner.identifier = Some(vec![identifier]);
                 practitioner.id = Some(id_number.to_string());
             }
-        }
 
         // XCN-2 through XCN-7: Name components -> Practitioner.name
         // XCN-2: Family Name (component index 1 in 0-based)
-        if let Ok(Some(family)) = terser.get(&format!("{}-1", base_path)) {
-            if !family.is_empty() {
+        if let Ok(Some(family)) = terser.get(&format!("{}-1", base_path))
+            && !family.is_empty() {
                 let mut name = HumanName {
                     use_: Some("official".to_string()),
                     text: None,
@@ -138,34 +135,30 @@ impl PractitionerConverter {
                 };
 
                 // XCN-3: Given Name (component index 2 in 0-based)
-                if let Ok(Some(given)) = terser.get(&format!("{}-2", base_path)) {
-                    if !given.is_empty() {
+                if let Ok(Some(given)) = terser.get(&format!("{}-2", base_path))
+                    && !given.is_empty() {
                         let mut given_names = vec![given.to_string()];
 
                         // XCN-4: Second/Middle Name (component index 3 in 0-based)
-                        if let Ok(Some(middle)) = terser.get(&format!("{}-3", base_path)) {
-                            if !middle.is_empty() {
+                        if let Ok(Some(middle)) = terser.get(&format!("{}-3", base_path))
+                            && !middle.is_empty() {
                                 given_names.push(middle.to_string());
                             }
-                        }
 
                         name.given = Some(given_names);
                     }
-                }
 
                 // XCN-5: Suffix (component index 4 in 0-based)
-                if let Ok(Some(suffix)) = terser.get(&format!("{}-4", base_path)) {
-                    if !suffix.is_empty() {
+                if let Ok(Some(suffix)) = terser.get(&format!("{}-4", base_path))
+                    && !suffix.is_empty() {
                         name.suffix = Some(vec![suffix.to_string()]);
                     }
-                }
 
                 // XCN-6: Prefix (component index 5 in 0-based)
-                if let Ok(Some(prefix)) = terser.get(&format!("{}-5", base_path)) {
-                    if !prefix.is_empty() {
+                if let Ok(Some(prefix)) = terser.get(&format!("{}-5", base_path))
+                    && !prefix.is_empty() {
                         name.prefix = Some(vec![prefix.to_string()]);
                     }
-                }
 
                 // Build display text
                 let mut display_parts = Vec::new();
@@ -185,11 +178,10 @@ impl PractitionerConverter {
 
                 practitioner.name = Some(vec![name]);
             }
-        }
 
         // XCN-7: Degree -> Practitioner.qualification (component index 6 in 0-based)
-        if let Ok(Some(degree)) = terser.get(&format!("{}-6", base_path)) {
-            if !degree.is_empty() {
+        if let Ok(Some(degree)) = terser.get(&format!("{}-6", base_path))
+            && !degree.is_empty() {
                 let qualification = PractitionerQualification {
                     identifier: None,
                     code: CodeableConcept {
@@ -202,7 +194,6 @@ impl PractitionerConverter {
 
                 practitioner.qualification = Some(vec![qualification]);
             }
-        }
 
         practitioner.active = Some(true);
 
@@ -310,6 +301,6 @@ mod tests {
         let practitioners = PractitionerConverter::extract_all_practitioners(&message).unwrap();
 
         // Should extract attending (PV1-7), referring (PV1-8), and consulting (PV1-9)
-        assert!(practitioners.len() >= 1);
+        assert!(!practitioners.is_empty());
     }
 }

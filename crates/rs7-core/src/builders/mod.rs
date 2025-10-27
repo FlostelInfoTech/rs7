@@ -58,10 +58,10 @@ impl MessageBuilder {
         let delims = Delimiters::default();
 
         // MSH-1: Field separator (special handling)
-        msh.add_field(Field::from_value(&delims.field_separator.to_string()));
+        msh.add_field(Field::from_value(delims.field_separator.to_string()));
 
         // MSH-2: Encoding characters
-        msh.add_field(Field::from_value(&format!(
+        msh.add_field(Field::from_value(format!(
             "{}{}{}{}",
             delims.component_separator, delims.repetition_separator, delims.escape_character, delims.subcomponent_separator
         )));

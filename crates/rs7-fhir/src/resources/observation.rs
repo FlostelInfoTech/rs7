@@ -1,6 +1,6 @@
 //! FHIR Observation resource
 //!
-//! Based on FHIR R4 Observation: https://www.hl7.org/fhir/R4/observation.html
+//! Based on FHIR R4 Observation: <https://www.hl7.org/fhir/R4/observation.html>
 
 use serde::{Deserialize, Serialize};
 use super::common::*;

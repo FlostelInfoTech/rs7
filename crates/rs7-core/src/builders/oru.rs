@@ -143,7 +143,7 @@ impl OruR01Builder {
         // Create OBX segments for observations
         for obs in &self.observations {
             let mut obx = Segment::new("OBX");
-            obx.add_field(Field::from_value(&obs.set_id.to_string())); // OBX-1: Set ID
+            obx.add_field(Field::from_value(obs.set_id.to_string())); // OBX-1: Set ID
             obx.add_field(Field::from_value(&obs.value_type)); // OBX-2: Value Type
             obx.add_field(Field::from_value(&obs.identifier)); // OBX-3: Observation Identifier
             obx.add_field(Field::from_value("")); // OBX-4: Observation Sub-ID

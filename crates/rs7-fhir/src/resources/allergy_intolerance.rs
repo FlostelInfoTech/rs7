@@ -57,6 +57,12 @@ pub struct AllergyIntoleranceReaction {
     pub severity: Option<String>, // mild | moderate | severe
 }
 
+impl Default for AllergyIntolerance {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AllergyIntolerance {
     pub fn new() -> Self {
         Self {

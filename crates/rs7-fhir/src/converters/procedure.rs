@@ -55,7 +55,7 @@ impl ProcedureConverter {
 
             // Component 2: Coding System (0-based)
             if let Ok(Some(system)) = terser.get(&format!("{}-2", code_path)) {
-                coding.system = Some(Self::convert_coding_system(&system));
+                coding.system = Some(Self::convert_coding_system(system));
             }
 
             procedure.code = Some(CodeableConcept {
@@ -71,7 +71,7 @@ impl ProcedureConverter {
             format!("PR1({})-5", pr1_index)
         };
         if let Ok(Some(datetime)) = terser.get(&datetime_path) {
-            procedure.performed_date_time = Some(Self::convert_datetime(&datetime)?);
+            procedure.performed_date_time = Some(Self::convert_datetime(datetime)?);
         }
 
         // Link to patient

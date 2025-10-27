@@ -16,7 +16,8 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 - **✅ Complex Field Builders**: Builder patterns for composite data types (XPN, XAD, XTN, CX, XCN)
 - **✅ Message Types**: Support for ADT (A01-A40), SIU (S12-S15), MDM (T01-T04), DFT (P03, P11), QRY (A19, Q01-Q02), BAR (P01-P02), Pharmacy (RDE, RAS, RDS, RGV, RRD, RRA), Laboratory (OUL, OML), MFN, ORM, ORU, ACK, and other message types
 - **✅ ACK Generation**: Automatic acknowledgment message creation
-- **✅ MLLP Support**: Network transmission using Minimal Lower Layer Protocol
+- **✅ MLLP Support**: Network transmission using Minimal Lower Layer Protocol (intra-organization)
+- **✅ HTTP Transport**: HL7-over-HTTP support for inter-organization communication
 - **✅ FHIR Conversion**: Convert HL7 v2 messages to FHIR R4 resources (Patient, Observation, Encounter, DiagnosticReport, etc.)
 - **🚀 Fast and Safe**: Built with Rust for performance and memory safety
 - **📦 Modular Design**: Use only the components you need
@@ -29,7 +30,8 @@ rs7/
 ├── rs7-parser    - HL7 message parser using nom
 ├── rs7-validator - Message validation against HL7 standards
 ├── rs7-terser    - Path-based field access API
-├── rs7-mllp      - MLLP protocol for network transmission
+├── rs7-mllp      - MLLP protocol for network transmission (intra-organization)
+├── rs7-http      - HTTP transport for inter-organization communication
 ├── rs7-fhir      - HL7 v2 to FHIR R4 conversion
 ├── rs7-wasm      - WebAssembly bindings for JavaScript/TypeScript
 ├── rs7-cli       - Command-line interface for message analysis
@@ -46,7 +48,8 @@ rs7-core = "0.6"
 rs7-parser = "0.6"
 rs7-terser = "0.6"
 rs7-validator = "0.6"
-rs7-mllp = "0.6"  # Optional: for network support
+rs7-mllp = "0.6"  # Optional: for MLLP network support (intra-organization)
+rs7-http = "0.6"  # Optional: for HTTP transport (inter-organization)
 rs7-fhir = "0.6"  # Optional: for FHIR conversion
 ```
 
@@ -199,6 +202,51 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+### HTTP Server
+
+```rust
+use rs7_http::HttpServer;
+use rs7_core::Message;
+use std::sync::Arc;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let server = HttpServer::new()
+        .with_handler(Arc::new(|message: Message| {
+            println!("Received: {:?}", message.get_message_type());
+            // Create and return ACK
+            Ok(message) // Simplified for example
+        }));
+        // Optional: .with_auth("username".into(), "password".into());
+
+    server.serve("127.0.0.1:8080").await?;
+}
+```
+
+### HTTP Client
+
+```rust
+use rs7_http::HttpClient;
+use rs7_core::builders::adt::AdtBuilder;
+use rs7_core::Version;
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HttpClient::new("http://example.com/hl7")?
+        .with_timeout(Duration::from_secs(30))?;
+        // Optional: .with_auth("username".into(), "password".into());
+
+    let message = AdtBuilder::a01(Version::V2_5)
+        .patient_id("12345")
+        .patient_name("DOE", "JOHN")
+        .build()?;
+
+    let ack = client.send_message(&message).await?;
+    println!("ACK received: {:?}", ack.get_control_id());
+}
+```
+
 ### FHIR Conversion
 
 ```rust
@@ -318,6 +366,8 @@ The `examples/` directory contains complete working examples:
 - `complete_validation.rs` - Full validation with data types and vocabulary
 - `mllp_server.rs` - MLLP server that receives messages and sends ACKs
 - `mllp_client.rs` - MLLP client that sends messages
+- `http_server.rs` (rs7-http) - HTTP server that receives HL7 messages over HTTP
+- `http_client.rs` (rs7-http) - HTTP client that sends HL7 messages over HTTP
 - `convert_adt.rs` (rs7-fhir) - Convert ADT^A01 to FHIR Patient/Encounter
 - `convert_oru.rs` (rs7-fhir) - Convert ORU^R01 to FHIR Observation/DiagnosticReport
 
@@ -335,6 +385,10 @@ cargo run --example vocabulary_validation
 cargo run --example complete_validation
 cargo run --example mllp_server
 cargo run --example mllp_client  # In another terminal
+
+# HTTP transport examples
+cargo run --example http_server -p rs7-http
+cargo run --example http_client -p rs7-http  # In another terminal
 
 # FHIR conversion examples
 cargo run --example convert_adt -p rs7-fhir
@@ -520,6 +574,7 @@ Contributions are welcome! Please:
 - [x] Performance optimizations ✅ (Cached Terser, optimized parsers, benchmarking suite)
 - [x] WebAssembly support ✅ (Full JavaScript/TypeScript bindings - see rs7-wasm/README.md)
 - [x] CLI tool for message analysis ✅ (5 commands: parse, validate, extract, convert, info - see rs7-cli/README.md)
+- [x] HTTP transport support ✅ (HL7-over-HTTP for inter-organization communication - see rs7-http/README.md)
 
 ## License
 
@@ -541,6 +596,7 @@ at your option.
 | Terser API | ✅ | ✅ |
 | Validation | ✅ | ✅ |
 | MLLP | ✅ | ✅ |
+| HTTP Transport | ✅ | ✅ |
 | Message Types | In progress | Comprehensive |
 | HL7 FHIR | ✅ (9 converters) | ✅ |
 

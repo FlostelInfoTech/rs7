@@ -52,18 +52,16 @@ impl DiagnosticReportConverter {
             };
 
             // OBR-4-2: Text (component 1 in 0-based)
-            if let Ok(Some(text)) = terser.get(&format!("{}-1", code_path)) {
-                if !text.is_empty() {
+            if let Ok(Some(text)) = terser.get(&format!("{}-1", code_path))
+                && !text.is_empty() {
                     coding.display = Some(text.to_string());
                 }
-            }
 
             // OBR-4-3: Coding System (component 2 in 0-based)
-            if let Ok(Some(system)) = terser.get(&format!("{}-2", code_path)) {
-                if !system.is_empty() {
-                    coding.system = Some(Self::convert_coding_system(&system));
+            if let Ok(Some(system)) = terser.get(&format!("{}-2", code_path))
+                && !system.is_empty() {
+                    coding.system = Some(Self::convert_coding_system(system));
                 }
-            }
 
             CodeableConcept {
                 coding: Some(vec![coding]),
@@ -83,7 +81,7 @@ impl DiagnosticReportConverter {
             format!("OBR({})-25", obr_index)
         };
         let status = if let Ok(Some(status_code)) = terser.get(&status_path) {
-            Self::convert_status(&status_code)
+            Self::convert_status(status_code)
         } else {
             "final".to_string()
         };
@@ -96,8 +94,8 @@ impl DiagnosticReportConverter {
         } else {
             format!("OBR({})-2", obr_index)
         };
-        if let Ok(Some(placer)) = terser.get(&placer_path) {
-            if !placer.is_empty() {
+        if let Ok(Some(placer)) = terser.get(&placer_path)
+            && !placer.is_empty() {
                 report.identifier = Some(vec![Identifier {
                     use_: Some("official".to_string()),
                     type_: None,
@@ -107,7 +105,6 @@ impl DiagnosticReportConverter {
                 }]);
                 report.id = Some(placer.to_string());
             }
-        }
 
         // OBR-7: Observation Date/Time -> DiagnosticReport.effectiveDateTime
         let obs_dt_path = if obr_index == 0 {
@@ -115,11 +112,10 @@ impl DiagnosticReportConverter {
         } else {
             format!("OBR({})-7", obr_index)
         };
-        if let Ok(Some(obs_dt)) = terser.get(&obs_dt_path) {
-            if !obs_dt.is_empty() {
-                report.effective_date_time = Some(Self::convert_datetime(&obs_dt)?);
+        if let Ok(Some(obs_dt)) = terser.get(&obs_dt_path)
+            && !obs_dt.is_empty() {
+                report.effective_date_time = Some(Self::convert_datetime(obs_dt)?);
             }
-        }
 
         // OBR-22: Results Report Date/Time -> DiagnosticReport.issued
         let issued_path = if obr_index == 0 {
@@ -127,15 +123,14 @@ impl DiagnosticReportConverter {
         } else {
             format!("OBR({})-22", obr_index)
         };
-        if let Ok(Some(issued)) = terser.get(&issued_path) {
-            if !issued.is_empty() {
-                report.issued = Some(Self::convert_datetime(&issued)?);
+        if let Ok(Some(issued)) = terser.get(&issued_path)
+            && !issued.is_empty() {
+                report.issued = Some(Self::convert_datetime(issued)?);
             }
-        }
 
         // Link to patient from PID segment
-        if let Ok(Some(patient_id)) = terser.get("PID-3") {
-            if !patient_id.is_empty() {
+        if let Ok(Some(patient_id)) = terser.get("PID-3")
+            && !patient_id.is_empty() {
                 report.subject = Some(Reference {
                     reference: Some(format!("Patient/{}", patient_id)),
                     type_: Some("Patient".to_string()),
@@ -143,7 +138,6 @@ impl DiagnosticReportConverter {
                     display: None,
                 });
             }
-        }
 
         // Link to observations - find OBX segments following this OBR
         let mut result_refs = Vec::new();

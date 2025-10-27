@@ -1,7 +1,7 @@
 //! FHIR R4 resource definitions
 //!
 //! Lightweight FHIR resource structures for common healthcare data.
-//! Based on FHIR R4 specification: https://www.hl7.org/fhir/R4/
+//! Based on FHIR R4 specification: <https://www.hl7.org/fhir/R4/>
 
 pub mod patient;
 pub mod observation;

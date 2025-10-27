@@ -1,7 +1,7 @@
 //! MLLP (Minimal Lower Layer Protocol) support
 //!
 //! MLLP is a simple framing protocol used for transmitting HL7 messages over TCP.
-//! Format: <VT>message<FS><CR>
+//! Format: \<VT\>message\<FS\>\<CR\>
 //! - VT (Vertical Tab): 0x0B - Start of block
 //! - FS (File Separator): 0x1C - End of block
 //! - CR (Carriage Return): 0x0D - End of message

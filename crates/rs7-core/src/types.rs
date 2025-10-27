@@ -4,6 +4,8 @@
 //! These types provide semantic meaning to field values.
 
 use chrono::{NaiveDate, NaiveDateTime};
+use std::str::FromStr;
+use crate::error::Error;
 
 /// HL7 data type enum
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -84,6 +86,10 @@ impl DataType {
     }
 
     /// Parse a data type from a string
+    ///
+    /// Note: This method is kept for backward compatibility.
+    /// Consider using the `FromStr` trait implementation instead.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "ST" => Some(DataType::ST),
@@ -110,6 +116,14 @@ impl DataType {
             "NA" => Some(DataType::NA),
             _ => None,
         }
+    }
+}
+
+impl FromStr for DataType {
+    type Err = Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::from_str(s).ok_or_else(|| Error::parse(format!("Unknown data type: {}", s)))
     }
 }
 

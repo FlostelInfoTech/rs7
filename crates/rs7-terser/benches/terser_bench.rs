@@ -1,6 +1,7 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId};
 use rs7_parser::parse_message;
 use rs7_terser::Terser;
+use std::hint::black_box;
 
 const TEST_MESSAGE: &str = r"MSH|^~\&|SendApp|SendFac|RecApp|RecFac|20240315143000||ADT^A01|12345|P|2.5
 PID|1|12345|67890^^^MRN||DOE^JOHN^A||19800101|M|||123 Main St^^Boston^MA^02101||555-1234

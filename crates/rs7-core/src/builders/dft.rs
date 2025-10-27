@@ -97,7 +97,7 @@ impl DftP03Builder {
         pid.add_field(Field::from_value(""));
 
         if let Some((family, given)) = &self.patient_name {
-            pid.add_field(Field::from_value(&format!("{}^{}", family, given)));
+            pid.add_field(Field::from_value(format!("{}^{}", family, given)));
         }
 
         self.base.message.add_segment(pid);

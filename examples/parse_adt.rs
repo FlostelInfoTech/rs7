@@ -46,14 +46,13 @@ PV1|1|I|WARD^ROOM^BED|||ATTEND^DOCTOR^A|||MED||||1|||ATTEND^DOCTOR^A||VN12345|||
         println!("  Alternate ID: {:?}", pid.get_field_value(3));
 
         // Access patient name components
-        if let Some(name_field) = pid.get_field(5) {
-            if let Some(rep) = name_field.get_repetition(0) {
+        if let Some(name_field) = pid.get_field(5)
+            && let Some(rep) = name_field.get_repetition(0) {
                 println!("  Patient Name:");
                 println!("    Family: {:?}", rep.get_component(0).and_then(|c| c.value()));
                 println!("    Given: {:?}", rep.get_component(1).and_then(|c| c.value()));
                 println!("    Middle: {:?}", rep.get_component(2).and_then(|c| c.value()));
             }
-        }
     }
     println!();
 

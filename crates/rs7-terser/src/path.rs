@@ -1,6 +1,6 @@
-///! Terser path parsing module
-///!
-///! This module handles parsing of terser path strings like "PID-5-1" or "OBX(2)-3-1"
+//! Terser path parsing module
+//!
+//! This module handles parsing of terser path strings like "PID-5-1" or "OBX(2)-3-1"
 
 use rs7_core::error::{Error, Result};
 

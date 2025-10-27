@@ -43,8 +43,8 @@ PV1|1|I|4N^401^01^Hospital^^^N||||5678901^JONES^MICHAEL^^^DR^MD^^^^^^NPI
     println!("📊 Key Patient Information:");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-    if let Some(ref names) = patient.name {
-        if let Some(name) = names.first() {
+    if let Some(ref names) = patient.name
+        && let Some(name) = names.first() {
             print!("Name: ");
             if let Some(ref prefix) = name.prefix {
                 print!("{} ", prefix.join(" "));
@@ -60,7 +60,6 @@ PV1|1|I|4N^401^01^Hospital^^^N||||5678901^JONES^MICHAEL^^^DR^MD^^^^^^NPI
             }
             println!();
         }
-    }
 
     if let Some(ref gender) = patient.gender {
         println!("Gender: {}", gender);
@@ -75,11 +74,10 @@ PV1|1|I|4N^401^01^Hospital^^^N||||5678901^JONES^MICHAEL^^^DR^MD^^^^^^NPI
         for id in identifiers {
             if let Some(ref value) = id.value {
                 print!("  - {}", value);
-                if let Some(ref type_) = id.type_ {
-                    if let Some(ref text) = type_.text {
+                if let Some(ref type_) = id.type_
+                    && let Some(ref text) = type_.text {
                         print!(" ({})", text);
                     }
-                }
                 println!();
             }
         }

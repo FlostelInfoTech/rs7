@@ -41,7 +41,7 @@ impl AllergyIntoleranceConverter {
             format!("AL1({})-2", al1_index)
         };
         if let Ok(Some(allergen_type)) = terser.get(&type_path) {
-            allergy.category = Some(vec![Self::convert_allergen_type(&allergen_type)]);
+            allergy.category = Some(vec![Self::convert_allergen_type(allergen_type)]);
         }
 
         // AL1-3: Allergen Code/Mnemonic/Description
@@ -69,7 +69,7 @@ impl AllergyIntoleranceConverter {
             format!("AL1({})-4", al1_index)
         };
         if let Ok(Some(severity)) = terser.get(&severity_path) {
-            allergy.criticality = Some(Self::convert_severity(&severity));
+            allergy.criticality = Some(Self::convert_severity(severity));
         }
 
         // Link to patient

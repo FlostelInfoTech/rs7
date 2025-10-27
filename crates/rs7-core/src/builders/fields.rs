@@ -104,16 +104,14 @@ impl XpnBuilder {
 
     /// Build the XPN field
     pub fn build(self) -> String {
-        let components = vec![
-            self.family_name.unwrap_or_default(),
+        let components = [self.family_name.unwrap_or_default(),
             self.given_name.unwrap_or_default(),
             self.middle_name.unwrap_or_default(),
             self.suffix.unwrap_or_default(),
             self.prefix.unwrap_or_default(),
             self.degree.unwrap_or_default(),
             self.name_type_code.unwrap_or_default(),
-            self.name_representation_code.unwrap_or_default(),
-        ];
+            self.name_representation_code.unwrap_or_default()];
 
         // Trim trailing empty components
         let mut result = components.join("^");
@@ -125,7 +123,7 @@ impl XpnBuilder {
 
     /// Build as Field
     pub fn build_field(self) -> Field {
-        Field::from_value(&self.build())
+        Field::from_value(self.build())
     }
 }
 
@@ -255,7 +253,7 @@ impl XadBuilder {
 
     /// Build as Field
     pub fn build_field(self) -> Field {
-        Field::from_value(&self.build())
+        Field::from_value(self.build())
     }
 }
 
@@ -385,7 +383,7 @@ impl XtnBuilder {
 
     /// Build as Field
     pub fn build_field(self) -> Field {
-        Field::from_value(&self.build())
+        Field::from_value(self.build())
     }
 }
 
@@ -483,16 +481,14 @@ impl CxBuilder {
 
     /// Build the CX field
     pub fn build(self) -> String {
-        let components = vec![
-            self.id_number,
+        let components = [self.id_number,
             self.check_digit.unwrap_or_default(),
             self.check_digit_scheme.unwrap_or_default(),
             self.assigning_authority.unwrap_or_default(),
             self.identifier_type_code.unwrap_or_default(),
             self.assigning_facility.unwrap_or_default(),
             self.effective_date.unwrap_or_default(),
-            self.expiration_date.unwrap_or_default(),
-        ];
+            self.expiration_date.unwrap_or_default()];
 
         // Trim trailing empty components
         let mut result = components.join("^");
@@ -504,7 +500,7 @@ impl CxBuilder {
 
     /// Build as Field
     pub fn build_field(self) -> Field {
-        Field::from_value(&self.build())
+        Field::from_value(self.build())
     }
 }
 
@@ -667,7 +663,7 @@ impl XcnBuilder {
 
     /// Build as Field
     pub fn build_field(self) -> Field {
-        Field::from_value(&self.build())
+        Field::from_value(self.build())
     }
 }
 

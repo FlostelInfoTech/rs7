@@ -130,7 +130,7 @@ impl<'a> TerserMut<'a> {
             let segment = &mut self.message.segments[segment_index];
 
             // Ensure field exists
-            while segment.fields.len() <= parsed_path.field_index - 1 {
+            while segment.fields.len() < parsed_path.field_index {
                 segment.add_field(Field::new());
             }
 

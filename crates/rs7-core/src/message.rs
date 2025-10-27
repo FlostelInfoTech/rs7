@@ -83,7 +83,7 @@ impl Message {
     pub fn get_version(&self) -> Option<Version> {
         self.get_msh()
             .and_then(|msh| msh.get_field_value(12))
-            .and_then(|v| Version::from_str(v))
+            .and_then(Version::from_str)
     }
 
     /// Set the HL7 version in MSH-12

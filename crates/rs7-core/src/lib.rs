@@ -23,6 +23,8 @@ pub use field::{Component, Field, Repetition, SubComponent};
 pub use message::Message;
 pub use segment::Segment;
 
+use std::str::FromStr;
+
 /// HL7 version enum
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Version {
@@ -38,6 +40,10 @@ pub enum Version {
 
 impl Version {
     /// Parse version from string (e.g., "2.5" or "2.5.1")
+    ///
+    /// Note: This method is kept for backward compatibility.
+    /// Consider using the `FromStr` trait implementation instead.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "2.3" => Some(Version::V2_3),
@@ -64,6 +70,14 @@ impl Version {
             Version::V2_7 => "2.7",
             Version::V2_7_1 => "2.7.1",
         }
+    }
+}
+
+impl FromStr for Version {
+    type Err = Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::from_str(s).ok_or_else(|| Error::UnsupportedVersion(format!("Unknown HL7 version: {}", s)))
     }
 }
 

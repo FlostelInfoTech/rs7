@@ -244,7 +244,7 @@ impl Field {
             .join(&delimiters.repetition_separator.to_string())
     }
 
-    /// Get component at path (e.g., [0][2] for first repetition, third component)
+    /// Get component at path (e.g., \[0\]\[2\] for first repetition, third component)
     pub fn get_component(&self, rep_index: usize, comp_index: usize) -> Option<&Component> {
         self.get_repetition(rep_index)
             .and_then(|r| r.get_component(comp_index))

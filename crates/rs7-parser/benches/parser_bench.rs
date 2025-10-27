@@ -1,5 +1,6 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId};
 use rs7_parser::parse_message;
+use std::hint::black_box;
 
 // Small ADT message
 const ADT_SMALL: &str = r"MSH|^~\&|SendApp|SendFac|RecApp|RecFac|20240315143000||ADT^A01|12345|P|2.5

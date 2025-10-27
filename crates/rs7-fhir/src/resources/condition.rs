@@ -42,6 +42,12 @@ pub struct Condition {
     pub recorded_date: Option<String>,
 }
 
+impl Default for Condition {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Condition {
     pub fn new() -> Self {
         Self {

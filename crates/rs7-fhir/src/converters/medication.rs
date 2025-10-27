@@ -40,7 +40,7 @@ impl MedicationConverter {
             format!("RXA({})-20", rxa_index)
         };
         let status = if let Ok(Some(status_code)) = terser.get(&status_path) {
-            Self::convert_status(&status_code)
+            Self::convert_status(status_code)
         } else {
             "completed".to_string()
         };
@@ -79,7 +79,7 @@ impl MedicationConverter {
             format!("RXA({})-3", rxa_index)
         };
         if let Ok(Some(datetime)) = terser.get(&datetime_path) {
-            admin.effective_date_time = Some(Self::convert_datetime(&datetime)?);
+            admin.effective_date_time = Some(Self::convert_datetime(datetime)?);
         }
 
         // RXA-6: Administered Amount
@@ -88,8 +88,8 @@ impl MedicationConverter {
         } else {
             format!("RXA({})-6", rxa_index)
         };
-        if let Ok(Some(amount)) = terser.get(&amount_path) {
-            if let Ok(value) = amount.parse::<f64>() {
+        if let Ok(Some(amount)) = terser.get(&amount_path)
+            && let Ok(value) = amount.parse::<f64>() {
                 let mut dosage = MedicationAdministrationDosage {
                     route: None,
                     dose: Some(Quantity {
@@ -112,7 +112,6 @@ impl MedicationConverter {
 
                 admin.dosage = Some(dosage);
             }
-        }
 
         // Link to patient
         if let Ok(Some(patient_id)) = terser.get("PID-3") {

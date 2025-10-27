@@ -228,8 +228,8 @@ impl Validator {
         }
 
         // Check version matches
-        if let Some(msg_version) = message.get_version() {
-            if msg_version != self.version {
+        if let Some(msg_version) = message.get_version()
+            && msg_version != self.version {
                 result.add_warning(ValidationWarning::new(
                     "MSH-12".to_string(),
                     format!(
@@ -239,7 +239,6 @@ impl Validator {
                     ),
                 ));
             }
-        }
     }
 
     /// Validate against schema
@@ -343,15 +342,14 @@ impl Validator {
                     // Validate vocabulary/code set
                     if let Some(table_id) = &field_def.table_id {
                         let vocab_validation = self.table_registry.validate(table_id, value);
-                        if !vocab_validation.is_valid() {
-                            if let Some(err_msg) = vocab_validation.error_message() {
+                        if !vocab_validation.is_valid()
+                            && let Some(err_msg) = vocab_validation.error_message() {
                                 result.add_error(ValidationError::new(
                                     field_location.clone(),
                                     err_msg.to_string(),
                                     ValidationErrorType::InvalidValue,
                                 ));
                             }
-                        }
                     }
                 }
             }

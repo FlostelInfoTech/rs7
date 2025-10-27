@@ -165,7 +165,7 @@ fn validate_timestamp(value: &str) -> DataTypeValidation {
 
     // Strip timezone if present
     let (ts_part, _tz) = if value.contains('+') || value.ends_with('-') {
-        let idx = value.rfind(|c| c == '+' || c == '-').unwrap();
+        let idx = value.rfind(['+', '-']).unwrap();
         (&value[..idx], Some(&value[idx..]))
     } else {
         (value, None)
@@ -201,13 +201,12 @@ fn validate_timestamp(value: &str) -> DataTypeValidation {
     }
 
     // Validate fractional seconds if present
-    if let Some(f) = frac {
-        if f.len() > 4 || !f.chars().all(|c| c.is_ascii_digit()) {
+    if let Some(f) = frac
+        && (f.len() > 4 || !f.chars().all(|c| c.is_ascii_digit())) {
             return DataTypeValidation::Invalid {
                 reason: "Fractional seconds must be 1-4 digits".to_string(),
             };
         }
-    }
 
     // Validate using parser
     match parse_timestamp(main_part) {

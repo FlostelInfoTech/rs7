@@ -1,6 +1,6 @@
 //! FHIR Patient resource
 //!
-//! Based on FHIR R4 Patient: https://www.hl7.org/fhir/R4/patient.html
+//! Based on FHIR R4 Patient: <https://www.hl7.org/fhir/R4/patient.html>
 
 use serde::{Deserialize, Serialize};
 use super::common::*;

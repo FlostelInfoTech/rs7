@@ -1,6 +1,6 @@
 //! FHIR Practitioner resource
 //!
-//! Based on FHIR R4 Practitioner: https://www.hl7.org/fhir/R4/practitioner.html
+//! Based on FHIR R4 Practitioner: <https://www.hl7.org/fhir/R4/practitioner.html>
 
 use serde::{Deserialize, Serialize};
 use super::common::*;

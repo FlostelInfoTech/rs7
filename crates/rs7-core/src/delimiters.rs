@@ -89,13 +89,11 @@ impl Delimiters {
 
     /// Validate that all delimiters are unique
     pub fn validate(&self) -> Result<()> {
-        let chars = vec![
-            self.field_separator,
+        let chars = [self.field_separator,
             self.component_separator,
             self.repetition_separator,
             self.escape_character,
-            self.subcomponent_separator,
-        ];
+            self.subcomponent_separator];
 
         for (i, &c1) in chars.iter().enumerate() {
             for (j, &c2) in chars.iter().enumerate() {
