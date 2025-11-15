@@ -27,7 +27,9 @@ pub fn encode_basic_auth(username: &str, password: &str) -> String {
     format!("Basic {}", BASE64_STANDARD.encode(credentials.as_bytes()))
 }
 
-/// Verify HTTP Basic Authentication credentials
+/// Verify HTTP Basic Authentication credentials using constant-time comparison
+///
+/// This function uses constant-time comparison to prevent timing attacks.
 ///
 /// # Arguments
 /// * `header` - The Authorization header value
@@ -51,7 +53,9 @@ pub fn verify_basic_auth(header: &str, username: &str, password: &str) -> bool {
     if let Some(encoded) = header.strip_prefix("Basic ") {
         if let Ok(decoded) = BASE64_STANDARD.decode(encoded) {
             if let Ok(credentials) = String::from_utf8(decoded) {
-                return credentials == format!("{}:{}", username, password);
+                let expected = format!("{}:{}", username, password);
+                // Use constant-time comparison to prevent timing attacks
+                return constant_time_compare(&credentials, &expected);
             }
         }
     }

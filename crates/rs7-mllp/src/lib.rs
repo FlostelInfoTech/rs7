@@ -11,6 +11,7 @@ use rs7_core::{
     message::Message,
 };
 use rs7_parser::parse_message;
+use std::time::Duration;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
@@ -20,6 +21,74 @@ use tokio::{
 pub const START_OF_BLOCK: u8 = 0x0B; // Vertical Tab (VT)
 pub const END_OF_BLOCK: u8 = 0x1C; // File Separator (FS)
 pub const CARRIAGE_RETURN: u8 = 0x0D; // Carriage Return (CR)
+
+/// Default maximum message size (10 MB)
+/// This prevents DoS attacks via unbounded buffer growth
+pub const DEFAULT_MAX_MESSAGE_SIZE: usize = 10 * 1024 * 1024;
+
+/// Default read timeout (30 seconds)
+pub const DEFAULT_READ_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Default write timeout (30 seconds)
+pub const DEFAULT_WRITE_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Default connection timeout (10 seconds)
+pub const DEFAULT_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+
+/// Configuration for MLLP client and server
+#[derive(Debug, Clone)]
+pub struct MllpConfig {
+    /// Maximum message size in bytes (default: 10 MB)
+    pub max_message_size: usize,
+    /// Read timeout (default: 30 seconds)
+    pub read_timeout: Duration,
+    /// Write timeout (default: 30 seconds)
+    pub write_timeout: Duration,
+    /// Connection timeout (default: 10 seconds)
+    pub connect_timeout: Duration,
+}
+
+impl Default for MllpConfig {
+    fn default() -> Self {
+        Self {
+            max_message_size: DEFAULT_MAX_MESSAGE_SIZE,
+            read_timeout: DEFAULT_READ_TIMEOUT,
+            write_timeout: DEFAULT_WRITE_TIMEOUT,
+            connect_timeout: DEFAULT_CONNECT_TIMEOUT,
+        }
+    }
+}
+
+impl MllpConfig {
+    /// Create a new configuration with custom settings
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set the maximum message size
+    pub fn with_max_message_size(mut self, size: usize) -> Self {
+        self.max_message_size = size;
+        self
+    }
+
+    /// Set the read timeout
+    pub fn with_read_timeout(mut self, timeout: Duration) -> Self {
+        self.read_timeout = timeout;
+        self
+    }
+
+    /// Set the write timeout
+    pub fn with_write_timeout(mut self, timeout: Duration) -> Self {
+        self.write_timeout = timeout;
+        self
+    }
+
+    /// Set the connection timeout
+    pub fn with_connect_timeout(mut self, timeout: Duration) -> Self {
+        self.connect_timeout = timeout;
+        self
+    }
+}
 
 /// MLLP message framing
 pub struct MllpFrame;
@@ -63,16 +132,48 @@ impl MllpFrame {
 /// MLLP client for sending messages
 pub struct MllpClient {
     stream: TcpStream,
+    max_message_size: usize,
+    read_timeout: Duration,
+    write_timeout: Duration,
 }
 
 impl MllpClient {
-    /// Connect to an MLLP server
+    /// Connect to an MLLP server with default settings
     pub async fn connect(addr: &str) -> Result<Self> {
-        let stream = TcpStream::connect(addr)
-            .await
-            .map_err(|e| Error::Network(format!("Failed to connect: {}", e)))?;
+        Self::connect_with_config(addr, MllpConfig::default()).await
+    }
 
-        Ok(Self { stream })
+    /// Connect to an MLLP server with custom configuration
+    pub async fn connect_with_config(addr: &str, config: MllpConfig) -> Result<Self> {
+        let stream = tokio::time::timeout(
+            config.connect_timeout,
+            TcpStream::connect(addr)
+        )
+        .await
+        .map_err(|_| Error::Network(format!("Connection timeout after {:?}", config.connect_timeout)))?
+        .map_err(|e| Error::Network(format!("Failed to connect: {}", e)))?;
+
+        Ok(Self {
+            stream,
+            max_message_size: config.max_message_size,
+            read_timeout: config.read_timeout,
+            write_timeout: config.write_timeout,
+        })
+    }
+
+    /// Set the maximum message size
+    pub fn set_max_message_size(&mut self, size: usize) {
+        self.max_message_size = size;
+    }
+
+    /// Set the read timeout
+    pub fn set_read_timeout(&mut self, timeout: Duration) {
+        self.read_timeout = timeout;
+    }
+
+    /// Set the write timeout
+    pub fn set_write_timeout(&mut self, timeout: Duration) {
+        self.write_timeout = timeout;
     }
 
     /// Send a message and wait for acknowledgment
@@ -83,19 +184,32 @@ impl MllpClient {
         // Wrap in MLLP frame
         let framed = MllpFrame::wrap(&hl7_text);
 
-        // Send
-        self.stream
-            .write_all(&framed)
-            .await
-            .map_err(|e| Error::Network(format!("Failed to send: {}", e)))?;
+        // Send with timeout
+        tokio::time::timeout(
+            self.write_timeout,
+            self.stream.write_all(&framed)
+        )
+        .await
+        .map_err(|_| Error::Network(format!("Write timeout after {:?}", self.write_timeout)))?
+        .map_err(|e| Error::Network(format!("Failed to send: {}", e)))?;
 
         // Receive acknowledgment
         self.receive_message().await
     }
 
-    /// Receive a message
+    /// Receive a message with timeout and size limit
     pub async fn receive_message(&mut self) -> Result<Message> {
-        let mut buffer = Vec::new();
+        tokio::time::timeout(
+            self.read_timeout,
+            self.receive_message_internal()
+        )
+        .await
+        .map_err(|_| Error::Network(format!("Read timeout after {:?}", self.read_timeout)))?
+    }
+
+    /// Internal method to receive a message with buffer size protection
+    async fn receive_message_internal(&mut self) -> Result<Message> {
+        let mut buffer = Vec::with_capacity(8192); // Pre-allocate reasonable size
         let mut byte = [0u8; 1];
 
         // Read until we find the start marker
@@ -114,6 +228,14 @@ impl MllpClient {
         // Read until we find the end markers
         let mut found_end = false;
         while !found_end {
+            // Check buffer size limit
+            if buffer.len() >= self.max_message_size {
+                return Err(Error::Mllp(format!(
+                    "Message exceeds maximum size of {} bytes",
+                    self.max_message_size
+                )));
+            }
+
             self.stream
                 .read_exact(&mut byte)
                 .await
@@ -149,19 +271,25 @@ impl MllpClient {
 /// MLLP server for receiving messages
 pub struct MllpServer {
     listener: TcpListener,
+    config: MllpConfig,
 }
 
 impl MllpServer {
-    /// Bind to an address
+    /// Bind to an address with default configuration
     pub async fn bind(addr: &str) -> Result<Self> {
+        Self::bind_with_config(addr, MllpConfig::default()).await
+    }
+
+    /// Bind to an address with custom configuration
+    pub async fn bind_with_config(addr: &str, config: MllpConfig) -> Result<Self> {
         let listener = TcpListener::bind(addr)
             .await
             .map_err(|e| Error::Network(format!("Failed to bind: {}", e)))?;
 
-        Ok(Self { listener })
+        Ok(Self { listener, config })
     }
 
-    /// Accept a connection
+    /// Accept a connection and return an MllpConnection with the server's configuration
     pub async fn accept(&self) -> Result<MllpConnection> {
         let (stream, _addr) = self
             .listener
@@ -169,7 +297,12 @@ impl MllpServer {
             .await
             .map_err(|e| Error::Network(format!("Failed to accept: {}", e)))?;
 
-        Ok(MllpConnection { stream })
+        Ok(MllpConnection {
+            stream,
+            max_message_size: self.config.max_message_size,
+            read_timeout: self.config.read_timeout,
+            write_timeout: self.config.write_timeout,
+        })
     }
 
     /// Get the local address
@@ -183,12 +316,25 @@ impl MllpServer {
 /// An MLLP connection
 pub struct MllpConnection {
     stream: TcpStream,
+    max_message_size: usize,
+    read_timeout: Duration,
+    write_timeout: Duration,
 }
 
 impl MllpConnection {
-    /// Receive a message
+    /// Receive a message with timeout and size limit
     pub async fn receive_message(&mut self) -> Result<Message> {
-        let mut buffer = Vec::new();
+        tokio::time::timeout(
+            self.read_timeout,
+            self.receive_message_internal()
+        )
+        .await
+        .map_err(|_| Error::Network(format!("Read timeout after {:?}", self.read_timeout)))?
+    }
+
+    /// Internal method to receive a message with buffer size protection
+    async fn receive_message_internal(&mut self) -> Result<Message> {
+        let mut buffer = Vec::with_capacity(8192); // Pre-allocate reasonable size
         let mut byte = [0u8; 1];
 
         // Read until we find the start marker
@@ -207,6 +353,14 @@ impl MllpConnection {
         // Read until we find the end markers
         let mut found_end = false;
         while !found_end {
+            // Check buffer size limit
+            if buffer.len() >= self.max_message_size {
+                return Err(Error::Mllp(format!(
+                    "Message exceeds maximum size of {} bytes",
+                    self.max_message_size
+                )));
+            }
+
             self.stream
                 .read_exact(&mut byte)
                 .await
@@ -230,15 +384,18 @@ impl MllpConnection {
         parse_message(&hl7_text)
     }
 
-    /// Send a message
+    /// Send a message with timeout
     pub async fn send_message(&mut self, message: &Message) -> Result<()> {
         let hl7_text = message.encode();
         let framed = MllpFrame::wrap(&hl7_text);
 
-        self.stream
-            .write_all(&framed)
-            .await
-            .map_err(|e| Error::Network(format!("Failed to send: {}", e)))
+        tokio::time::timeout(
+            self.write_timeout,
+            self.stream.write_all(&framed)
+        )
+        .await
+        .map_err(|_| Error::Network(format!("Write timeout after {:?}", self.write_timeout)))?
+        .map_err(|e| Error::Network(format!("Failed to send: {}", e)))
     }
 
     /// Close the connection

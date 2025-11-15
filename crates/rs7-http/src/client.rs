@@ -153,8 +153,25 @@ impl HttpClient {
     ///
     /// # Arguments
     /// * `timeout` - Timeout duration for HTTP requests
+    ///
+    /// # Note
+    /// This method rebuilds the HTTP client while preserving existing configuration
+    /// (TLS, HTTP/2, etc.) to avoid losing settings.
     pub fn with_timeout(mut self, timeout: Duration) -> Result<Self> {
-        self.client = ClientBuilder::new().timeout(timeout).build()?;
+        let mut builder = ClientBuilder::new().timeout(timeout);
+
+        // Preserve HTTP/2 setting
+        if self.http2_only {
+            builder = builder.http2_prior_knowledge();
+        }
+
+        // Preserve TLS configuration
+        #[cfg(feature = "tls")]
+        if let Some(ref tls_config) = self.tls_config {
+            builder = builder.use_preconfigured_tls(tls_config.config.clone());
+        }
+
+        self.client = builder.build()?;
         Ok(self)
     }
 
