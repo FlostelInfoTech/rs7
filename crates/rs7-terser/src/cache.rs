@@ -97,6 +97,9 @@ impl<'a> CachedTerser<'a> {
     }
 
     /// Get a field value at the specified indices
+    ///
+    /// Note: Component and subcomponent indices are 1-based (HL7 standard notation)
+    /// but internally converted to 0-based for array access.
     #[inline]
     fn get_field_value<'b>(
         &self,
@@ -109,11 +112,21 @@ impl<'a> CachedTerser<'a> {
 
         match (comp_idx, sub_idx) {
             (None, None) => repetition.value(),
-            (Some(c_idx), None) => repetition.get_component(c_idx)?.value(),
+            (Some(c_idx), None) => {
+                // Convert 1-based HL7 to 0-based internal
+                if c_idx == 0 {
+                    return None; // Invalid: HL7 uses 1-based indexing
+                }
+                repetition.get_component(c_idx - 1)?.value()
+            }
             (Some(c_idx), Some(s_idx)) => {
+                // Convert 1-based HL7 to 0-based internal
+                if c_idx == 0 || s_idx == 0 {
+                    return None; // Invalid: HL7 uses 1-based indexing
+                }
                 repetition
-                    .get_component(c_idx)?
-                    .get_subcomponent(s_idx)?
+                    .get_component(c_idx - 1)?
+                    .get_subcomponent(s_idx - 1)?
                     .as_str()
                     .into()
             }
@@ -176,17 +189,17 @@ mod tests {
 
         let message = parse_message(hl7).unwrap();
 
-        // Verify with regular Terser
+        // Verify with regular Terser using 1-based indexing (HL7 standard)
         let regular_terser = crate::Terser::new(&message);
-        let expected_family = regular_terser.get("PID-5-0").unwrap();
-        let expected_given = regular_terser.get("PID-5-1").unwrap();
+        let expected_family = regular_terser.get("PID-5-1").unwrap(); // Family name
+        let expected_given = regular_terser.get("PID-5-2").unwrap(); // Given name
 
         let mut terser = CachedTerser::new(&message);
 
-        let family = terser.get("PID-5-0").unwrap();
+        let family = terser.get("PID-5-1").unwrap(); // 1-based: first component
         assert_eq!(family, expected_family);
 
-        let given = terser.get("PID-5-1").unwrap();
+        let given = terser.get("PID-5-2").unwrap(); // 1-based: second component
         assert_eq!(given, expected_given);
 
         assert_eq!(terser.cache_size(), 2);
@@ -200,7 +213,8 @@ mod tests {
         let message = parse_message(hl7).unwrap();
         let mut terser = CachedTerser::new(&message);
 
-        terser.warm_cache(&["PID-5", "PID-5-0", "PID-5-1", "PID-7", "PID-8"]).unwrap();
+        // Use 1-based indexing (HL7 standard)
+        terser.warm_cache(&["PID-5", "PID-5-1", "PID-5-2", "PID-7", "PID-8"]).unwrap();
         assert_eq!(terser.cache_size(), 5);
 
         // All subsequent accesses should be cached

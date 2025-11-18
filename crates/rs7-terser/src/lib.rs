@@ -73,6 +73,9 @@ impl<'a> Terser<'a> {
     }
 
     /// Get a field value at the specified indices
+    ///
+    /// Note: Component and subcomponent indices are 1-based (HL7 standard notation)
+    /// but internally converted to 0-based for array access.
     fn get_field_value<'b>(
         &self,
         field: &'b Field,
@@ -88,14 +91,20 @@ impl<'a> Terser<'a> {
                 repetition.value()
             }
             (Some(c_idx), None) => {
-                // Component value
-                repetition.get_component(c_idx)?.value()
+                // Component value (convert 1-based HL7 to 0-based internal)
+                if c_idx == 0 {
+                    return None; // Invalid: HL7 uses 1-based indexing
+                }
+                repetition.get_component(c_idx - 1)?.value()
             }
             (Some(c_idx), Some(s_idx)) => {
-                // Subcomponent value
+                // Subcomponent value (convert 1-based HL7 to 0-based internal)
+                if c_idx == 0 || s_idx == 0 {
+                    return None; // Invalid: HL7 uses 1-based indexing
+                }
                 repetition
-                    .get_component(c_idx)?
-                    .get_subcomponent(s_idx)?
+                    .get_component(c_idx - 1)?
+                    .get_subcomponent(s_idx - 1)?
                     .as_str()
                     .into()
             }
@@ -176,6 +185,9 @@ impl<'a> TerserMut<'a> {
     }
 
     /// Set a field value at the specified indices
+    ///
+    /// Note: Component and subcomponent indices are 1-based (HL7 standard notation)
+    /// but internally converted to 0-based for array access.
     fn set_field_value_static(
         field: &mut Field,
         value: &str,
@@ -203,26 +215,40 @@ impl<'a> TerserMut<'a> {
                 }
             }
             (Some(c_idx), None) => {
-                // Set component value
-                while repetition.components.len() <= c_idx {
+                // Set component value (convert 1-based HL7 to 0-based internal)
+                if c_idx == 0 {
+                    return Err(Error::terser_path(
+                        "Invalid component index 0: HL7 uses 1-based indexing",
+                    ));
+                }
+                let internal_idx = c_idx - 1;
+                while repetition.components.len() <= internal_idx {
                     repetition.add_component(Component::new());
                 }
 
-                repetition.components[c_idx] = Component::from_value(value);
+                repetition.components[internal_idx] = Component::from_value(value);
             }
             (Some(c_idx), Some(s_idx)) => {
-                // Set subcomponent value
-                while repetition.components.len() <= c_idx {
+                // Set subcomponent value (convert 1-based HL7 to 0-based internal)
+                if c_idx == 0 || s_idx == 0 {
+                    return Err(Error::terser_path(
+                        "Invalid index 0: HL7 uses 1-based indexing",
+                    ));
+                }
+                let internal_c_idx = c_idx - 1;
+                let internal_s_idx = s_idx - 1;
+
+                while repetition.components.len() <= internal_c_idx {
                     repetition.add_component(Component::new());
                 }
 
-                let component = &mut repetition.components[c_idx];
+                let component = &mut repetition.components[internal_c_idx];
 
-                while component.subcomponents.len() <= s_idx {
+                while component.subcomponents.len() <= internal_s_idx {
                     component.add_subcomponent(SubComponent::new(""));
                 }
 
-                component.subcomponents[s_idx] = SubComponent::new(value);
+                component.subcomponents[internal_s_idx] = SubComponent::new(value);
             }
             (None, Some(_)) => {
                 return Err(Error::terser_path(
@@ -238,6 +264,7 @@ impl<'a> TerserMut<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rs7_parser::parse_message;
 
     #[test]
     fn test_parse_path_with_segment_index() {
@@ -260,5 +287,85 @@ mod tests {
         assert!(TerserPath::parse("").is_err());
         assert!(TerserPath::parse("PID").is_err());
         assert!(TerserPath::parse("PID-").is_err());
+    }
+
+    #[test]
+    fn test_1_based_component_indexing() {
+        // Standard HL7 message with components: ADT^A01^ADT_A01
+        let hl7 = "MSH|^~\\&|HIS|HOSPITAL|EMR|CLINIC|20250115143025||ADT^A01^ADT_A01|MSG12345|P|2.5\r";
+        let message = parse_message(hl7).unwrap();
+        let terser = Terser::new(&message);
+
+        // MSH-9-1 should be first component (ADT)
+        let msg_type = terser.get("MSH-9-1").unwrap();
+        assert_eq!(msg_type, Some("ADT"));
+
+        // MSH-9-2 should be second component (A01)
+        let trigger = terser.get("MSH-9-2").unwrap();
+        assert_eq!(trigger, Some("A01"));
+
+        // MSH-9-3 should be third component (ADT_A01)
+        let structure = terser.get("MSH-9-3").unwrap();
+        assert_eq!(structure, Some("ADT_A01"));
+    }
+
+    #[test]
+    fn test_1_based_patient_name_components() {
+        // PID with patient name: DOE^JOHN^A^^^DR
+        let hl7 = "MSH|^~\\&|APP|FAC|||20250115||ADT^A01|123|P|2.5\rPID|1||PAT001||DOE^JOHN^A^^^DR\r";
+        let message = parse_message(hl7).unwrap();
+        let terser = Terser::new(&message);
+
+        // PID-5-1 = Family name (DOE)
+        assert_eq!(terser.get("PID-5-1").unwrap(), Some("DOE"));
+
+        // PID-5-2 = Given name (JOHN)
+        assert_eq!(terser.get("PID-5-2").unwrap(), Some("JOHN"));
+
+        // PID-5-3 = Middle name (A)
+        assert_eq!(terser.get("PID-5-3").unwrap(), Some("A"));
+
+        // PID-5-6 = Prefix (DR)
+        assert_eq!(terser.get("PID-5-6").unwrap(), Some("DR"));
+    }
+
+    #[test]
+    fn test_invalid_0_based_index_returns_none() {
+        let hl7 = "MSH|^~\\&|APP|FAC|||20250115||ADT^A01|123|P|2.5\r";
+        let message = parse_message(hl7).unwrap();
+        let terser = Terser::new(&message);
+
+        // MSH-9-0 should be invalid (HL7 doesn't use 0-based)
+        let result = terser.get("MSH-9-0").unwrap();
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_set_with_1_based_indexing() {
+        let hl7 = "MSH|^~\\&|APP|FAC|||20250115||ADT^A01|123|P|2.5\rPID|1\r";
+        let mut message = parse_message(hl7).unwrap();
+        let mut terser = TerserMut::new(&mut message);
+
+        // Set patient name using 1-based component indices
+        terser.set("PID-5-1", "SMITH").unwrap(); // Family name
+        terser.set("PID-5-2", "JANE").unwrap(); // Given name
+        terser.set("PID-5-3", "M").unwrap(); // Middle name
+
+        // Verify with read terser
+        let read_terser = Terser::new(&message);
+        assert_eq!(read_terser.get("PID-5-1").unwrap(), Some("SMITH"));
+        assert_eq!(read_terser.get("PID-5-2").unwrap(), Some("JANE"));
+        assert_eq!(read_terser.get("PID-5-3").unwrap(), Some("M"));
+    }
+
+    #[test]
+    fn test_set_invalid_0_index_returns_error() {
+        let hl7 = "MSH|^~\\&|APP|FAC|||20250115||ADT^A01|123|P|2.5\rPID|1\r";
+        let mut message = parse_message(hl7).unwrap();
+        let mut terser = TerserMut::new(&mut message);
+
+        // Setting with index 0 should fail
+        let result = terser.set("PID-5-0", "INVALID");
+        assert!(result.is_err());
     }
 }
