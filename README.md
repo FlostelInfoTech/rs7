@@ -333,7 +333,7 @@ message.add_custom_segment(new_zpv);
 - Type-safe segment definitions with compile-time validation
 - Fluent builder API for ergonomic segment creation
 - Custom validation hooks for business rules
-- Support for primitive types, DateTime (chrono), Option<T>, Vec<T> (repeating fields), and tuple types (components)
+- Support for primitive types, DateTime (chrono), Option<T>, Vec<T> (repeating fields), tuple types (components), and Vec<Tuple> (repeating components)
 - Zero overhead for standard HL7 segments
 
 See [rs7-custom/README.md](crates/rs7-custom/README.md) for complete documentation and examples.

@@ -358,6 +358,112 @@ if let Some((last, first, cred)) = &with_optional.secondary_physician {
 - Returns `Some(tuple)` only if all components are present and non-empty
 - Empty HL7 fields (`||`) parse as `None`
 
+### Repeating Component Fields (Vec<Tuple>)
+
+Repeating component fields combine both repetitions and components, allowing multiple structured values in a single field. This follows the HL7 v2.x specification where repetitions are separated by `~` (tilde) and components within each repetition are separated by `^` (caret).
+
+Supported repeating component types:
+- `Vec<(String, String)>` - Multiple 2-component values
+- `Vec<(String, String, String)>` - Multiple 3-component values
+- `Vec<(String, String, String, String)>` - Multiple 4-component values
+- `Vec<(String, String, String, String, String)>` - Multiple 5-component values
+
+Common use cases:
+- **Multiple phone numbers**: Vec<(Number, Type)> for Phone^Type~Phone^Type~...
+- **Multiple addresses**: Vec<(Street, City, State, Zip, Country)>
+- **Multiple identifiers**: Vec<(ID, Type, Authority, Facility)>
+- **Multiple contact persons**: Vec<(Name, Relationship, Phone)>
+
+Example with repeating component fields:
+
+```rust
+z_segment! {
+    ZPH,
+    id = "ZPH",
+    fields = {
+        1 => patient_id: String,
+        2 => phone_numbers: Vec<(String, String)>,  // Number^Type (multiple phones)
+    }
+}
+
+// Building with multiple phone numbers
+let zph = ZPH::builder()
+    .patient_id("PAT-12345")
+    .phone_numbers(vec![
+        ("555-1234".to_string(), "Home".to_string()),
+        ("555-5678".to_string(), "Work".to_string()),
+        ("555-9999".to_string(), "Mobile".to_string()),
+    ])
+    .build()?;
+
+// Accessing individual phones
+for (number, phone_type) in &zph.phone_numbers {
+    println!("{}: {}", number, phone_type);
+}
+
+// HL7 encoding uses both separators
+// ZPH|PAT-12345|555-1234^Home~555-5678^Work~555-9999^Mobile
+```
+
+**HL7 Encoding**:
+- **Parsing**: `"555-1234^Home~555-5678^Work"` → `vec![("555-1234", "Home"), ("555-5678", "Work")]`
+- **Serialization**: `vec![("A", "B"), ("C", "D")]` → `"A^B~C^D"`
+- **Empty Vec**: `vec![]` → `""` (empty field)
+- **Incomplete tuples**: Tuples with missing components are skipped during parsing
+
+**Multiple addresses example**:
+
+```rust
+z_segment! {
+    ZAD,
+    id = "ZAD",
+    fields = {
+        1 => patient_id: String,
+        2 => addresses: Vec<(String, String, String, String, String)>, // Street^City^State^Zip^Country
+    }
+}
+
+let zad = ZAD::builder()
+    .patient_id("PAT-67890")
+    .addresses(vec![
+        (
+            "123 Main Street".to_string(),
+            "Springfield".to_string(),
+            "IL".to_string(),
+            "62701".to_string(),
+            "USA".to_string(),
+        ),
+        (
+            "456 Oak Avenue".to_string(),
+            "Chicago".to_string(),
+            "IL".to_string(),
+            "60601".to_string(),
+            "USA".to_string(),
+        ),
+    ])
+    .build()?;
+
+// HL7 encoding:
+// ZAD|PAT-67890|123 Main Street^Springfield^IL^62701^USA~456 Oak Avenue^Chicago^IL^60601^USA
+```
+
+**Modifying repeating component fields**:
+
+```rust
+// Parse existing message
+let mut msg = parse_message("...")?;
+let mut zph = msg.get_custom_segment::<ZPH>()?.unwrap();
+
+// Add new phone number
+zph.phone_numbers.push(("555-0000".to_string(), "Fax".to_string()));
+
+// Remove a phone number
+zph.phone_numbers.remove(0);
+
+// Update the message
+msg.set_custom_segment(zph)?;
+```
+
 ### Boolean Field Parsing
 
 Boolean fields support multiple HL7 conventions when parsing:
@@ -509,6 +615,7 @@ See the `examples/` directory for complete working examples:
 - `datetime_fields.rs` - Demonstrating date/time field types (NaiveDateTime, NaiveDate, NaiveTime, DateTime<Utc>)
 - `repeating_fields.rs` - Demonstrating repeating fields (Vec<String>, Vec<u32>, Vec<i32>, Vec<i64>, Vec<f64>, Vec<bool>)
 - `component_fields.rs` - Demonstrating component fields using tuple types ((String, String), (String, String, String), etc.)
+- `repeating_components.rs` - Demonstrating repeating component fields (Vec<Tuple> combining ~ and ^ separators)
 
 Run examples with:
 
@@ -520,6 +627,7 @@ cargo run --example field_types
 cargo run --example datetime_fields
 cargo run --example repeating_fields
 cargo run --example component_fields
+cargo run --example repeating_components
 ```
 
 ## Testing

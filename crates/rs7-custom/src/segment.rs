@@ -2011,6 +2011,247 @@ impl BuilderFieldType for Option<(String, String, String, String, String)> {
     type Inner = Option<(String, String, String, String, String)>;
 }
 
+// ============================================================================
+// Vec<Tuple> Implementations - Repeating Component Fields
+// ============================================================================
+//
+// These implementations support repeating component fields in HL7, which combine
+// both repetitions (~ separator) and components (^ separator).
+//
+// Example HL7 encoding: "555-1234^Home~555-5678^Work~555-9999^Mobile"
+//                       └─ repetition 1 ┘ └─ repetition 2 ┘ └─ repetition 3 ┘
+//                          └─ 2 components in each repetition
+//
+// Common use cases:
+// - Multiple phone numbers with number and type
+// - Multiple addresses with all address components
+// - Multiple identifiers with ID, type, and authority
+// ============================================================================
+
+// Vec<(String, String)> - Multiple 2-component fields
+impl ParseSegmentField for Vec<(String, String)> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            let mut results = Vec::new();
+            for rep in &field.repetitions {
+                let c0 = rep.get_component(0).and_then(|c| c.value()).unwrap_or("");
+                let c1 = rep.get_component(1).and_then(|c| c.value()).unwrap_or("");
+
+                // Only include complete tuples (all components present)
+                if !c0.is_empty() && !c1.is_empty() {
+                    results.push((c0.to_string(), c1.to_string()));
+                }
+            }
+            Ok(results)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+}
+
+impl SerializeSegmentField for Vec<(String, String)> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut field = Field::new();
+        for (c0, c1) in self {
+            let mut rep = Repetition::new();
+            rep.add_component(Component::from_value(c0));
+            rep.add_component(Component::from_value(c1));
+            field.add_repetition(rep);
+        }
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuildableField for Vec<(String, String)> {
+    type Storage = Vec<(String, String)>;
+    type Inner = Vec<(String, String)>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = value;
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+impl BuilderFieldType for Vec<(String, String)> {
+    type Inner = Vec<(String, String)>;
+}
+
+// Vec<(String, String, String)> - Multiple 3-component fields
+impl ParseSegmentField for Vec<(String, String, String)> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            let mut results = Vec::new();
+            for rep in &field.repetitions {
+                let c0 = rep.get_component(0).and_then(|c| c.value()).unwrap_or("");
+                let c1 = rep.get_component(1).and_then(|c| c.value()).unwrap_or("");
+                let c2 = rep.get_component(2).and_then(|c| c.value()).unwrap_or("");
+
+                // Only include complete tuples (all components present)
+                if !c0.is_empty() && !c1.is_empty() && !c2.is_empty() {
+                    results.push((c0.to_string(), c1.to_string(), c2.to_string()));
+                }
+            }
+            Ok(results)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+}
+
+impl SerializeSegmentField for Vec<(String, String, String)> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut field = Field::new();
+        for (c0, c1, c2) in self {
+            let mut rep = Repetition::new();
+            rep.add_component(Component::from_value(c0));
+            rep.add_component(Component::from_value(c1));
+            rep.add_component(Component::from_value(c2));
+            field.add_repetition(rep);
+        }
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuildableField for Vec<(String, String, String)> {
+    type Storage = Vec<(String, String, String)>;
+    type Inner = Vec<(String, String, String)>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = value;
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+impl BuilderFieldType for Vec<(String, String, String)> {
+    type Inner = Vec<(String, String, String)>;
+}
+
+// Vec<(String, String, String, String)> - Multiple 4-component fields
+impl ParseSegmentField for Vec<(String, String, String, String)> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            let mut results = Vec::new();
+            for rep in &field.repetitions {
+                let c0 = rep.get_component(0).and_then(|c| c.value()).unwrap_or("");
+                let c1 = rep.get_component(1).and_then(|c| c.value()).unwrap_or("");
+                let c2 = rep.get_component(2).and_then(|c| c.value()).unwrap_or("");
+                let c3 = rep.get_component(3).and_then(|c| c.value()).unwrap_or("");
+
+                // Only include complete tuples (all components present)
+                if !c0.is_empty() && !c1.is_empty() && !c2.is_empty() && !c3.is_empty() {
+                    results.push((c0.to_string(), c1.to_string(), c2.to_string(), c3.to_string()));
+                }
+            }
+            Ok(results)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+}
+
+impl SerializeSegmentField for Vec<(String, String, String, String)> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut field = Field::new();
+        for (c0, c1, c2, c3) in self {
+            let mut rep = Repetition::new();
+            rep.add_component(Component::from_value(c0));
+            rep.add_component(Component::from_value(c1));
+            rep.add_component(Component::from_value(c2));
+            rep.add_component(Component::from_value(c3));
+            field.add_repetition(rep);
+        }
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuildableField for Vec<(String, String, String, String)> {
+    type Storage = Vec<(String, String, String, String)>;
+    type Inner = Vec<(String, String, String, String)>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = value;
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+impl BuilderFieldType for Vec<(String, String, String, String)> {
+    type Inner = Vec<(String, String, String, String)>;
+}
+
+// Vec<(String, String, String, String, String)> - Multiple 5-component fields
+impl ParseSegmentField for Vec<(String, String, String, String, String)> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            let mut results = Vec::new();
+            for rep in &field.repetitions {
+                let c0 = rep.get_component(0).and_then(|c| c.value()).unwrap_or("");
+                let c1 = rep.get_component(1).and_then(|c| c.value()).unwrap_or("");
+                let c2 = rep.get_component(2).and_then(|c| c.value()).unwrap_or("");
+                let c3 = rep.get_component(3).and_then(|c| c.value()).unwrap_or("");
+                let c4 = rep.get_component(4).and_then(|c| c.value()).unwrap_or("");
+
+                // Only include complete tuples (all components present)
+                if !c0.is_empty() && !c1.is_empty() && !c2.is_empty() && !c3.is_empty() && !c4.is_empty() {
+                    results.push((c0.to_string(), c1.to_string(), c2.to_string(), c3.to_string(), c4.to_string()));
+                }
+            }
+            Ok(results)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+}
+
+impl SerializeSegmentField for Vec<(String, String, String, String, String)> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut field = Field::new();
+        for (c0, c1, c2, c3, c4) in self {
+            let mut rep = Repetition::new();
+            rep.add_component(Component::from_value(c0));
+            rep.add_component(Component::from_value(c1));
+            rep.add_component(Component::from_value(c2));
+            rep.add_component(Component::from_value(c3));
+            rep.add_component(Component::from_value(c4));
+            field.add_repetition(rep);
+        }
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuildableField for Vec<(String, String, String, String, String)> {
+    type Storage = Vec<(String, String, String, String, String)>;
+    type Inner = Vec<(String, String, String, String, String)>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = value;
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+impl BuilderFieldType for Vec<(String, String, String, String, String)> {
+    type Inner = Vec<(String, String, String, String, String)>;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3355,5 +3596,310 @@ mod tests {
 
         // When None, should not add components
         assert!(!encoded.contains("^"));
+    }
+
+    // ========================================================================
+    // Vec<Tuple> Tests - Repeating Component Fields
+    // ========================================================================
+
+    #[test]
+    fn test_vec_tuple2_parse_multiple() {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut segment = Segment::new("ZVT");
+
+        // Create field with multiple 2-component repetitions
+        let mut field = Field::new();
+
+        let mut rep1 = Repetition::new();
+        rep1.add_component(Component::from_value("555-1234"));
+        rep1.add_component(Component::from_value("Home"));
+        field.add_repetition(rep1);
+
+        let mut rep2 = Repetition::new();
+        rep2.add_component(Component::from_value("555-5678"));
+        rep2.add_component(Component::from_value("Work"));
+        field.add_repetition(rep2);
+
+        let mut rep3 = Repetition::new();
+        rep3.add_component(Component::from_value("555-9999"));
+        rep3.add_component(Component::from_value("Mobile"));
+        field.add_repetition(rep3);
+
+        segment.set_field(1, field).unwrap();
+
+        let result = Vec::<(String, String)>::parse_field(&segment, 1, "ZVT").unwrap();
+
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0], ("555-1234".to_string(), "Home".to_string()));
+        assert_eq!(result[1], ("555-5678".to_string(), "Work".to_string()));
+        assert_eq!(result[2], ("555-9999".to_string(), "Mobile".to_string()));
+    }
+
+    #[test]
+    fn test_vec_tuple2_serialize() {
+        use rs7_core::Delimiters;
+
+        let mut segment = Segment::new("ZVT");
+        let phones = vec![
+            ("555-1234".to_string(), "Home".to_string()),
+            ("555-5678".to_string(), "Work".to_string()),
+        ];
+
+        phones.set_field(&mut segment, 1);
+
+        let delimiters = Delimiters::default();
+        let encoded = segment.encode(&delimiters);
+
+        assert!(encoded.contains("555-1234^Home~555-5678^Work"));
+    }
+
+    #[test]
+    fn test_vec_tuple2_roundtrip() {
+        use rs7_core::Delimiters;
+
+        let mut segment = Segment::new("ZVT");
+        let original = vec![
+            ("AAA".to_string(), "BBB".to_string()),
+            ("CCC".to_string(), "DDD".to_string()),
+            ("EEE".to_string(), "FFF".to_string()),
+        ];
+
+        original.set_field(&mut segment, 1);
+        let parsed = Vec::<(String, String)>::parse_field(&segment, 1, "ZVT").unwrap();
+
+        assert_eq!(parsed, original);
+    }
+
+    #[test]
+    fn test_vec_tuple3_parse_multiple() {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut segment = Segment::new("ZVT");
+
+        let mut field = Field::new();
+
+        let mut rep1 = Repetition::new();
+        rep1.add_component(Component::from_value("123 Main"));
+        rep1.add_component(Component::from_value("Springfield"));
+        rep1.add_component(Component::from_value("IL"));
+        field.add_repetition(rep1);
+
+        let mut rep2 = Repetition::new();
+        rep2.add_component(Component::from_value("456 Oak"));
+        rep2.add_component(Component::from_value("Chicago"));
+        rep2.add_component(Component::from_value("IL"));
+        field.add_repetition(rep2);
+
+        segment.set_field(1, field).unwrap();
+
+        let result = Vec::<(String, String, String)>::parse_field(&segment, 1, "ZVT").unwrap();
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0], ("123 Main".to_string(), "Springfield".to_string(), "IL".to_string()));
+        assert_eq!(result[1], ("456 Oak".to_string(), "Chicago".to_string(), "IL".to_string()));
+    }
+
+    #[test]
+    fn test_vec_tuple3_roundtrip() {
+        use rs7_core::Delimiters;
+
+        let mut segment = Segment::new("ZVT");
+        let original = vec![
+            ("Smith".to_string(), "John".to_string(), "MD".to_string()),
+            ("Doe".to_string(), "Jane".to_string(), "PhD".to_string()),
+        ];
+
+        original.set_field(&mut segment, 1);
+        let parsed = Vec::<(String, String, String)>::parse_field(&segment, 1, "ZVT").unwrap();
+
+        assert_eq!(parsed, original);
+    }
+
+    #[test]
+    fn test_vec_tuple4_parse_multiple() {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut segment = Segment::new("ZVT");
+
+        let mut field = Field::new();
+
+        let mut rep1 = Repetition::new();
+        rep1.add_component(Component::from_value("MRN123"));
+        rep1.add_component(Component::from_value("MRN"));
+        rep1.add_component(Component::from_value("Hospital"));
+        rep1.add_component(Component::from_value("Main"));
+        field.add_repetition(rep1);
+
+        let mut rep2 = Repetition::new();
+        rep2.add_component(Component::from_value("ACC456"));
+        rep2.add_component(Component::from_value("Account"));
+        rep2.add_component(Component::from_value("Billing"));
+        rep2.add_component(Component::from_value("West"));
+        field.add_repetition(rep2);
+
+        segment.set_field(1, field).unwrap();
+
+        let result = Vec::<(String, String, String, String)>::parse_field(&segment, 1, "ZVT").unwrap();
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0], ("MRN123".to_string(), "MRN".to_string(), "Hospital".to_string(), "Main".to_string()));
+        assert_eq!(result[1], ("ACC456".to_string(), "Account".to_string(), "Billing".to_string(), "West".to_string()));
+    }
+
+    #[test]
+    fn test_vec_tuple4_roundtrip() {
+        use rs7_core::Delimiters;
+
+        let mut segment = Segment::new("ZVT");
+        let original = vec![
+            ("A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()),
+            ("E".to_string(), "F".to_string(), "G".to_string(), "H".to_string()),
+        ];
+
+        original.set_field(&mut segment, 1);
+        let parsed = Vec::<(String, String, String, String)>::parse_field(&segment, 1, "ZVT").unwrap();
+
+        assert_eq!(parsed, original);
+    }
+
+    #[test]
+    fn test_vec_tuple5_parse_multiple() {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut segment = Segment::new("ZVT");
+
+        let mut field = Field::new();
+
+        let mut rep1 = Repetition::new();
+        rep1.add_component(Component::from_value("123 Main"));
+        rep1.add_component(Component::from_value("Springfield"));
+        rep1.add_component(Component::from_value("IL"));
+        rep1.add_component(Component::from_value("62701"));
+        rep1.add_component(Component::from_value("USA"));
+        field.add_repetition(rep1);
+
+        let mut rep2 = Repetition::new();
+        rep2.add_component(Component::from_value("456 Oak"));
+        rep2.add_component(Component::from_value("Chicago"));
+        rep2.add_component(Component::from_value("IL"));
+        rep2.add_component(Component::from_value("60601"));
+        rep2.add_component(Component::from_value("USA"));
+        field.add_repetition(rep2);
+
+        segment.set_field(1, field).unwrap();
+
+        let result = Vec::<(String, String, String, String, String)>::parse_field(&segment, 1, "ZVT").unwrap();
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0], ("123 Main".to_string(), "Springfield".to_string(), "IL".to_string(), "62701".to_string(), "USA".to_string()));
+        assert_eq!(result[1], ("456 Oak".to_string(), "Chicago".to_string(), "IL".to_string(), "60601".to_string(), "USA".to_string()));
+    }
+
+    #[test]
+    fn test_vec_tuple5_roundtrip() {
+        use rs7_core::Delimiters;
+
+        let mut segment = Segment::new("ZVT");
+        let original = vec![
+            ("Williams".to_string(), "Sarah".to_string(), "Jane".to_string(), "MD".to_string(), "Dr".to_string()),
+            ("Brown".to_string(), "Robert".to_string(), "Lee".to_string(), "PhD".to_string(), "Prof".to_string()),
+        ];
+
+        original.set_field(&mut segment, 1);
+        let parsed = Vec::<(String, String, String, String, String)>::parse_field(&segment, 1, "ZVT").unwrap();
+
+        assert_eq!(parsed, original);
+    }
+
+    #[test]
+    fn test_vec_tuple_empty() {
+        let segment = Segment::new("ZVT");
+
+        let result = Vec::<(String, String)>::parse_field(&segment, 1, "ZVT").unwrap();
+        assert_eq!(result.len(), 0);
+
+        let result3 = Vec::<(String, String, String)>::parse_field(&segment, 1, "ZVT").unwrap();
+        assert_eq!(result3.len(), 0);
+    }
+
+    #[test]
+    fn test_vec_tuple_hl7_encoding_with_both_separators() {
+        use rs7_core::Delimiters;
+
+        let mut segment = Segment::new("ZVT");
+        let phones = vec![
+            ("555-1111".to_string(), "Home".to_string()),
+            ("555-2222".to_string(), "Work".to_string()),
+            ("555-3333".to_string(), "Mobile".to_string()),
+        ];
+
+        phones.set_field(&mut segment, 1);
+
+        let delimiters = Delimiters::default();
+        let encoded = segment.encode(&delimiters);
+
+        // Should have both ~ (repetition separator) and ^ (component separator)
+        assert!(encoded.contains("~"));
+        assert!(encoded.contains("^"));
+        assert!(encoded.contains("555-1111^Home"));
+        assert!(encoded.contains("555-2222^Work"));
+        assert!(encoded.contains("555-3333^Mobile"));
+    }
+
+    #[test]
+    fn test_vec_tuple_incomplete_components_skipped() {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut segment = Segment::new("ZVT");
+
+        // Mix of complete and incomplete tuples
+        let mut field = Field::new();
+
+        // First tuple complete (AAA^BBB)
+        let mut rep1 = Repetition::new();
+        rep1.add_component(Component::from_value("AAA"));
+        rep1.add_component(Component::from_value("BBB"));
+        field.add_repetition(rep1);
+
+        // Second tuple incomplete (CCC only - missing second component)
+        let mut rep2 = Repetition::new();
+        rep2.add_component(Component::from_value("CCC"));
+        field.add_repetition(rep2);
+
+        // Third tuple complete (DDD^EEE)
+        let mut rep3 = Repetition::new();
+        rep3.add_component(Component::from_value("DDD"));
+        rep3.add_component(Component::from_value("EEE"));
+        field.add_repetition(rep3);
+
+        segment.set_field(1, field).unwrap();
+
+        let result = Vec::<(String, String)>::parse_field(&segment, 1, "ZVT").unwrap();
+
+        // Should only include complete tuples (AAA^BBB and DDD^EEE)
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0], ("AAA".to_string(), "BBB".to_string()));
+        assert_eq!(result[1], ("DDD".to_string(), "EEE".to_string()));
+    }
+
+    #[test]
+    fn test_vec_tuple_builder() {
+        use rs7_core::Delimiters;
+
+        let mut segment = Segment::new("ZVT");
+        let phones = vec![
+            ("555-0001".to_string(), "Primary".to_string()),
+            ("555-0002".to_string(), "Secondary".to_string()),
+        ];
+
+        phones.set_field(&mut segment, 1);
+        let parsed = Vec::<(String, String)>::parse_field(&segment, 1, "ZVT").unwrap();
+
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0].0, "555-0001");
+        assert_eq!(parsed[0].1, "Primary");
+        assert_eq!(parsed[1].0, "555-0002");
+        assert_eq!(parsed[1].1, "Secondary");
     }
 }
