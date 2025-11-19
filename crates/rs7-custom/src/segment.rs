@@ -1454,6 +1454,311 @@ impl BuilderFieldType for Vec<bool> {
     type Inner = Vec<bool>;
 }
 
+// ============================================================================
+// Tuple types for field components
+// ============================================================================
+//
+// Components are sub-parts of fields separated by ^ (caret) in HL7.
+// Example: "Smith^John^A" represents last name^first name^middle initial
+//
+// We support tuples of 2-5 elements to represent common component structures.
+
+// Tuple of 2 components: (String, String)
+impl BuildableField for (String, String) {
+    type Storage = (Option<String>, Option<String>);
+    type Inner = (String, String);
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = (Some(value.0), Some(value.1));
+    }
+
+    fn build_value(storage: Self::Storage, field_name: &str, seg_id: &str) -> Result<Self> {
+        match storage {
+            (Some(c0), Some(c1)) => Ok((c0, c1)),
+            _ => Err(crate::error::CustomSegmentError::missing_field(
+                format!("{}-{}", seg_id, field_name),
+                seg_id,
+            )),
+        }
+    }
+}
+
+impl ParseSegmentField for (String, String) {
+    fn parse_field(segment: &Segment, field_num: usize, seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            if let Some(rep) = field.get_repetition(0) {
+                let c0 = rep
+                    .get_component(0)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+                let c1 = rep
+                    .get_component(1)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+
+                if !c0.is_empty() && !c1.is_empty() {
+                    return Ok((c0, c1));
+                }
+            }
+        }
+        Err(crate::error::CustomSegmentError::missing_field(
+            format!("{}-{}", seg_id, field_num),
+            seg_id,
+        ))
+    }
+}
+
+impl SerializeSegmentField for (String, String) {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut rep = Repetition::new();
+        rep.add_component(Component::from_value(&self.0));
+        rep.add_component(Component::from_value(&self.1));
+
+        let mut field = Field::new();
+        field.add_repetition(rep);
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuilderFieldType for (String, String) {
+    type Inner = (String, String);
+}
+
+// Tuple of 3 components: (String, String, String)
+impl BuildableField for (String, String, String) {
+    type Storage = (Option<String>, Option<String>, Option<String>);
+    type Inner = (String, String, String);
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = (Some(value.0), Some(value.1), Some(value.2));
+    }
+
+    fn build_value(storage: Self::Storage, field_name: &str, seg_id: &str) -> Result<Self> {
+        match storage {
+            (Some(c0), Some(c1), Some(c2)) => Ok((c0, c1, c2)),
+            _ => Err(crate::error::CustomSegmentError::missing_field(
+                format!("{}-{}", seg_id, field_name),
+                seg_id,
+            )),
+        }
+    }
+}
+
+impl ParseSegmentField for (String, String, String) {
+    fn parse_field(segment: &Segment, field_num: usize, seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            if let Some(rep) = field.get_repetition(0) {
+                let c0 = rep
+                    .get_component(0)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+                let c1 = rep
+                    .get_component(1)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+                let c2 = rep
+                    .get_component(2)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+
+                if !c0.is_empty() && !c1.is_empty() && !c2.is_empty() {
+                    return Ok((c0, c1, c2));
+                }
+            }
+        }
+        Err(crate::error::CustomSegmentError::missing_field(
+            format!("{}-{}", seg_id, field_num),
+            seg_id,
+        ))
+    }
+}
+
+impl SerializeSegmentField for (String, String, String) {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut rep = Repetition::new();
+        rep.add_component(Component::from_value(&self.0));
+        rep.add_component(Component::from_value(&self.1));
+        rep.add_component(Component::from_value(&self.2));
+
+        let mut field = Field::new();
+        field.add_repetition(rep);
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuilderFieldType for (String, String, String) {
+    type Inner = (String, String, String);
+}
+
+// Tuple of 4 components: (String, String, String, String)
+impl BuildableField for (String, String, String, String) {
+    type Storage = (Option<String>, Option<String>, Option<String>, Option<String>);
+    type Inner = (String, String, String, String);
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = (Some(value.0), Some(value.1), Some(value.2), Some(value.3));
+    }
+
+    fn build_value(storage: Self::Storage, field_name: &str, seg_id: &str) -> Result<Self> {
+        match storage {
+            (Some(c0), Some(c1), Some(c2), Some(c3)) => Ok((c0, c1, c2, c3)),
+            _ => Err(crate::error::CustomSegmentError::missing_field(
+                format!("{}-{}", seg_id, field_name),
+                seg_id,
+            )),
+        }
+    }
+}
+
+impl ParseSegmentField for (String, String, String, String) {
+    fn parse_field(segment: &Segment, field_num: usize, seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            if let Some(rep) = field.get_repetition(0) {
+                let c0 = rep
+                    .get_component(0)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+                let c1 = rep
+                    .get_component(1)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+                let c2 = rep
+                    .get_component(2)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+                let c3 = rep
+                    .get_component(3)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+
+                if !c0.is_empty() && !c1.is_empty() && !c2.is_empty() && !c3.is_empty() {
+                    return Ok((c0, c1, c2, c3));
+                }
+            }
+        }
+        Err(crate::error::CustomSegmentError::missing_field(
+            format!("{}-{}", seg_id, field_num),
+            seg_id,
+        ))
+    }
+}
+
+impl SerializeSegmentField for (String, String, String, String) {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut rep = Repetition::new();
+        rep.add_component(Component::from_value(&self.0));
+        rep.add_component(Component::from_value(&self.1));
+        rep.add_component(Component::from_value(&self.2));
+        rep.add_component(Component::from_value(&self.3));
+
+        let mut field = Field::new();
+        field.add_repetition(rep);
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuilderFieldType for (String, String, String, String) {
+    type Inner = (String, String, String, String);
+}
+
+// Tuple of 5 components: (String, String, String, String, String)
+impl BuildableField for (String, String, String, String, String) {
+    type Storage = (Option<String>, Option<String>, Option<String>, Option<String>, Option<String>);
+    type Inner = (String, String, String, String, String);
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = (Some(value.0), Some(value.1), Some(value.2), Some(value.3), Some(value.4));
+    }
+
+    fn build_value(storage: Self::Storage, field_name: &str, seg_id: &str) -> Result<Self> {
+        match storage {
+            (Some(c0), Some(c1), Some(c2), Some(c3), Some(c4)) => Ok((c0, c1, c2, c3, c4)),
+            _ => Err(crate::error::CustomSegmentError::missing_field(
+                format!("{}-{}", seg_id, field_name),
+                seg_id,
+            )),
+        }
+    }
+}
+
+impl ParseSegmentField for (String, String, String, String, String) {
+    fn parse_field(segment: &Segment, field_num: usize, seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            if let Some(rep) = field.get_repetition(0) {
+                let c0 = rep
+                    .get_component(0)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+                let c1 = rep
+                    .get_component(1)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+                let c2 = rep
+                    .get_component(2)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+                let c3 = rep
+                    .get_component(3)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+                let c4 = rep
+                    .get_component(4)
+                    .and_then(|c| c.value())
+                    .unwrap_or("")
+                    .to_string();
+
+                if !c0.is_empty() && !c1.is_empty() && !c2.is_empty() && !c3.is_empty() && !c4.is_empty() {
+                    return Ok((c0, c1, c2, c3, c4));
+                }
+            }
+        }
+        Err(crate::error::CustomSegmentError::missing_field(
+            format!("{}-{}", seg_id, field_num),
+            seg_id,
+        ))
+    }
+}
+
+impl SerializeSegmentField for (String, String, String, String, String) {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut rep = Repetition::new();
+        rep.add_component(Component::from_value(&self.0));
+        rep.add_component(Component::from_value(&self.1));
+        rep.add_component(Component::from_value(&self.2));
+        rep.add_component(Component::from_value(&self.3));
+        rep.add_component(Component::from_value(&self.4));
+
+        let mut field = Field::new();
+        field.add_repetition(rep);
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuilderFieldType for (String, String, String, String, String) {
+    type Inner = (String, String, String, String, String);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2358,5 +2663,240 @@ mod tests {
 
         let field = segment.get_field(1).unwrap();
         assert_eq!(field.repetitions.len(), 0);
+    }
+
+    // Tests for tuple component types
+    #[test]
+    fn test_tuple2_parse() {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        let mut rep = Repetition::new();
+        rep.add_component(Component::from_value("Smith"));
+        rep.add_component(Component::from_value("John"));
+        field.add_repetition(rep);
+        segment.set_field(1, field).unwrap();
+
+        let result = <(String, String)>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result.0, "Smith");
+        assert_eq!(result.1, "John");
+    }
+
+    #[test]
+    fn test_tuple2_serialize() {
+        let mut segment = Segment::new("TEST");
+        let value = ("Smith".to_string(), "John".to_string());
+
+        value.set_field(&mut segment, 1);
+
+        let field = segment.get_field(1).unwrap();
+        let rep = field.get_repetition(0).unwrap();
+        assert_eq!(rep.get_component(0).unwrap().value().unwrap(), "Smith");
+        assert_eq!(rep.get_component(1).unwrap().value().unwrap(), "John");
+    }
+
+    #[test]
+    fn test_tuple2_roundtrip() {
+        use rs7_core::Delimiters;
+
+        let mut segment = Segment::new("ZPN");
+        let original = ("Doe".to_string(), "Jane".to_string());
+
+        original.set_field(&mut segment, 1);
+        let parsed = <(String, String)>::parse_field(&segment, 1, "ZPN").unwrap();
+
+        assert_eq!(original, parsed);
+
+        // Verify HL7 encoding uses ^ separator
+        let delimiters = Delimiters::default();
+        let encoded = segment.encode(&delimiters);
+        assert!(encoded.contains("Doe^Jane"));
+    }
+
+    #[test]
+    fn test_tuple3_parse() {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        let mut rep = Repetition::new();
+        rep.add_component(Component::from_value("Smith"));
+        rep.add_component(Component::from_value("John"));
+        rep.add_component(Component::from_value("A"));
+        field.add_repetition(rep);
+        segment.set_field(1, field).unwrap();
+
+        let result = <(String, String, String)>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result.0, "Smith");
+        assert_eq!(result.1, "John");
+        assert_eq!(result.2, "A");
+    }
+
+    #[test]
+    fn test_tuple3_serialize() {
+        let mut segment = Segment::new("TEST");
+        let value = ("Smith".to_string(), "John".to_string(), "A".to_string());
+
+        value.set_field(&mut segment, 1);
+
+        let field = segment.get_field(1).unwrap();
+        let rep = field.get_repetition(0).unwrap();
+        assert_eq!(rep.get_component(0).unwrap().value().unwrap(), "Smith");
+        assert_eq!(rep.get_component(1).unwrap().value().unwrap(), "John");
+        assert_eq!(rep.get_component(2).unwrap().value().unwrap(), "A");
+    }
+
+    #[test]
+    fn test_tuple3_roundtrip() {
+        let mut segment = Segment::new("ZPN");
+        let original = ("Doe".to_string(), "Jane".to_string(), "Marie".to_string());
+
+        original.set_field(&mut segment, 1);
+        let parsed = <(String, String, String)>::parse_field(&segment, 1, "ZPN").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_tuple4_parse() {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        let mut rep = Repetition::new();
+        rep.add_component(Component::from_value("Smith"));
+        rep.add_component(Component::from_value("John"));
+        rep.add_component(Component::from_value("A"));
+        rep.add_component(Component::from_value("Jr"));
+        field.add_repetition(rep);
+        segment.set_field(1, field).unwrap();
+
+        let result = <(String, String, String, String)>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result.0, "Smith");
+        assert_eq!(result.1, "John");
+        assert_eq!(result.2, "A");
+        assert_eq!(result.3, "Jr");
+    }
+
+    #[test]
+    fn test_tuple4_serialize() {
+        let mut segment = Segment::new("TEST");
+        let value = (
+            "Smith".to_string(),
+            "John".to_string(),
+            "A".to_string(),
+            "Jr".to_string(),
+        );
+
+        value.set_field(&mut segment, 1);
+
+        let field = segment.get_field(1).unwrap();
+        let rep = field.get_repetition(0).unwrap();
+        assert_eq!(rep.get_component(0).unwrap().value().unwrap(), "Smith");
+        assert_eq!(rep.get_component(1).unwrap().value().unwrap(), "John");
+        assert_eq!(rep.get_component(2).unwrap().value().unwrap(), "A");
+        assert_eq!(rep.get_component(3).unwrap().value().unwrap(), "Jr");
+    }
+
+    #[test]
+    fn test_tuple4_roundtrip() {
+        let mut segment = Segment::new("ZPN");
+        let original = (
+            "Doe".to_string(),
+            "Jane".to_string(),
+            "Marie".to_string(),
+            "III".to_string(),
+        );
+
+        original.set_field(&mut segment, 1);
+        let parsed = <(String, String, String, String)>::parse_field(&segment, 1, "ZPN").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_tuple5_parse() {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        let mut rep = Repetition::new();
+        rep.add_component(Component::from_value("Smith"));
+        rep.add_component(Component::from_value("John"));
+        rep.add_component(Component::from_value("A"));
+        rep.add_component(Component::from_value("Jr"));
+        rep.add_component(Component::from_value("Dr"));
+        field.add_repetition(rep);
+        segment.set_field(1, field).unwrap();
+
+        let result = <(String, String, String, String, String)>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result.0, "Smith");
+        assert_eq!(result.1, "John");
+        assert_eq!(result.2, "A");
+        assert_eq!(result.3, "Jr");
+        assert_eq!(result.4, "Dr");
+    }
+
+    #[test]
+    fn test_tuple5_serialize() {
+        let mut segment = Segment::new("TEST");
+        let value = (
+            "Smith".to_string(),
+            "John".to_string(),
+            "A".to_string(),
+            "Jr".to_string(),
+            "Dr".to_string(),
+        );
+
+        value.set_field(&mut segment, 1);
+
+        let field = segment.get_field(1).unwrap();
+        let rep = field.get_repetition(0).unwrap();
+        assert_eq!(rep.get_component(0).unwrap().value().unwrap(), "Smith");
+        assert_eq!(rep.get_component(1).unwrap().value().unwrap(), "John");
+        assert_eq!(rep.get_component(2).unwrap().value().unwrap(), "A");
+        assert_eq!(rep.get_component(3).unwrap().value().unwrap(), "Jr");
+        assert_eq!(rep.get_component(4).unwrap().value().unwrap(), "Dr");
+    }
+
+    #[test]
+    fn test_tuple5_roundtrip() {
+        let mut segment = Segment::new("ZPN");
+        let original = (
+            "Doe".to_string(),
+            "Jane".to_string(),
+            "Marie".to_string(),
+            "III".to_string(),
+            "Prof".to_string(),
+        );
+
+        original.set_field(&mut segment, 1);
+        let parsed = <(String, String, String, String, String)>::parse_field(&segment, 1, "ZPN").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_tuple_hl7_encoding_with_caret_separator() {
+        use rs7_core::Delimiters;
+
+        let mut segment = Segment::new("ZPN");
+
+        // Patient name: Last^First^Middle^Suffix^Prefix
+        let name = (
+            "Smith".to_string(),
+            "John".to_string(),
+            "Alexander".to_string(),
+            "Jr".to_string(),
+            "Dr".to_string(),
+        );
+        name.set_field(&mut segment, 1);
+
+        let delimiters = Delimiters::default();
+        let encoded = segment.encode(&delimiters);
+
+        // Verify the encoded string contains ^ separators
+        assert!(encoded.contains("Smith^John^Alexander^Jr^Dr"));
     }
 }

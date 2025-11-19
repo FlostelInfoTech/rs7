@@ -247,6 +247,62 @@ let zct = ZCT::builder()
 - **Serialization**: `vec!["a", "b", "c"]` → `"a~b~c"`
 - **Empty Vec**: `vec![]` → `""` (empty field)
 
+### Component Fields (Tuple Types)
+
+Component fields allow structured data within a single field, following the HL7 v2.x specification. Components are sub-parts of fields separated by `^` (caret) in HL7 encoding.
+
+Supported tuple types for components:
+- `(String, String)` - 2 components
+- `(String, String, String)` - 3 components
+- `(String, String, String, String)` - 4 components
+- `(String, String, String, String, String)` - 5 components
+
+Common use cases:
+- **Patient names**: Last^First^Middle^Suffix^Prefix
+- **Addresses**: Street^City^State^Zip^Country
+- **Identifiers**: ID^Type^Authority^Facility
+- **Phone numbers**: Number^Extension
+
+Example with component fields:
+
+```rust
+z_segment! {
+    ZPN,
+    id = "ZPN",
+    fields = {
+        1 => patient_id: String,
+        2 => patient_name: (String, String, String),  // Last^First^Middle
+        3 => emergency_contact: (String, String),     // Last^First
+    }
+}
+
+// Building with component values
+let zpn = ZPN::builder()
+    .patient_id("PAT-12345")
+    .patient_name((
+        "Smith".to_string(),
+        "John".to_string(),
+        "Alexander".to_string(),
+    ))
+    .emergency_contact((
+        "Doe".to_string(),
+        "Jane".to_string(),
+    ))
+    .build()?;
+
+// Accessing components
+let (last, first, middle) = zpn.patient_name;
+println!("Patient: {} {}", first, last);
+
+// HL7 encoding uses ^ separator
+// ZPN|PAT-12345|Smith^John^Alexander|Doe^Jane
+```
+
+**HL7 Encoding**:
+- **Parsing**: `"Smith^John^A"` → `("Smith", "John", "A")`
+- **Serialization**: `("Doe", "Jane", "M")` → `"Doe^Jane^M"`
+- **Destructuring**: Tuples support pattern matching and destructuring
+
 ### Boolean Field Parsing
 
 Boolean fields support multiple HL7 conventions when parsing:
@@ -397,6 +453,7 @@ See the `examples/` directory for complete working examples:
 - `field_types.rs` - Demonstrating primitive field types (String, u32, i32, i64, f64, bool)
 - `datetime_fields.rs` - Demonstrating date/time field types (NaiveDateTime, NaiveDate, NaiveTime, DateTime<Utc>)
 - `repeating_fields.rs` - Demonstrating repeating fields (Vec<String>, Vec<u32>, Vec<i32>, Vec<i64>, Vec<f64>, Vec<bool>)
+- `component_fields.rs` - Demonstrating component fields using tuple types ((String, String), (String, String, String), etc.)
 
 Run examples with:
 
@@ -407,6 +464,7 @@ cargo run --example message_manipulation
 cargo run --example field_types
 cargo run --example datetime_fields
 cargo run --example repeating_fields
+cargo run --example component_fields
 ```
 
 ## Testing
