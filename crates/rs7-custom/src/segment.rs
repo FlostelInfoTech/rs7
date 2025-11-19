@@ -2,6 +2,7 @@
 
 use crate::error::Result;
 use rs7_core::Segment;
+use chrono::{NaiveDateTime, NaiveDate, NaiveTime, DateTime, Utc};
 
 /// Trait for custom Z-segments
 ///
@@ -745,6 +746,431 @@ impl BuilderFieldType for Option<bool> {
     type Inner = bool;
 }
 
+// ============================================================================
+// NaiveDateTime implementations (timestamp without timezone)
+// ============================================================================
+
+// BuildableField for required NaiveDateTime
+impl BuildableField for NaiveDateTime {
+    type Storage = Option<NaiveDateTime>;
+    type Inner = NaiveDateTime;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, field_name: &str, seg_id: &str) -> Result<Self> {
+        storage.ok_or_else(|| {
+            crate::error::CustomSegmentError::missing_field(
+                format!("{}-{}", seg_id, field_name),
+                seg_id,
+            )
+        })
+    }
+}
+
+// BuildableField for optional NaiveDateTime
+impl BuildableField for Option<NaiveDateTime> {
+    type Storage = Option<NaiveDateTime>;
+    type Inner = NaiveDateTime;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+// ParseSegmentField for NaiveDateTime
+// Supports HL7 datetime formats: YYYYMMDDHHMMSS[.SSSS]
+impl ParseSegmentField for NaiveDateTime {
+    fn parse_field(segment: &Segment, field_num: usize, seg_id: &str) -> Result<Self> {
+        segment
+            .get_field_value(field_num)
+            .and_then(|s| parse_hl7_datetime(s))
+            .ok_or_else(|| {
+                crate::error::CustomSegmentError::missing_field(
+                    format!("{}-{}", seg_id, field_num),
+                    seg_id,
+                )
+            })
+    }
+}
+
+// ParseSegmentField for Option<NaiveDateTime>
+impl ParseSegmentField for Option<NaiveDateTime> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        Ok(segment.get_field_value(field_num).and_then(parse_hl7_datetime))
+    }
+}
+
+// SerializeSegmentField for NaiveDateTime
+impl SerializeSegmentField for NaiveDateTime {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        let formatted = self.format("%Y%m%d%H%M%S").to_string();
+        let _ = segment.set_field_value(field_num, &formatted);
+    }
+}
+
+// SerializeSegmentField for Option<NaiveDateTime>
+impl SerializeSegmentField for Option<NaiveDateTime> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        if let Some(dt) = self {
+            dt.set_field(segment, field_num);
+        }
+    }
+}
+
+// BuilderFieldType for NaiveDateTime
+impl BuilderFieldType for NaiveDateTime {
+    type Inner = NaiveDateTime;
+}
+
+// BuilderFieldType for Option<NaiveDateTime>
+impl BuilderFieldType for Option<NaiveDateTime> {
+    type Inner = NaiveDateTime;
+}
+
+// ============================================================================
+// NaiveDate implementations (date without time)
+// ============================================================================
+
+// BuildableField for required NaiveDate
+impl BuildableField for NaiveDate {
+    type Storage = Option<NaiveDate>;
+    type Inner = NaiveDate;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, field_name: &str, seg_id: &str) -> Result<Self> {
+        storage.ok_or_else(|| {
+            crate::error::CustomSegmentError::missing_field(
+                format!("{}-{}", seg_id, field_name),
+                seg_id,
+            )
+        })
+    }
+}
+
+// BuildableField for optional NaiveDate
+impl BuildableField for Option<NaiveDate> {
+    type Storage = Option<NaiveDate>;
+    type Inner = NaiveDate;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+// ParseSegmentField for NaiveDate
+// Supports HL7 date formats: YYYYMMDD, YYYYMM, YYYY
+impl ParseSegmentField for NaiveDate {
+    fn parse_field(segment: &Segment, field_num: usize, seg_id: &str) -> Result<Self> {
+        segment
+            .get_field_value(field_num)
+            .and_then(|s| parse_hl7_date(s))
+            .ok_or_else(|| {
+                crate::error::CustomSegmentError::missing_field(
+                    format!("{}-{}", seg_id, field_num),
+                    seg_id,
+                )
+            })
+    }
+}
+
+// ParseSegmentField for Option<NaiveDate>
+impl ParseSegmentField for Option<NaiveDate> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        Ok(segment.get_field_value(field_num).and_then(parse_hl7_date))
+    }
+}
+
+// SerializeSegmentField for NaiveDate
+impl SerializeSegmentField for NaiveDate {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        let formatted = self.format("%Y%m%d").to_string();
+        let _ = segment.set_field_value(field_num, &formatted);
+    }
+}
+
+// SerializeSegmentField for Option<NaiveDate>
+impl SerializeSegmentField for Option<NaiveDate> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        if let Some(date) = self {
+            date.set_field(segment, field_num);
+        }
+    }
+}
+
+// BuilderFieldType for NaiveDate
+impl BuilderFieldType for NaiveDate {
+    type Inner = NaiveDate;
+}
+
+// BuilderFieldType for Option<NaiveDate>
+impl BuilderFieldType for Option<NaiveDate> {
+    type Inner = NaiveDate;
+}
+
+// ============================================================================
+// NaiveTime implementations (time without date)
+// ============================================================================
+
+// BuildableField for required NaiveTime
+impl BuildableField for NaiveTime {
+    type Storage = Option<NaiveTime>;
+    type Inner = NaiveTime;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, field_name: &str, seg_id: &str) -> Result<Self> {
+        storage.ok_or_else(|| {
+            crate::error::CustomSegmentError::missing_field(
+                format!("{}-{}", seg_id, field_name),
+                seg_id,
+            )
+        })
+    }
+}
+
+// BuildableField for optional NaiveTime
+impl BuildableField for Option<NaiveTime> {
+    type Storage = Option<NaiveTime>;
+    type Inner = NaiveTime;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+// ParseSegmentField for NaiveTime
+// Supports HL7 time formats: HHMMSS[.SSSS], HHMM
+impl ParseSegmentField for NaiveTime {
+    fn parse_field(segment: &Segment, field_num: usize, seg_id: &str) -> Result<Self> {
+        segment
+            .get_field_value(field_num)
+            .and_then(|s| parse_hl7_time(s))
+            .ok_or_else(|| {
+                crate::error::CustomSegmentError::missing_field(
+                    format!("{}-{}", seg_id, field_num),
+                    seg_id,
+                )
+            })
+    }
+}
+
+// ParseSegmentField for Option<NaiveTime>
+impl ParseSegmentField for Option<NaiveTime> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        Ok(segment.get_field_value(field_num).and_then(parse_hl7_time))
+    }
+}
+
+// SerializeSegmentField for NaiveTime
+impl SerializeSegmentField for NaiveTime {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        let formatted = self.format("%H%M%S").to_string();
+        let _ = segment.set_field_value(field_num, &formatted);
+    }
+}
+
+// SerializeSegmentField for Option<NaiveTime>
+impl SerializeSegmentField for Option<NaiveTime> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        if let Some(time) = self {
+            time.set_field(segment, field_num);
+        }
+    }
+}
+
+// BuilderFieldType for NaiveTime
+impl BuilderFieldType for NaiveTime {
+    type Inner = NaiveTime;
+}
+
+// BuilderFieldType for Option<NaiveTime>
+impl BuilderFieldType for Option<NaiveTime> {
+    type Inner = NaiveTime;
+}
+
+// ============================================================================
+// DateTime<Utc> implementations (timezone-aware timestamp)
+// ============================================================================
+
+// BuildableField for required DateTime<Utc>
+impl BuildableField for DateTime<Utc> {
+    type Storage = Option<DateTime<Utc>>;
+    type Inner = DateTime<Utc>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, field_name: &str, seg_id: &str) -> Result<Self> {
+        storage.ok_or_else(|| {
+            crate::error::CustomSegmentError::missing_field(
+                format!("{}-{}", seg_id, field_name),
+                seg_id,
+            )
+        })
+    }
+}
+
+// BuildableField for optional DateTime<Utc>
+impl BuildableField for Option<DateTime<Utc>> {
+    type Storage = Option<DateTime<Utc>>;
+    type Inner = DateTime<Utc>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+// ParseSegmentField for DateTime<Utc>
+// Supports HL7 datetime formats with timezone: YYYYMMDDHHMMSS[.SSSS][+/-ZZZZ]
+impl ParseSegmentField for DateTime<Utc> {
+    fn parse_field(segment: &Segment, field_num: usize, seg_id: &str) -> Result<Self> {
+        segment
+            .get_field_value(field_num)
+            .and_then(|s| parse_hl7_datetime_utc(s))
+            .ok_or_else(|| {
+                crate::error::CustomSegmentError::missing_field(
+                    format!("{}-{}", seg_id, field_num),
+                    seg_id,
+                )
+            })
+    }
+}
+
+// ParseSegmentField for Option<DateTime<Utc>>
+impl ParseSegmentField for Option<DateTime<Utc>> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        Ok(segment.get_field_value(field_num).and_then(parse_hl7_datetime_utc))
+    }
+}
+
+// SerializeSegmentField for DateTime<Utc>
+impl SerializeSegmentField for DateTime<Utc> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        let formatted = self.format("%Y%m%d%H%M%S").to_string();
+        let _ = segment.set_field_value(field_num, &formatted);
+    }
+}
+
+// SerializeSegmentField for Option<DateTime<Utc>>
+impl SerializeSegmentField for Option<DateTime<Utc>> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        if let Some(dt) = self {
+            dt.set_field(segment, field_num);
+        }
+    }
+}
+
+// BuilderFieldType for DateTime<Utc>
+impl BuilderFieldType for DateTime<Utc> {
+    type Inner = DateTime<Utc>;
+}
+
+// BuilderFieldType for Option<DateTime<Utc>>
+impl BuilderFieldType for Option<DateTime<Utc>> {
+    type Inner = DateTime<Utc>;
+}
+
+// ============================================================================
+// Helper functions for parsing HL7 date/time formats
+// ============================================================================
+
+/// Parse HL7 datetime format: YYYYMMDDHHMMSS[.SSSS]
+fn parse_hl7_datetime(s: &str) -> Option<NaiveDateTime> {
+    // Try full format with optional fractional seconds
+    if s.len() >= 14 {
+        let year = s[0..4].parse::<i32>().ok()?;
+        let month = s[4..6].parse::<u32>().ok()?;
+        let day = s[6..8].parse::<u32>().ok()?;
+        let hour = s[8..10].parse::<u32>().ok()?;
+        let minute = s[10..12].parse::<u32>().ok()?;
+        let second = s[12..14].parse::<u32>().ok()?;
+
+        let date = NaiveDate::from_ymd_opt(year, month, day)?;
+        let time = NaiveTime::from_hms_opt(hour, minute, second)?;
+
+        return Some(NaiveDateTime::new(date, time));
+    }
+
+    None
+}
+
+/// Parse HL7 date format: YYYYMMDD, YYYYMM, or YYYY
+fn parse_hl7_date(s: &str) -> Option<NaiveDate> {
+    match s.len() {
+        8 => {
+            // YYYYMMDD
+            let year = s[0..4].parse::<i32>().ok()?;
+            let month = s[4..6].parse::<u32>().ok()?;
+            let day = s[6..8].parse::<u32>().ok()?;
+            NaiveDate::from_ymd_opt(year, month, day)
+        }
+        6 => {
+            // YYYYMM - default to first day of month
+            let year = s[0..4].parse::<i32>().ok()?;
+            let month = s[4..6].parse::<u32>().ok()?;
+            NaiveDate::from_ymd_opt(year, month, 1)
+        }
+        4 => {
+            // YYYY - default to January 1st
+            let year = s[0..4].parse::<i32>().ok()?;
+            NaiveDate::from_ymd_opt(year, 1, 1)
+        }
+        _ => None,
+    }
+}
+
+/// Parse HL7 time format: HHMMSS[.SSSS] or HHMM
+fn parse_hl7_time(s: &str) -> Option<NaiveTime> {
+    if s.len() >= 6 {
+        // HHMMSS format
+        let hour = s[0..2].parse::<u32>().ok()?;
+        let minute = s[2..4].parse::<u32>().ok()?;
+        let second = s[4..6].parse::<u32>().ok()?;
+        NaiveTime::from_hms_opt(hour, minute, second)
+    } else if s.len() == 4 {
+        // HHMM format
+        let hour = s[0..2].parse::<u32>().ok()?;
+        let minute = s[2..4].parse::<u32>().ok()?;
+        NaiveTime::from_hms_opt(hour, minute, 0)
+    } else {
+        None
+    }
+}
+
+/// Parse HL7 datetime with timezone: YYYYMMDDHHMMSS[+/-ZZZZ]
+fn parse_hl7_datetime_utc(s: &str) -> Option<DateTime<Utc>> {
+    use chrono::TimeZone;
+
+    // For simplicity, parse as naive datetime and convert to UTC
+    // Full timezone support would require parsing +/-ZZZZ offset
+    let naive_dt = parse_hl7_datetime(s)?;
+    Some(Utc.from_utc_datetime(&naive_dt))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1070,5 +1496,277 @@ mod tests {
 
         let result = bool::parse_field(&segment, 1, "TEST");
         assert!(result.is_err());
+    }
+
+    // Tests for NaiveDateTime type
+    #[test]
+    fn test_naive_datetime_parse() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "20250119143000").unwrap(); // Jan 19, 2025 14:30:00
+
+        let result = NaiveDateTime::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result.format("%Y%m%d%H%M%S").to_string(), "20250119143000");
+    }
+
+    #[test]
+    fn test_naive_datetime_serialize() {
+        use chrono::NaiveDate;
+        let mut segment = Segment::new("TEST");
+        let dt = NaiveDate::from_ymd_opt(2025, 1, 19)
+            .unwrap()
+            .and_hms_opt(14, 30, 0)
+            .unwrap();
+
+        dt.set_field(&mut segment, 1);
+        assert_eq!(segment.get_field_value(1).unwrap(), "20250119143000");
+    }
+
+    #[test]
+    fn test_naive_datetime_roundtrip() {
+        use chrono::NaiveDate;
+        let mut segment = Segment::new("TEST");
+        let original = NaiveDate::from_ymd_opt(2025, 12, 31)
+            .unwrap()
+            .and_hms_opt(23, 59, 59)
+            .unwrap();
+
+        original.set_field(&mut segment, 1);
+        let parsed = NaiveDateTime::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_option_naive_datetime_parse_some() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "20250101000000").unwrap();
+
+        let result = Option::<NaiveDateTime>::parse_field(&segment, 1, "TEST").unwrap();
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_option_naive_datetime_parse_none() {
+        let segment = Segment::new("TEST");
+
+        let result = Option::<NaiveDateTime>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, None);
+    }
+
+    // Tests for NaiveDate type
+    #[test]
+    fn test_naive_date_parse_yyyymmdd() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "20250119").unwrap(); // Jan 19, 2025
+
+        let result = NaiveDate::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result.format("%Y%m%d").to_string(), "20250119");
+    }
+
+    #[test]
+    fn test_naive_date_parse_yyyymm() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "202501").unwrap(); // Jan 2025 (defaults to 1st)
+
+        let result = NaiveDate::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result.format("%Y%m%d").to_string(), "20250101");
+    }
+
+    #[test]
+    fn test_naive_date_parse_yyyy() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "2025").unwrap(); // 2025 (defaults to Jan 1st)
+
+        let result = NaiveDate::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result.format("%Y%m%d").to_string(), "20250101");
+    }
+
+    #[test]
+    fn test_naive_date_serialize() {
+        let mut segment = Segment::new("TEST");
+        let date = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+
+        date.set_field(&mut segment, 1);
+        assert_eq!(segment.get_field_value(1).unwrap(), "20250615");
+    }
+
+    #[test]
+    fn test_naive_date_roundtrip() {
+        let mut segment = Segment::new("TEST");
+        let original = NaiveDate::from_ymd_opt(1980, 1, 15).unwrap();
+
+        original.set_field(&mut segment, 1);
+        let parsed = NaiveDate::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_option_naive_date_parse_some() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "20250119").unwrap();
+
+        let result = Option::<NaiveDate>::parse_field(&segment, 1, "TEST").unwrap();
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_option_naive_date_parse_none() {
+        let segment = Segment::new("TEST");
+
+        let result = Option::<NaiveDate>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, None);
+    }
+
+    // Tests for NaiveTime type
+    #[test]
+    fn test_naive_time_parse_hhmmss() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "143000").unwrap(); // 14:30:00
+
+        let result = NaiveTime::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result.format("%H%M%S").to_string(), "143000");
+    }
+
+    #[test]
+    fn test_naive_time_parse_hhmm() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "1430").unwrap(); // 14:30 (seconds default to 00)
+
+        let result = NaiveTime::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result.format("%H%M%S").to_string(), "143000");
+    }
+
+    #[test]
+    fn test_naive_time_serialize() {
+        let mut segment = Segment::new("TEST");
+        let time = NaiveTime::from_hms_opt(23, 59, 59).unwrap();
+
+        time.set_field(&mut segment, 1);
+        assert_eq!(segment.get_field_value(1).unwrap(), "235959");
+    }
+
+    #[test]
+    fn test_naive_time_roundtrip() {
+        let mut segment = Segment::new("TEST");
+        let original = NaiveTime::from_hms_opt(8, 15, 30).unwrap();
+
+        original.set_field(&mut segment, 1);
+        let parsed = NaiveTime::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_option_naive_time_parse_some() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "120000").unwrap();
+
+        let result = Option::<NaiveTime>::parse_field(&segment, 1, "TEST").unwrap();
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_option_naive_time_parse_none() {
+        let segment = Segment::new("TEST");
+
+        let result = Option::<NaiveTime>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, None);
+    }
+
+    // Tests for DateTime<Utc> type
+    #[test]
+    fn test_datetime_utc_parse() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "20250119143000").unwrap();
+
+        let result = DateTime::<Utc>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result.format("%Y%m%d%H%M%S").to_string(), "20250119143000");
+    }
+
+    #[test]
+    fn test_datetime_utc_serialize() {
+        use chrono::TimeZone;
+        let mut segment = Segment::new("TEST");
+        let dt = Utc.with_ymd_and_hms(2025, 1, 19, 14, 30, 0).unwrap();
+
+        dt.set_field(&mut segment, 1);
+        assert_eq!(segment.get_field_value(1).unwrap(), "20250119143000");
+    }
+
+    #[test]
+    fn test_datetime_utc_roundtrip() {
+        use chrono::TimeZone;
+        let mut segment = Segment::new("TEST");
+        let original = Utc.with_ymd_and_hms(2025, 12, 31, 23, 59, 59).unwrap();
+
+        original.set_field(&mut segment, 1);
+        let parsed = DateTime::<Utc>::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_option_datetime_utc_parse_some() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "20250101000000").unwrap();
+
+        let result = Option::<DateTime<Utc>>::parse_field(&segment, 1, "TEST").unwrap();
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_option_datetime_utc_parse_none() {
+        let segment = Segment::new("TEST");
+
+        let result = Option::<DateTime<Utc>>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, None);
+    }
+
+    // Tests for HL7 datetime parsing helper functions
+    #[test]
+    fn test_parse_hl7_datetime_valid() {
+        let result = parse_hl7_datetime("20250119143000").unwrap();
+        assert_eq!(result.format("%Y%m%d%H%M%S").to_string(), "20250119143000");
+    }
+
+    #[test]
+    fn test_parse_hl7_datetime_invalid() {
+        assert!(parse_hl7_datetime("invalid").is_none());
+        assert!(parse_hl7_datetime("2025").is_none());
+        assert!(parse_hl7_datetime("20250119").is_none()); // Date only, not datetime
+    }
+
+    #[test]
+    fn test_parse_hl7_date_formats() {
+        // YYYYMMDD
+        let date1 = parse_hl7_date("20250119").unwrap();
+        assert_eq!(date1.format("%Y%m%d").to_string(), "20250119");
+
+        // YYYYMM
+        let date2 = parse_hl7_date("202501").unwrap();
+        assert_eq!(date2.format("%Y%m%d").to_string(), "20250101");
+
+        // YYYY
+        let date3 = parse_hl7_date("2025").unwrap();
+        assert_eq!(date3.format("%Y%m%d").to_string(), "20250101");
+    }
+
+    #[test]
+    fn test_parse_hl7_time_formats() {
+        // HHMMSS
+        let time1 = parse_hl7_time("143000").unwrap();
+        assert_eq!(time1.format("%H%M%S").to_string(), "143000");
+
+        // HHMM
+        let time2 = parse_hl7_time("1430").unwrap();
+        assert_eq!(time2.format("%H%M%S").to_string(), "143000");
+    }
+
+    #[test]
+    fn test_parse_hl7_time_invalid() {
+        assert!(parse_hl7_time("invalid").is_none());
+        assert!(parse_hl7_time("14").is_none());
+        assert!(parse_hl7_time("999999").is_none()); // Invalid hour
     }
 }

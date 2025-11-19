@@ -26,5 +26,8 @@ once_cell = "1.19"
 # Macro utilities
 paste.workspace = true
 
+# Date/Time handling
+chrono.workspace = true
+
 [dev-dependencies]
 rs7-parser.workspace = true

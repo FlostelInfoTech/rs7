@@ -176,6 +176,7 @@ println!("Removed {} segments", removed);
 
 The following field types are supported out of the box:
 
+### Primitive Types
 - `String` - Text fields (required)
 - `Option<String>` - Optional text fields
 - `u32` - Unsigned 32-bit integers (0 to 4,294,967,295)
@@ -189,6 +190,16 @@ The following field types are supported out of the box:
 - `bool` - Boolean flags (true/false)
 - `Option<bool>` - Optional boolean flags
 
+### Date/Time Types (via chrono)
+- `NaiveDateTime` - Timestamp without timezone
+- `Option<NaiveDateTime>` - Optional timestamp
+- `NaiveDate` - Date only (no time component)
+- `Option<NaiveDate>` - Optional date
+- `NaiveTime` - Time only (no date component)
+- `Option<NaiveTime>` - Optional time
+- `DateTime<Utc>` - UTC timestamp (timezone-aware)
+- `Option<DateTime<Utc>>` - Optional UTC timestamp
+
 ### Boolean Field Parsing
 
 Boolean fields support multiple HL7 conventions when parsing:
@@ -196,33 +207,73 @@ Boolean fields support multiple HL7 conventions when parsing:
 - **False values**: `N`, `NO`, `F`, `FALSE`, `0` (case-insensitive)
 - **Serialization**: Always outputs `Y` for true, `N` for false
 
+### Date/Time Field Formats
+
+Date/time fields use standard HL7 formats:
+
+**NaiveDateTime** (YYYYMMDDHHMMSS):
+- **Parsing**: `"20250119143000"` → Jan 19, 2025 14:30:00
+- **Serialization**: `20250119143000`
+
+**NaiveDate** (YYYYMMDD, YYYYMM, or YYYY):
+- **Parsing**: `"20250119"` → Jan 19, 2025
+- **Parsing**: `"202501"` → Jan 1, 2025 (defaults to first day of month)
+- **Parsing**: `"2025"` → Jan 1, 2025 (defaults to first day of year)
+- **Serialization**: Always `YYYYMMDD` format
+
+**NaiveTime** (HHMMSS or HHMM):
+- **Parsing**: `"143000"` → 14:30:00
+- **Parsing**: `"1430"` → 14:30:00 (defaults seconds to 00)
+- **Serialization**: Always `HHMMSS` format
+
+**DateTime<Utc>** (YYYYMMDDHHMMSS):
+- **Parsing**: `"20250119143000"` → 2025-01-19 14:30:00 UTC
+- **Serialization**: `20250119143000` (in UTC)
+
 Example with different types:
 
 ```rust
+use chrono::{NaiveDateTime, NaiveDate, NaiveTime, DateTime, Utc};
+
 z_segment! {
     ZMX,
     id = "ZMX",
     fields = {
-        1 => id: String,                 // Required text
-        2 => count: u32,                 // Required unsigned integer
-        3 => temperature_delta: i32,     // Required signed integer (can be negative)
-        4 => account_balance: i64,       // Required large integer
-        5 => amount: Option<f64>,        // Optional decimal
-        6 => is_active: bool,            // Required boolean
-        7 => verified: Option<bool>,     // Optional boolean
-        8 => notes: Option<String>,      // Optional text
+        1 => id: String,                      // Required text
+        2 => count: u32,                      // Required unsigned integer
+        3 => temperature_delta: i32,          // Required signed integer (can be negative)
+        4 => account_balance: i64,            // Required large integer
+        5 => amount: Option<f64>,             // Optional decimal
+        6 => is_active: bool,                 // Required boolean
+        7 => verified: Option<bool>,          // Optional boolean
+        8 => created_at: NaiveDateTime,       // Required timestamp
+        9 => birth_date: NaiveDate,           // Required date
+        10 => appointment_time: NaiveTime,    // Required time
+        11 => last_updated: DateTime<Utc>,    // Required UTC timestamp
+        12 => discharged_at: Option<NaiveDateTime>, // Optional timestamp
+        13 => notes: Option<String>,          // Optional text
     }
 }
+
+let created = NaiveDate::from_ymd_opt(2025, 1, 19)
+    .unwrap()
+    .and_hms_opt(14, 30, 0)
+    .unwrap();
 
 let zmx = ZMX::builder()
     .id("MX001")
     .count(42u32)
-    .temperature_delta(-5)          // Signed integer (negative)
-    .account_balance(1000000i64)    // Large integer
-    .amount(123.45)                 // Optional float
-    .is_active(true)                // Boolean
-    .verified(false)                // Optional boolean
-    .notes("Sample notes")          // Optional string
+    .temperature_delta(-5)                     // Signed integer (negative)
+    .account_balance(1000000i64)               // Large integer
+    .amount(123.45)                            // Optional float
+    .is_active(true)                           // Boolean
+    .verified(false)                           // Optional boolean
+    .created_at(created)                       // DateTime
+    .birth_date(NaiveDate::from_ymd_opt(1980, 6, 15).unwrap())  // Date
+    .appointment_time(NaiveTime::from_hms_opt(10, 30, 0).unwrap()) // Time
+    .last_updated(Utc::now())                  // UTC timestamp
+    .discharged_at(created + chrono::Duration::days(3)) // Optional DateTime (3 days later)
+    .notes("Sample notes")                     // Optional string
     .build()?;
 ```
 
@@ -296,7 +347,8 @@ See the `examples/` directory for complete working examples:
 - `zpv_visit_segment.rs` - Basic Z-segment usage
 - `zcu_customer_segment.rs` - Validation and error handling
 - `message_manipulation.rs` - Comprehensive message operations
-- `field_types.rs` - Demonstrating all supported field types (String, u32, i32, i64, f64, bool)
+- `field_types.rs` - Demonstrating primitive field types (String, u32, i32, i64, f64, bool)
+- `datetime_fields.rs` - Demonstrating date/time field types (NaiveDateTime, NaiveDate, NaiveTime, DateTime<Utc>)
 
 Run examples with:
 
@@ -304,6 +356,8 @@ Run examples with:
 cargo run --example zpv_visit_segment
 cargo run --example zcu_customer_segment
 cargo run --example message_manipulation
+cargo run --example field_types
+cargo run --example datetime_fields
 ```
 
 ## Testing
