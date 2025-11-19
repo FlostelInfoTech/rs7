@@ -1171,6 +1171,289 @@ fn parse_hl7_datetime_utc(s: &str) -> Option<DateTime<Utc>> {
     Some(Utc.from_utc_datetime(&naive_dt))
 }
 
+// ============================================================================
+// Vec<T> implementations for repeating fields
+// ============================================================================
+
+// Vec<String> - Repeating text fields
+impl BuildableField for Vec<String> {
+    type Storage = Vec<String>;
+    type Inner = Vec<String>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = value;
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+impl ParseSegmentField for Vec<String> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            let values: Vec<String> = field
+                .repetitions
+                .iter()
+                .filter_map(|rep| rep.value().map(|s| s.to_string()))
+                .collect();
+            Ok(values)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+}
+
+impl SerializeSegmentField for Vec<String> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Field, Repetition};
+
+        let mut field = Field::new();
+        for value in self {
+            field.add_repetition(Repetition::from_value(value));
+        }
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuilderFieldType for Vec<String> {
+    type Inner = Vec<String>;
+}
+
+// Vec<u32> - Repeating unsigned integers
+impl BuildableField for Vec<u32> {
+    type Storage = Vec<u32>;
+    type Inner = Vec<u32>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = value;
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+impl ParseSegmentField for Vec<u32> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            let values: Vec<u32> = field
+                .repetitions
+                .iter()
+                .filter_map(|rep| rep.value().and_then(|s| s.parse::<u32>().ok()))
+                .collect();
+            Ok(values)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+}
+
+impl SerializeSegmentField for Vec<u32> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Field, Repetition};
+
+        let mut field = Field::new();
+        for value in self {
+            field.add_repetition(Repetition::from_value(&value.to_string()));
+        }
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuilderFieldType for Vec<u32> {
+    type Inner = Vec<u32>;
+}
+
+// Vec<i32> - Repeating signed integers
+impl BuildableField for Vec<i32> {
+    type Storage = Vec<i32>;
+    type Inner = Vec<i32>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = value;
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+impl ParseSegmentField for Vec<i32> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            let values: Vec<i32> = field
+                .repetitions
+                .iter()
+                .filter_map(|rep| rep.value().and_then(|s| s.parse::<i32>().ok()))
+                .collect();
+            Ok(values)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+}
+
+impl SerializeSegmentField for Vec<i32> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Field, Repetition};
+
+        let mut field = Field::new();
+        for value in self {
+            field.add_repetition(Repetition::from_value(&value.to_string()));
+        }
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuilderFieldType for Vec<i32> {
+    type Inner = Vec<i32>;
+}
+
+// Vec<i64> - Repeating large integers
+impl BuildableField for Vec<i64> {
+    type Storage = Vec<i64>;
+    type Inner = Vec<i64>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = value;
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+impl ParseSegmentField for Vec<i64> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            let values: Vec<i64> = field
+                .repetitions
+                .iter()
+                .filter_map(|rep| rep.value().and_then(|s| s.parse::<i64>().ok()))
+                .collect();
+            Ok(values)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+}
+
+impl SerializeSegmentField for Vec<i64> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Field, Repetition};
+
+        let mut field = Field::new();
+        for value in self {
+            field.add_repetition(Repetition::from_value(&value.to_string()));
+        }
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuilderFieldType for Vec<i64> {
+    type Inner = Vec<i64>;
+}
+
+// Vec<f64> - Repeating floating point numbers
+impl BuildableField for Vec<f64> {
+    type Storage = Vec<f64>;
+    type Inner = Vec<f64>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = value;
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+impl ParseSegmentField for Vec<f64> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            let values: Vec<f64> = field
+                .repetitions
+                .iter()
+                .filter_map(|rep| rep.value().and_then(|s| s.parse::<f64>().ok()))
+                .collect();
+            Ok(values)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+}
+
+impl SerializeSegmentField for Vec<f64> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Field, Repetition};
+
+        let mut field = Field::new();
+        for value in self {
+            field.add_repetition(Repetition::from_value(&value.to_string()));
+        }
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuilderFieldType for Vec<f64> {
+    type Inner = Vec<f64>;
+}
+
+// Vec<bool> - Repeating boolean flags
+impl BuildableField for Vec<bool> {
+    type Storage = Vec<bool>;
+    type Inner = Vec<bool>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = value;
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+impl ParseSegmentField for Vec<bool> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            let values: Vec<bool> = field
+                .repetitions
+                .iter()
+                .filter_map(|rep| {
+                    rep.value().and_then(|s| {
+                        match s.to_uppercase().as_str() {
+                            "Y" | "YES" | "T" | "TRUE" | "1" => Some(true),
+                            "N" | "NO" | "F" | "FALSE" | "0" => Some(false),
+                            _ => None,
+                        }
+                    })
+                })
+                .collect();
+            Ok(values)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+}
+
+impl SerializeSegmentField for Vec<bool> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        use rs7_core::{Field, Repetition};
+
+        let mut field = Field::new();
+        for value in self {
+            let str_value = if *value { "Y" } else { "N" };
+            field.add_repetition(Repetition::from_value(str_value));
+        }
+        let _ = segment.set_field(field_num, field);
+    }
+}
+
+impl BuilderFieldType for Vec<bool> {
+    type Inner = Vec<bool>;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1768,5 +2051,312 @@ mod tests {
         assert!(parse_hl7_time("invalid").is_none());
         assert!(parse_hl7_time("14").is_none());
         assert!(parse_hl7_time("999999").is_none()); // Invalid hour
+    }
+
+    // Tests for Vec<String> repeating fields
+    #[test]
+    fn test_vec_string_parse_multiple() {
+        use rs7_core::{Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        field.add_repetition(Repetition::from_value("value1"));
+        field.add_repetition(Repetition::from_value("value2"));
+        field.add_repetition(Repetition::from_value("value3"));
+        segment.set_field(1, field).unwrap();
+
+        let result = Vec::<String>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, vec!["value1", "value2", "value3"]);
+    }
+
+    #[test]
+    fn test_vec_string_parse_empty() {
+        let segment = Segment::new("TEST");
+
+        let result = Vec::<String>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, Vec::<String>::new());
+    }
+
+    #[test]
+    fn test_vec_string_serialize() {
+        let mut segment = Segment::new("TEST");
+        let values = vec!["alpha".to_string(), "beta".to_string(), "gamma".to_string()];
+
+        values.set_field(&mut segment, 1);
+
+        let field = segment.get_field(1).unwrap();
+        assert_eq!(field.repetitions.len(), 3);
+        assert_eq!(field.repetitions[0].value().unwrap(), "alpha");
+        assert_eq!(field.repetitions[1].value().unwrap(), "beta");
+        assert_eq!(field.repetitions[2].value().unwrap(), "gamma");
+    }
+
+    #[test]
+    fn test_vec_string_roundtrip() {
+        use rs7_core::Delimiters;
+
+        let mut segment = Segment::new("TEST");
+        let original = vec!["phone1".to_string(), "phone2".to_string()];
+
+        original.set_field(&mut segment, 1);
+        let parsed = Vec::<String>::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original, parsed);
+
+        // Verify HL7 encoding uses ~ separator
+        let delimiters = Delimiters::default();
+        let encoded = segment.encode(&delimiters);
+        assert!(encoded.contains("phone1~phone2"));
+    }
+
+    // Tests for Vec<u32> repeating fields
+    #[test]
+    fn test_vec_u32_parse_multiple() {
+        use rs7_core::{Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        field.add_repetition(Repetition::from_value("10"));
+        field.add_repetition(Repetition::from_value("20"));
+        field.add_repetition(Repetition::from_value("30"));
+        segment.set_field(1, field).unwrap();
+
+        let result = Vec::<u32>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, vec![10, 20, 30]);
+    }
+
+    #[test]
+    fn test_vec_u32_parse_empty() {
+        let segment = Segment::new("TEST");
+
+        let result = Vec::<u32>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, Vec::<u32>::new());
+    }
+
+    #[test]
+    fn test_vec_u32_serialize() {
+        let mut segment = Segment::new("TEST");
+        let values = vec![100, 200, 300];
+
+        values.set_field(&mut segment, 1);
+
+        let field = segment.get_field(1).unwrap();
+        assert_eq!(field.repetitions.len(), 3);
+        assert_eq!(field.repetitions[0].value().unwrap(), "100");
+        assert_eq!(field.repetitions[1].value().unwrap(), "200");
+        assert_eq!(field.repetitions[2].value().unwrap(), "300");
+    }
+
+    #[test]
+    fn test_vec_u32_roundtrip() {
+        let mut segment = Segment::new("TEST");
+        let original = vec![42, 99, 1000];
+
+        original.set_field(&mut segment, 1);
+        let parsed = Vec::<u32>::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    // Tests for Vec<i32> repeating fields
+    #[test]
+    fn test_vec_i32_parse_with_negatives() {
+        use rs7_core::{Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        field.add_repetition(Repetition::from_value("-10"));
+        field.add_repetition(Repetition::from_value("0"));
+        field.add_repetition(Repetition::from_value("10"));
+        segment.set_field(1, field).unwrap();
+
+        let result = Vec::<i32>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, vec![-10, 0, 10]);
+    }
+
+    #[test]
+    fn test_vec_i32_serialize() {
+        let mut segment = Segment::new("TEST");
+        let values = vec![-100, 50, -75];
+
+        values.set_field(&mut segment, 1);
+
+        let field = segment.get_field(1).unwrap();
+        assert_eq!(field.repetitions[0].value().unwrap(), "-100");
+        assert_eq!(field.repetitions[1].value().unwrap(), "50");
+        assert_eq!(field.repetitions[2].value().unwrap(), "-75");
+    }
+
+    #[test]
+    fn test_vec_i32_roundtrip() {
+        let mut segment = Segment::new("TEST");
+        let original = vec![-456, 0, 789];
+
+        original.set_field(&mut segment, 1);
+        let parsed = Vec::<i32>::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    // Tests for Vec<i64> repeating fields
+    #[test]
+    fn test_vec_i64_parse_large_numbers() {
+        use rs7_core::{Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        field.add_repetition(Repetition::from_value("9223372036854775807")); // i64::MAX
+        field.add_repetition(Repetition::from_value("-9223372036854775808")); // i64::MIN
+        field.add_repetition(Repetition::from_value("0"));
+        segment.set_field(1, field).unwrap();
+
+        let result = Vec::<i64>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, vec![9223372036854775807, -9223372036854775808, 0]);
+    }
+
+    #[test]
+    fn test_vec_i64_roundtrip() {
+        let mut segment = Segment::new("TEST");
+        let original = vec![1000000000000i64, -1000000000000i64];
+
+        original.set_field(&mut segment, 1);
+        let parsed = Vec::<i64>::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    // Tests for Vec<f64> repeating fields
+    #[test]
+    fn test_vec_f64_parse_decimals() {
+        use rs7_core::{Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        field.add_repetition(Repetition::from_value("3.14"));
+        field.add_repetition(Repetition::from_value("2.718"));
+        field.add_repetition(Repetition::from_value("-0.5"));
+        segment.set_field(1, field).unwrap();
+
+        let result = Vec::<f64>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result.len(), 3);
+        assert!((result[0] - 3.14).abs() < 0.001);
+        assert!((result[1] - 2.718).abs() < 0.001);
+        assert!((result[2] + 0.5).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_vec_f64_serialize() {
+        let mut segment = Segment::new("TEST");
+        let values = vec![123.45, 678.90, -99.99];
+
+        values.set_field(&mut segment, 1);
+
+        let field = segment.get_field(1).unwrap();
+        assert_eq!(field.repetitions.len(), 3);
+        assert_eq!(field.repetitions[0].value().unwrap(), "123.45");
+        assert_eq!(field.repetitions[1].value().unwrap(), "678.9");
+        assert_eq!(field.repetitions[2].value().unwrap(), "-99.99");
+    }
+
+    #[test]
+    fn test_vec_f64_roundtrip() {
+        let mut segment = Segment::new("TEST");
+        let original = vec![1.5, 2.5, 3.5];
+
+        original.set_field(&mut segment, 1);
+        let parsed = Vec::<f64>::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original.len(), parsed.len());
+        for (a, b) in original.iter().zip(parsed.iter()) {
+            assert!((a - b).abs() < 0.0001);
+        }
+    }
+
+    // Tests for Vec<bool> repeating fields
+    #[test]
+    fn test_vec_bool_parse_yn_values() {
+        use rs7_core::{Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        field.add_repetition(Repetition::from_value("Y"));
+        field.add_repetition(Repetition::from_value("N"));
+        field.add_repetition(Repetition::from_value("TRUE"));
+        field.add_repetition(Repetition::from_value("FALSE"));
+        segment.set_field(1, field).unwrap();
+
+        let result = Vec::<bool>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, vec![true, false, true, false]);
+    }
+
+    #[test]
+    fn test_vec_bool_parse_numeric_values() {
+        use rs7_core::{Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        field.add_repetition(Repetition::from_value("1"));
+        field.add_repetition(Repetition::from_value("0"));
+        field.add_repetition(Repetition::from_value("1"));
+        segment.set_field(1, field).unwrap();
+
+        let result = Vec::<bool>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, vec![true, false, true]);
+    }
+
+    #[test]
+    fn test_vec_bool_serialize() {
+        let mut segment = Segment::new("TEST");
+        let values = vec![true, false, true, true, false];
+
+        values.set_field(&mut segment, 1);
+
+        let field = segment.get_field(1).unwrap();
+        assert_eq!(field.repetitions.len(), 5);
+        assert_eq!(field.repetitions[0].value().unwrap(), "Y");
+        assert_eq!(field.repetitions[1].value().unwrap(), "N");
+        assert_eq!(field.repetitions[2].value().unwrap(), "Y");
+        assert_eq!(field.repetitions[3].value().unwrap(), "Y");
+        assert_eq!(field.repetitions[4].value().unwrap(), "N");
+    }
+
+    #[test]
+    fn test_vec_bool_roundtrip() {
+        let mut segment = Segment::new("TEST");
+        let original = vec![true, false, false, true];
+
+        original.set_field(&mut segment, 1);
+        let parsed = Vec::<bool>::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    // Test HL7 encoding with ~ separator
+    #[test]
+    fn test_vec_hl7_encoding_with_tilde_separator() {
+        use rs7_core::Delimiters;
+
+        let mut segment = Segment::new("ZRP");
+
+        // Add multiple string values
+        let phones = vec!["555-1234".to_string(), "555-5678".to_string(), "555-9999".to_string()];
+        phones.set_field(&mut segment, 1);
+
+        let delimiters = Delimiters::default();
+        let encoded = segment.encode(&delimiters);
+
+        // Verify the encoded string contains ~ separators
+        assert!(encoded.contains("555-1234~555-5678~555-9999"));
+    }
+
+    #[test]
+    fn test_vec_empty_serializes_correctly() {
+        let mut segment = Segment::new("TEST");
+        let empty: Vec<String> = vec![];
+
+        empty.set_field(&mut segment, 1);
+
+        let field = segment.get_field(1).unwrap();
+        assert_eq!(field.repetitions.len(), 0);
     }
 }

@@ -200,6 +200,53 @@ The following field types are supported out of the box:
 - `DateTime<Utc>` - UTC timestamp (timezone-aware)
 - `Option<DateTime<Utc>>` - Optional UTC timestamp
 
+### Repeating Fields (Vec<T>)
+
+Repeating fields allow multiple values for a single field, following the HL7 v2.x specification. The values are separated by the repetition separator `~` (tilde) in HL7 encoding.
+
+Supported repeating field types:
+- `Vec<String>` - Multiple text values (e.g., phone numbers, email addresses)
+- `Vec<u32>` - Multiple unsigned integers
+- `Vec<i32>` - Multiple signed integers
+- `Vec<i64>` - Multiple large integers
+- `Vec<f64>` - Multiple floating point numbers
+- `Vec<bool>` - Multiple boolean flags
+
+Example with repeating fields:
+
+```rust
+z_segment! {
+    ZCT,
+    id = "ZCT",
+    fields = {
+        1 => patient_id: String,
+        2 => phone_numbers: Vec<String>,      // Multiple phone numbers
+        3 => emergency_contacts: Vec<u32>,    // Multiple contact IDs
+        4 => verified_flags: Vec<bool>,       // Multiple flags
+    }
+}
+
+// Building with multiple values
+let zct = ZCT::builder()
+    .patient_id("PAT-12345")
+    .phone_numbers(vec![
+        "555-1234".to_string(),
+        "555-5678".to_string(),
+        "555-9999".to_string(),
+    ])
+    .emergency_contacts(vec![101, 102, 103])
+    .verified_flags(vec![true, false, true])
+    .build()?;
+
+// HL7 encoding uses ~ separator
+// ZCT|PAT-12345|555-1234~555-5678~555-9999|101~102~103|Y~N~Y
+```
+
+**HL7 Encoding**:
+- **Parsing**: `"value1~value2~value3"` → `vec!["value1", "value2", "value3"]`
+- **Serialization**: `vec!["a", "b", "c"]` → `"a~b~c"`
+- **Empty Vec**: `vec![]` → `""` (empty field)
+
 ### Boolean Field Parsing
 
 Boolean fields support multiple HL7 conventions when parsing:
@@ -349,6 +396,7 @@ See the `examples/` directory for complete working examples:
 - `message_manipulation.rs` - Comprehensive message operations
 - `field_types.rs` - Demonstrating primitive field types (String, u32, i32, i64, f64, bool)
 - `datetime_fields.rs` - Demonstrating date/time field types (NaiveDateTime, NaiveDate, NaiveTime, DateTime<Utc>)
+- `repeating_fields.rs` - Demonstrating repeating fields (Vec<String>, Vec<u32>, Vec<i32>, Vec<i64>, Vec<f64>, Vec<bool>)
 
 Run examples with:
 
@@ -358,6 +406,7 @@ cargo run --example zcu_customer_segment
 cargo run --example message_manipulation
 cargo run --example field_types
 cargo run --example datetime_fields
+cargo run --example repeating_fields
 ```
 
 ## Testing
