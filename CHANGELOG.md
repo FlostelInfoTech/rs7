@@ -14,8 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **rs7-custom Crate** - Type-safe framework for custom organization-specific Z-segments:
   - Declarative `z_segment!` macro for defining custom segments
   - Compile-time type checking for segment fields
-  - Support for String, u32, f64, and Option<T> field types
   - Zero overhead for standard HL7 segments
+  - Support for all HL7 field patterns and data types
+
+- **Field Types** - Comprehensive support for all HL7 field patterns:
+  - **Primitive Types**: `String`, `u32`, `i32`, `i64`, `f64`, `bool`
+  - **DateTime Types**: `NaiveDate`, `NaiveTime`, `NaiveDateTime`, `DateTime<Utc>` (via chrono)
+  - **Optional Fields**: `Option<T>` for any supported type
+  - **Repeating Fields**: `Vec<T>` for repeating simple values (HL7 `~` separator)
+  - **Component Fields**: `(String, String, ...)` tuples (2-5 components, HL7 `^` separator)
+  - **Optional Components**: `Option<Tuple>` for optional composite fields
+  - **Repeating Components**: `Vec<Tuple>` for multiple structured values (HL7 `~` and `^` separators)
 
 - **Core Features**:
   - `CustomSegment` trait for segment definitions
@@ -23,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `MessageExt` extension trait for seamless Message integration
   - Fluent builder API for ergonomic segment creation
   - Custom validation hooks for business rules
+  - Automatic HL7 encoding/decoding with proper separator handling
 
 - **Message Operations**:
   - `get_custom_segment<T>()` - Extract first occurrence by type
@@ -35,31 +45,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Builder Pattern**:
   - Type-safe field setters with automatic type conversion
   - Required field validation at build time
-  - Optional field support without explicit None
+  - Optional field support (omit builder call for None)
   - Validation runs automatically on build
+  - Compile-time verification of field types
 
-- **Examples**:
+- **Examples** (9 comprehensive examples):
   - `zpv_visit_segment.rs` - Basic Z-segment usage
   - `zcu_customer_segment.rs` - Validation and error handling
   - `message_manipulation.rs` - Comprehensive message operations
+  - `field_types.rs` - All supported field types demonstration
+  - `component_fields.rs` - Component fields (tuples)
+  - `datetime_fields.rs` - DateTime field types (NaiveDate, NaiveTime, NaiveDateTime)
+  - `repeating_fields.rs` - Repeating fields (Vec<T>)
+  - `repeating_components.rs` - Repeating component fields (Vec<Tuple>)
+  - `real_world_adt.rs` - Complete ADT^A01 patient admission example using all field types
 
 - **Testing**:
-  - 25 unit tests covering core functionality
+  - 146 total tests (all passing)
+  - 43 unit tests for field type implementations
+  - 25 unit tests for core functionality
   - 18 integration tests for end-to-end workflows
-  - All tests passing with zero warnings
+  - Comprehensive coverage of all field patterns
+  - Zero warnings
 
 - **Documentation**:
-  - Comprehensive README with quick start guide
-  - API documentation for all public types
+  - Comprehensive README with quick start guide and field type reference
+  - API documentation for all public types and traits
   - Best practices and performance notes
   - Updated main README with Z-segment section
+  - Field type examples for all supported patterns
+  - Real-world healthcare scenario demonstrations
 
 ### Technical Details
 
-- **Trait-Based Architecture**: Uses specialized traits (ParseSegmentField, SerializeSegmentField, BuildableField) for type-safe field handling
+- **Trait-Based Architecture**: Uses specialized traits for type-safe field handling:
+  - `ParseSegmentField` - Parse from HL7 segment fields
+  - `SerializeSegmentField` - Encode to HL7 format
+  - `BuildableField` - Builder pattern support
+  - `BuilderFieldType` - Type information for builders
 - **Macro Implementation**: Declarative macro generates struct, CustomSegment impl, and builder struct
 - **Validation Integration**: Custom validation functions run on parsing and building
 - **Zero Runtime Cost**: All type checking happens at compile time
+- **HL7 Compliance**: Proper handling of all HL7 v2.x field separators (|, ^, ~, \, &)
+- **DateTime Support**: Integration with chrono for robust date/time handling
+- **Tuple Support**: Compile-time validation of component counts (2-5 components)
 
 ## [0.7.0] - 2025-11-19
 

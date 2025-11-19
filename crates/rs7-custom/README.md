@@ -616,6 +616,7 @@ See the `examples/` directory for complete working examples:
 - `repeating_fields.rs` - Demonstrating repeating fields (Vec<String>, Vec<u32>, Vec<i32>, Vec<i64>, Vec<f64>, Vec<bool>)
 - `component_fields.rs` - Demonstrating component fields using tuple types ((String, String), (String, String, String), etc.)
 - `repeating_components.rs` - Demonstrating repeating component fields (Vec<Tuple> combining ~ and ^ separators)
+- `real_world_adt.rs` - Complete ADT^A01 patient admission example demonstrating all field types in a practical healthcare scenario
 
 Run examples with:
 
@@ -628,6 +629,7 @@ cargo run --example datetime_fields
 cargo run --example repeating_fields
 cargo run --example component_fields
 cargo run --example repeating_components
+cargo run --example real_world_adt
 ```
 
 ## Testing
