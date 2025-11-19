@@ -302,8 +302,113 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             zpn.emergency_contact.0); // Emergency last
     }
 
-    // Example 10: Component field benefits
-    println!("\n10. Benefits of component fields:");
+    // Example 10: Optional component fields
+    println!("\n10. Optional component fields:");
+    println!("    ------------------------------------------");
+
+    z_segment! {
+        ZOC,
+        id = "ZOC",
+        fields = {
+            1 => patient_id: String,
+            2 => primary_physician: (String, String, String),       // Required: Last^First^Credentials
+            3 => secondary_physician: Option<(String, String, String)>, // Optional
+            4 => maiden_name: Option<(String, String)>,             // Optional: Last^First
+        }
+    }
+
+    // Create segment with optional fields present
+    let with_optional = ZOC::builder()
+        .patient_id("PAT-001")
+        .primary_physician((
+            "Smith".to_string(),
+            "John".to_string(),
+            "MD".to_string(),
+        ))
+        .secondary_physician(Some((
+            "Doe".to_string(),
+            "Jane".to_string(),
+            "RN".to_string(),
+        )))
+        .maiden_name(Some((
+            "Johnson".to_string(),
+            "Mary".to_string(),
+        )))
+        .build()?;
+
+    println!("    Patient with optional fields:");
+    println!("      Patient ID: {}", with_optional.patient_id);
+    println!("      Primary: Dr. {} {}",
+        with_optional.primary_physician.1,
+        with_optional.primary_physician.0);
+
+    if let Some((last, first, cred)) = &with_optional.secondary_physician {
+        println!("      Secondary: {} {} {}", cred, first, last);
+    }
+
+    if let Some((last, first)) = &with_optional.maiden_name {
+        println!("      Maiden name: {} {}", first, last);
+    }
+
+    // Create segment without optional fields
+    let without_optional = ZOC::builder()
+        .patient_id("PAT-002")
+        .primary_physician((
+            "Williams".to_string(),
+            "Sarah".to_string(),
+            "DO".to_string(),
+        ))
+        .build()?;  // No secondary_physician or maiden_name
+
+    println!("\n    Patient without optional fields:");
+    println!("      Patient ID: {}", without_optional.patient_id);
+    println!("      Primary: Dr. {} {}",
+        without_optional.primary_physician.1,
+        without_optional.primary_physician.0);
+    println!("      Secondary: {:?}", without_optional.secondary_physician);
+    println!("      Maiden name: {:?}", without_optional.maiden_name);
+
+    // HL7 encoding
+    let encoded_with = with_optional.to_segment().encode(&delimiters);
+    let encoded_without = without_optional.to_segment().encode(&delimiters);
+
+    println!("\n    HL7 encoding:");
+    println!("      With optional: {}", encoded_with);
+    println!("      Without optional: {}", encoded_without);
+    println!("      (Note: Optional fields appear as empty when None)");
+
+    // Parsing messages with optional components
+    let msg_with_optional = parse_message(
+        "MSH|^~\\&|App|Fac|App|Fac|20250119120000||ADT^A01|MSG|P|2.5\r\
+         ZOC|PAT-003|Brown^Robert^MD|White^Alice^NP|Anderson^Beth\r"
+    )?;
+
+    let msg_without_optional = parse_message(
+        "MSH|^~\\&|App|Fac|App|Fac|20250119120000||ADT^A01|MSG|P|2.5\r\
+         ZOC|PAT-004|Taylor^David^MD||\r"
+    )?;
+
+    println!("\n    Parsing HL7 messages:");
+    if let Some(zoc) = msg_with_optional.get_custom_segment::<ZOC>()? {
+        println!("      Patient {}: Primary={} {}, Secondary={:?}, Maiden={:?}",
+            zoc.patient_id,
+            zoc.primary_physician.1,
+            zoc.primary_physician.0,
+            zoc.secondary_physician.as_ref().map(|(l, f, c)| format!("{} {} {}", c, f, l)),
+            zoc.maiden_name.as_ref().map(|(l, f)| format!("{} {}", f, l)));
+    }
+
+    if let Some(zoc) = msg_without_optional.get_custom_segment::<ZOC>()? {
+        println!("      Patient {}: Primary={} {}, Secondary={:?}, Maiden={:?}",
+            zoc.patient_id,
+            zoc.primary_physician.1,
+            zoc.primary_physician.0,
+            zoc.secondary_physician,
+            zoc.maiden_name);
+    }
+
+    // Example 11: Component field benefits
+    println!("\n11. Benefits of component fields:");
     println!("    ------------------------------------------");
 
     println!("    ✓ Type-safe access to structured data");
@@ -312,6 +417,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("    ✓ Self-documenting code with tuple destructuring");
     println!("    ✓ Follows HL7 v2.x component structure exactly");
     println!("    ✓ Works seamlessly with HL7 ^ (caret) separator");
+    println!("    ✓ Optional components with Option<Tuple> support");
 
     println!("\n=== Example completed successfully! ===");
     Ok(())

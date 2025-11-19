@@ -1759,6 +1759,258 @@ impl BuilderFieldType for (String, String, String, String, String) {
     type Inner = (String, String, String, String, String);
 }
 
+// ============================================================================
+// Optional tuple types for optional component fields
+// ============================================================================
+
+// Option<(String, String)> - Optional 2-component field
+impl BuildableField for Option<(String, String)> {
+    type Storage = (Option<String>, Option<String>);
+    type Inner = Option<(String, String)>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        if let Some((c0, c1)) = value {
+            *storage = (Some(c0), Some(c1));
+        } else {
+            *storage = (None, None);
+        }
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        match storage {
+            (Some(c0), Some(c1)) => Ok(Some((c0, c1))),
+            _ => Ok(None),
+        }
+    }
+}
+
+impl ParseSegmentField for Option<(String, String)> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            if let Some(rep) = field.get_repetition(0) {
+                let c0 = rep.get_component(0).and_then(|c| c.value());
+                let c1 = rep.get_component(1).and_then(|c| c.value());
+
+                if let (Some(v0), Some(v1)) = (c0, c1) {
+                    if !v0.is_empty() && !v1.is_empty() {
+                        return Ok(Some((v0.to_string(), v1.to_string())));
+                    }
+                }
+            }
+        }
+        Ok(None)
+    }
+}
+
+impl SerializeSegmentField for Option<(String, String)> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        if let Some((c0, c1)) = self {
+            use rs7_core::{Component, Field, Repetition};
+
+            let mut rep = Repetition::new();
+            rep.add_component(Component::from_value(c0));
+            rep.add_component(Component::from_value(c1));
+
+            let mut field = Field::new();
+            field.add_repetition(rep);
+            let _ = segment.set_field(field_num, field);
+        }
+    }
+}
+
+impl BuilderFieldType for Option<(String, String)> {
+    type Inner = Option<(String, String)>;
+}
+
+// Option<(String, String, String)> - Optional 3-component field
+impl BuildableField for Option<(String, String, String)> {
+    type Storage = (Option<String>, Option<String>, Option<String>);
+    type Inner = Option<(String, String, String)>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        if let Some((c0, c1, c2)) = value {
+            *storage = (Some(c0), Some(c1), Some(c2));
+        } else {
+            *storage = (None, None, None);
+        }
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        match storage {
+            (Some(c0), Some(c1), Some(c2)) => Ok(Some((c0, c1, c2))),
+            _ => Ok(None),
+        }
+    }
+}
+
+impl ParseSegmentField for Option<(String, String, String)> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            if let Some(rep) = field.get_repetition(0) {
+                let c0 = rep.get_component(0).and_then(|c| c.value());
+                let c1 = rep.get_component(1).and_then(|c| c.value());
+                let c2 = rep.get_component(2).and_then(|c| c.value());
+
+                if let (Some(v0), Some(v1), Some(v2)) = (c0, c1, c2) {
+                    if !v0.is_empty() && !v1.is_empty() && !v2.is_empty() {
+                        return Ok(Some((v0.to_string(), v1.to_string(), v2.to_string())));
+                    }
+                }
+            }
+        }
+        Ok(None)
+    }
+}
+
+impl SerializeSegmentField for Option<(String, String, String)> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        if let Some((c0, c1, c2)) = self {
+            use rs7_core::{Component, Field, Repetition};
+
+            let mut rep = Repetition::new();
+            rep.add_component(Component::from_value(c0));
+            rep.add_component(Component::from_value(c1));
+            rep.add_component(Component::from_value(c2));
+
+            let mut field = Field::new();
+            field.add_repetition(rep);
+            let _ = segment.set_field(field_num, field);
+        }
+    }
+}
+
+impl BuilderFieldType for Option<(String, String, String)> {
+    type Inner = Option<(String, String, String)>;
+}
+
+// Option<(String, String, String, String)> - Optional 4-component field
+impl BuildableField for Option<(String, String, String, String)> {
+    type Storage = (Option<String>, Option<String>, Option<String>, Option<String>);
+    type Inner = Option<(String, String, String, String)>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        if let Some((c0, c1, c2, c3)) = value {
+            *storage = (Some(c0), Some(c1), Some(c2), Some(c3));
+        } else {
+            *storage = (None, None, None, None);
+        }
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        match storage {
+            (Some(c0), Some(c1), Some(c2), Some(c3)) => Ok(Some((c0, c1, c2, c3))),
+            _ => Ok(None),
+        }
+    }
+}
+
+impl ParseSegmentField for Option<(String, String, String, String)> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            if let Some(rep) = field.get_repetition(0) {
+                let c0 = rep.get_component(0).and_then(|c| c.value());
+                let c1 = rep.get_component(1).and_then(|c| c.value());
+                let c2 = rep.get_component(2).and_then(|c| c.value());
+                let c3 = rep.get_component(3).and_then(|c| c.value());
+
+                if let (Some(v0), Some(v1), Some(v2), Some(v3)) = (c0, c1, c2, c3) {
+                    if !v0.is_empty() && !v1.is_empty() && !v2.is_empty() && !v3.is_empty() {
+                        return Ok(Some((v0.to_string(), v1.to_string(), v2.to_string(), v3.to_string())));
+                    }
+                }
+            }
+        }
+        Ok(None)
+    }
+}
+
+impl SerializeSegmentField for Option<(String, String, String, String)> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        if let Some((c0, c1, c2, c3)) = self {
+            use rs7_core::{Component, Field, Repetition};
+
+            let mut rep = Repetition::new();
+            rep.add_component(Component::from_value(c0));
+            rep.add_component(Component::from_value(c1));
+            rep.add_component(Component::from_value(c2));
+            rep.add_component(Component::from_value(c3));
+
+            let mut field = Field::new();
+            field.add_repetition(rep);
+            let _ = segment.set_field(field_num, field);
+        }
+    }
+}
+
+impl BuilderFieldType for Option<(String, String, String, String)> {
+    type Inner = Option<(String, String, String, String)>;
+}
+
+// Option<(String, String, String, String, String)> - Optional 5-component field
+impl BuildableField for Option<(String, String, String, String, String)> {
+    type Storage = (Option<String>, Option<String>, Option<String>, Option<String>, Option<String>);
+    type Inner = Option<(String, String, String, String, String)>;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        if let Some((c0, c1, c2, c3, c4)) = value {
+            *storage = (Some(c0), Some(c1), Some(c2), Some(c3), Some(c4));
+        } else {
+            *storage = (None, None, None, None, None);
+        }
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        match storage {
+            (Some(c0), Some(c1), Some(c2), Some(c3), Some(c4)) => Ok(Some((c0, c1, c2, c3, c4))),
+            _ => Ok(None),
+        }
+    }
+}
+
+impl ParseSegmentField for Option<(String, String, String, String, String)> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        if let Some(field) = segment.get_field(field_num) {
+            if let Some(rep) = field.get_repetition(0) {
+                let c0 = rep.get_component(0).and_then(|c| c.value());
+                let c1 = rep.get_component(1).and_then(|c| c.value());
+                let c2 = rep.get_component(2).and_then(|c| c.value());
+                let c3 = rep.get_component(3).and_then(|c| c.value());
+                let c4 = rep.get_component(4).and_then(|c| c.value());
+
+                if let (Some(v0), Some(v1), Some(v2), Some(v3), Some(v4)) = (c0, c1, c2, c3, c4) {
+                    if !v0.is_empty() && !v1.is_empty() && !v2.is_empty() && !v3.is_empty() && !v4.is_empty() {
+                        return Ok(Some((v0.to_string(), v1.to_string(), v2.to_string(), v3.to_string(), v4.to_string())));
+                    }
+                }
+            }
+        }
+        Ok(None)
+    }
+}
+
+impl SerializeSegmentField for Option<(String, String, String, String, String)> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        if let Some((c0, c1, c2, c3, c4)) = self {
+            use rs7_core::{Component, Field, Repetition};
+
+            let mut rep = Repetition::new();
+            rep.add_component(Component::from_value(c0));
+            rep.add_component(Component::from_value(c1));
+            rep.add_component(Component::from_value(c2));
+            rep.add_component(Component::from_value(c3));
+            rep.add_component(Component::from_value(c4));
+
+            let mut field = Field::new();
+            field.add_repetition(rep);
+            let _ = segment.set_field(field_num, field);
+        }
+    }
+}
+
+impl BuilderFieldType for Option<(String, String, String, String, String)> {
+    type Inner = Option<(String, String, String, String, String)>;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2898,5 +3150,210 @@ mod tests {
 
         // Verify the encoded string contains ^ separators
         assert!(encoded.contains("Smith^John^Alexander^Jr^Dr"));
+    }
+
+    // Tests for optional tuple component types
+    #[test]
+    fn test_option_tuple2_parse_some() {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        let mut rep = Repetition::new();
+        rep.add_component(Component::from_value("Smith"));
+        rep.add_component(Component::from_value("John"));
+        field.add_repetition(rep);
+        segment.set_field(1, field).unwrap();
+
+        let result = Option::<(String, String)>::parse_field(&segment, 1, "TEST").unwrap();
+        assert!(result.is_some());
+        let (c0, c1) = result.unwrap();
+        assert_eq!(c0, "Smith");
+        assert_eq!(c1, "John");
+    }
+
+    #[test]
+    fn test_option_tuple2_parse_none() {
+        let segment = Segment::new("TEST");
+
+        let result = Option::<(String, String)>::parse_field(&segment, 1, "TEST").unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_option_tuple2_serialize_some() {
+        let mut segment = Segment::new("TEST");
+        let value = Some(("Doe".to_string(), "Jane".to_string()));
+
+        value.set_field(&mut segment, 1);
+
+        let field = segment.get_field(1).unwrap();
+        let rep = field.get_repetition(0).unwrap();
+        assert_eq!(rep.get_component(0).unwrap().value().unwrap(), "Doe");
+        assert_eq!(rep.get_component(1).unwrap().value().unwrap(), "Jane");
+    }
+
+    #[test]
+    fn test_option_tuple2_serialize_none() {
+        let mut segment = Segment::new("TEST");
+        let value: Option<(String, String)> = None;
+
+        value.set_field(&mut segment, 1);
+
+        // Should not create a field
+        assert!(segment.get_field(1).is_none() || segment.get_field(1).unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_option_tuple2_roundtrip() {
+        let mut segment = Segment::new("ZOP");
+        let original = Some(("Brown".to_string(), "Alice".to_string()));
+
+        original.set_field(&mut segment, 1);
+        let parsed = Option::<(String, String)>::parse_field(&segment, 1, "ZOP").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_option_tuple3_parse_some() {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        let mut rep = Repetition::new();
+        rep.add_component(Component::from_value("Smith"));
+        rep.add_component(Component::from_value("John"));
+        rep.add_component(Component::from_value("A"));
+        field.add_repetition(rep);
+        segment.set_field(1, field).unwrap();
+
+        let result = Option::<(String, String, String)>::parse_field(&segment, 1, "TEST").unwrap();
+        assert!(result.is_some());
+        let (c0, c1, c2) = result.unwrap();
+        assert_eq!(c0, "Smith");
+        assert_eq!(c1, "John");
+        assert_eq!(c2, "A");
+    }
+
+    #[test]
+    fn test_option_tuple3_parse_none() {
+        let segment = Segment::new("TEST");
+
+        let result = Option::<(String, String, String)>::parse_field(&segment, 1, "TEST").unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_option_tuple3_roundtrip() {
+        let mut segment = Segment::new("ZOP");
+        let original = Some(("Doe".to_string(), "Jane".to_string(), "Marie".to_string()));
+
+        original.set_field(&mut segment, 1);
+        let parsed = Option::<(String, String, String)>::parse_field(&segment, 1, "ZOP").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_option_tuple4_parse_some() {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        let mut rep = Repetition::new();
+        rep.add_component(Component::from_value("Smith"));
+        rep.add_component(Component::from_value("John"));
+        rep.add_component(Component::from_value("A"));
+        rep.add_component(Component::from_value("Jr"));
+        field.add_repetition(rep);
+        segment.set_field(1, field).unwrap();
+
+        let result = Option::<(String, String, String, String)>::parse_field(&segment, 1, "TEST").unwrap();
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_option_tuple4_roundtrip() {
+        let mut segment = Segment::new("ZOP");
+        let original = Some((
+            "Williams".to_string(),
+            "Sarah".to_string(),
+            "Jane".to_string(),
+            "III".to_string(),
+        ));
+
+        original.set_field(&mut segment, 1);
+        let parsed = Option::<(String, String, String, String)>::parse_field(&segment, 1, "ZOP").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_option_tuple5_parse_some() {
+        use rs7_core::{Component, Field, Repetition};
+
+        let mut segment = Segment::new("TEST");
+        let mut field = Field::new();
+        let mut rep = Repetition::new();
+        rep.add_component(Component::from_value("Smith"));
+        rep.add_component(Component::from_value("John"));
+        rep.add_component(Component::from_value("A"));
+        rep.add_component(Component::from_value("Jr"));
+        rep.add_component(Component::from_value("Dr"));
+        field.add_repetition(rep);
+        segment.set_field(1, field).unwrap();
+
+        let result = Option::<(String, String, String, String, String)>::parse_field(&segment, 1, "TEST").unwrap();
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_option_tuple5_roundtrip() {
+        let mut segment = Segment::new("ZOP");
+        let original = Some((
+            "Brown".to_string(),
+            "Robert".to_string(),
+            "James".to_string(),
+            "Sr".to_string(),
+            "Prof".to_string(),
+        ));
+
+        original.set_field(&mut segment, 1);
+        let parsed = Option::<(String, String, String, String, String)>::parse_field(&segment, 1, "ZOP").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_option_tuple_builder_with_some() {
+        // This test verifies optional component fields work in the builder pattern
+        use rs7_core::Delimiters;
+
+        let mut segment = Segment::new("ZOP");
+        let value = Some(("Test".to_string(), "Value".to_string()));
+
+        value.set_field(&mut segment, 1);
+
+        let delimiters = Delimiters::default();
+        let encoded = segment.encode(&delimiters);
+
+        assert!(encoded.contains("Test^Value"));
+    }
+
+    #[test]
+    fn test_option_tuple_builder_with_none() {
+        use rs7_core::Delimiters;
+
+        let mut segment = Segment::new("ZOP");
+        let value: Option<(String, String)> = None;
+
+        value.set_field(&mut segment, 1);
+
+        let delimiters = Delimiters::default();
+        let encoded = segment.encode(&delimiters);
+
+        // When None, should not add components
+        assert!(!encoded.contains("^"));
     }
 }

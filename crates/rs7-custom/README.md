@@ -256,6 +256,10 @@ Supported tuple types for components:
 - `(String, String, String)` - 3 components
 - `(String, String, String, String)` - 4 components
 - `(String, String, String, String, String)` - 5 components
+- `Option<(String, String)>` - Optional 2 components
+- `Option<(String, String, String)>` - Optional 3 components
+- `Option<(String, String, String, String)>` - Optional 4 components
+- `Option<(String, String, String, String, String)>` - Optional 5 components
 
 Common use cases:
 - **Patient names**: Last^First^Middle^Suffix^Prefix
@@ -302,6 +306,57 @@ println!("Patient: {} {}", first, last);
 - **Parsing**: `"Smith^John^A"` → `("Smith", "John", "A")`
 - **Serialization**: `("Doe", "Jane", "M")` → `"Doe^Jane^M"`
 - **Destructuring**: Tuples support pattern matching and destructuring
+
+**Optional Component Fields**:
+
+Component fields can be made optional by wrapping the tuple in `Option<T>`:
+- `Option<(String, String)>` - Optional 2-component field
+- `Option<(String, String, String)>` - Optional 3-component field
+- `Option<(String, String, String, String)>` - Optional 4-component field
+- `Option<(String, String, String, String, String)>` - Optional 5-component field
+
+Example with optional components:
+
+```rust
+z_segment! {
+    ZOC,
+    id = "ZOC",
+    fields = {
+        1 => patient_id: String,
+        2 => primary_physician: (String, String, String),       // Required: Last^First^Credentials
+        3 => secondary_physician: Option<(String, String, String)>, // Optional
+        4 => maiden_name: Option<(String, String)>,             // Optional: Last^First
+    }
+}
+
+// With optional fields present
+let with_optional = ZOC::builder()
+    .patient_id("PAT-001")
+    .primary_physician(("Smith".to_string(), "John".to_string(), "MD".to_string()))
+    .secondary_physician(Some(("Doe".to_string(), "Jane".to_string(), "RN".to_string())))
+    .maiden_name(Some(("Johnson".to_string(), "Mary".to_string())))
+    .build()?;
+
+// Without optional fields
+let without_optional = ZOC::builder()
+    .patient_id("PAT-002")
+    .primary_physician(("Williams".to_string(), "Sarah".to_string(), "DO".to_string()))
+    .build()?;  // secondary_physician and maiden_name default to None
+
+// Accessing optional components
+if let Some((last, first, cred)) = &with_optional.secondary_physician {
+    println!("Secondary: {} {} {}", cred, first, last);
+}
+
+// HL7 encoding: Optional fields appear as empty when None
+// ZOC|PAT-001|Smith^John^MD|Doe^Jane^RN|Johnson^Mary
+// ZOC|PAT-002|Williams^Sarah^DO||
+```
+
+**Parsing Behavior**:
+- Returns `None` if the field is missing or any component is empty
+- Returns `Some(tuple)` only if all components are present and non-empty
+- Empty HL7 fields (`||`) parse as `None`
 
 ### Boolean Field Parsing
 
