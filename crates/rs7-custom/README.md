@@ -178,10 +178,23 @@ The following field types are supported out of the box:
 
 - `String` - Text fields (required)
 - `Option<String>` - Optional text fields
-- `u32` - Unsigned 32-bit integers
-- `Option<u32>` - Optional integers
+- `u32` - Unsigned 32-bit integers (0 to 4,294,967,295)
+- `Option<u32>` - Optional unsigned integers
+- `i32` - Signed 32-bit integers (-2,147,483,648 to 2,147,483,647)
+- `Option<i32>` - Optional signed integers
+- `i64` - Signed 64-bit integers (large numbers)
+- `Option<i64>` - Optional large integers
 - `f64` - Floating point numbers
 - `Option<f64>` - Optional floating point numbers
+- `bool` - Boolean flags (true/false)
+- `Option<bool>` - Optional boolean flags
+
+### Boolean Field Parsing
+
+Boolean fields support multiple HL7 conventions when parsing:
+- **True values**: `Y`, `YES`, `T`, `TRUE`, `1` (case-insensitive)
+- **False values**: `N`, `NO`, `F`, `FALSE`, `0` (case-insensitive)
+- **Serialization**: Always outputs `Y` for true, `N` for false
 
 Example with different types:
 
@@ -190,17 +203,26 @@ z_segment! {
     ZMX,
     id = "ZMX",
     fields = {
-        1 => id: String,              // Required text
-        2 => count: u32,              // Required integer
-        3 => amount: Option<f64>,     // Optional decimal
-        4 => notes: Option<String>,   // Optional text
+        1 => id: String,                 // Required text
+        2 => count: u32,                 // Required unsigned integer
+        3 => temperature_delta: i32,     // Required signed integer (can be negative)
+        4 => account_balance: i64,       // Required large integer
+        5 => amount: Option<f64>,        // Optional decimal
+        6 => is_active: bool,            // Required boolean
+        7 => verified: Option<bool>,     // Optional boolean
+        8 => notes: Option<String>,      // Optional text
     }
 }
 
 let zmx = ZMX::builder()
     .id("MX001")
     .count(42u32)
-    .amount(123.45)
+    .temperature_delta(-5)          // Signed integer (negative)
+    .account_balance(1000000i64)    // Large integer
+    .amount(123.45)                 // Optional float
+    .is_active(true)                // Boolean
+    .verified(false)                // Optional boolean
+    .notes("Sample notes")          // Optional string
     .build()?;
 ```
 
@@ -274,6 +296,7 @@ See the `examples/` directory for complete working examples:
 - `zpv_visit_segment.rs` - Basic Z-segment usage
 - `zcu_customer_segment.rs` - Validation and error handling
 - `message_manipulation.rs` - Comprehensive message operations
+- `field_types.rs` - Demonstrating all supported field types (String, u32, i32, i64, f64, bool)
 
 Run examples with:
 

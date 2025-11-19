@@ -504,6 +504,247 @@ impl BuilderFieldType for Option<u32> {
     type Inner = u32;
 }
 
+// Implementations for i32
+impl BuildableField for i32 {
+    type Storage = Option<i32>;
+    type Inner = i32;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, field_name: &str, seg_id: &str) -> Result<Self> {
+        storage.ok_or_else(|| {
+            crate::error::CustomSegmentError::missing_field(
+                format!("{}-{}", seg_id, field_name),
+                seg_id,
+            )
+        })
+    }
+}
+
+impl BuildableField for Option<i32> {
+    type Storage = Option<i32>;
+    type Inner = i32;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+impl ParseSegmentField for i32 {
+    fn parse_field(segment: &Segment, field_num: usize, seg_id: &str) -> Result<Self> {
+        segment
+            .get_field_value(field_num)
+            .and_then(|s| s.parse::<i32>().ok())
+            .ok_or_else(|| {
+                crate::error::CustomSegmentError::missing_field(
+                    format!("{}-{}", seg_id, field_num),
+                    seg_id,
+                )
+            })
+    }
+}
+
+impl ParseSegmentField for Option<i32> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        Ok(segment
+            .get_field_value(field_num)
+            .and_then(|s| s.parse::<i32>().ok()))
+    }
+}
+
+impl SerializeSegmentField for i32 {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        let _ = segment.set_field_value(field_num, &self.to_string());
+    }
+}
+
+impl SerializeSegmentField for Option<i32> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        if let Some(v) = self {
+            let _ = segment.set_field_value(field_num, &v.to_string());
+        }
+    }
+}
+
+impl BuilderFieldType for i32 {
+    type Inner = i32;
+}
+
+impl BuilderFieldType for Option<i32> {
+    type Inner = i32;
+}
+
+// Implementations for i64
+impl BuildableField for i64 {
+    type Storage = Option<i64>;
+    type Inner = i64;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, field_name: &str, seg_id: &str) -> Result<Self> {
+        storage.ok_or_else(|| {
+            crate::error::CustomSegmentError::missing_field(
+                format!("{}-{}", seg_id, field_name),
+                seg_id,
+            )
+        })
+    }
+}
+
+impl BuildableField for Option<i64> {
+    type Storage = Option<i64>;
+    type Inner = i64;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+impl ParseSegmentField for i64 {
+    fn parse_field(segment: &Segment, field_num: usize, seg_id: &str) -> Result<Self> {
+        segment
+            .get_field_value(field_num)
+            .and_then(|s| s.parse::<i64>().ok())
+            .ok_or_else(|| {
+                crate::error::CustomSegmentError::missing_field(
+                    format!("{}-{}", seg_id, field_num),
+                    seg_id,
+                )
+            })
+    }
+}
+
+impl ParseSegmentField for Option<i64> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        Ok(segment
+            .get_field_value(field_num)
+            .and_then(|s| s.parse::<i64>().ok()))
+    }
+}
+
+impl SerializeSegmentField for i64 {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        let _ = segment.set_field_value(field_num, &self.to_string());
+    }
+}
+
+impl SerializeSegmentField for Option<i64> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        if let Some(v) = self {
+            let _ = segment.set_field_value(field_num, &v.to_string());
+        }
+    }
+}
+
+impl BuilderFieldType for i64 {
+    type Inner = i64;
+}
+
+impl BuilderFieldType for Option<i64> {
+    type Inner = i64;
+}
+
+// Implementations for bool
+impl BuildableField for bool {
+    type Storage = Option<bool>;
+    type Inner = bool;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, field_name: &str, seg_id: &str) -> Result<Self> {
+        storage.ok_or_else(|| {
+            crate::error::CustomSegmentError::missing_field(
+                format!("{}-{}", seg_id, field_name),
+                seg_id,
+            )
+        })
+    }
+}
+
+impl BuildableField for Option<bool> {
+    type Storage = Option<bool>;
+    type Inner = bool;
+
+    fn set_value(storage: &mut Self::Storage, value: Self::Inner) {
+        *storage = Some(value);
+    }
+
+    fn build_value(storage: Self::Storage, _field_name: &str, _seg_id: &str) -> Result<Self> {
+        Ok(storage)
+    }
+}
+
+impl ParseSegmentField for bool {
+    fn parse_field(segment: &Segment, field_num: usize, seg_id: &str) -> Result<Self> {
+        segment
+            .get_field_value(field_num)
+            .and_then(|s| {
+                // HL7 typically uses Y/N or 1/0 for booleans
+                match s.to_uppercase().as_str() {
+                    "Y" | "YES" | "T" | "TRUE" | "1" => Some(true),
+                    "N" | "NO" | "F" | "FALSE" | "0" => Some(false),
+                    _ => None,
+                }
+            })
+            .ok_or_else(|| {
+                crate::error::CustomSegmentError::missing_field(
+                    format!("{}-{}", seg_id, field_num),
+                    seg_id,
+                )
+            })
+    }
+}
+
+impl ParseSegmentField for Option<bool> {
+    fn parse_field(segment: &Segment, field_num: usize, _seg_id: &str) -> Result<Self> {
+        Ok(segment.get_field_value(field_num).and_then(|s| {
+            match s.to_uppercase().as_str() {
+                "Y" | "YES" | "T" | "TRUE" | "1" => Some(true),
+                "N" | "NO" | "F" | "FALSE" | "0" => Some(false),
+                _ => None,
+            }
+        }))
+    }
+}
+
+impl SerializeSegmentField for bool {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        let value = if *self { "Y" } else { "N" };
+        let _ = segment.set_field_value(field_num, value);
+    }
+}
+
+impl SerializeSegmentField for Option<bool> {
+    fn set_field(&self, segment: &mut Segment, field_num: usize) {
+        if let Some(v) = self {
+            let value = if *v { "Y" } else { "N" };
+            let _ = segment.set_field_value(field_num, value);
+        }
+    }
+}
+
+impl BuilderFieldType for bool {
+    type Inner = bool;
+}
+
+impl BuilderFieldType for Option<bool> {
+    type Inner = bool;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -538,5 +779,296 @@ mod tests {
             .build();
 
         assert!(!field.required);
+    }
+
+    // Tests for i32 type
+    #[test]
+    fn test_i32_parse_positive() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "42").unwrap();
+
+        let result = i32::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, 42);
+    }
+
+    #[test]
+    fn test_i32_parse_negative() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "-123").unwrap();
+
+        let result = i32::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, -123);
+    }
+
+    #[test]
+    fn test_i32_parse_zero() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "0").unwrap();
+
+        let result = i32::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_i32_serialize() {
+        let mut segment = Segment::new("TEST");
+        let value: i32 = -456;
+
+        value.set_field(&mut segment, 1);
+        assert_eq!(segment.get_field_value(1).unwrap(), "-456");
+    }
+
+    #[test]
+    fn test_i32_roundtrip() {
+        let mut segment = Segment::new("TEST");
+        let original: i32 = 789;
+
+        original.set_field(&mut segment, 1);
+        let parsed = i32::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_option_i32_parse_some() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "100").unwrap();
+
+        let result = Option::<i32>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, Some(100));
+    }
+
+    #[test]
+    fn test_option_i32_parse_none() {
+        let segment = Segment::new("TEST");
+
+        let result = Option::<i32>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, None);
+    }
+
+    // Tests for i64 type
+    #[test]
+    fn test_i64_parse_large_positive() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "9223372036854775807").unwrap(); // i64::MAX
+
+        let result = i64::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, 9223372036854775807);
+    }
+
+    #[test]
+    fn test_i64_parse_large_negative() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "-9223372036854775808").unwrap(); // i64::MIN
+
+        let result = i64::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, -9223372036854775808);
+    }
+
+    #[test]
+    fn test_i64_serialize() {
+        let mut segment = Segment::new("TEST");
+        let value: i64 = 123456789012345;
+
+        value.set_field(&mut segment, 1);
+        assert_eq!(segment.get_field_value(1).unwrap(), "123456789012345");
+    }
+
+    #[test]
+    fn test_i64_roundtrip() {
+        let mut segment = Segment::new("TEST");
+        let original: i64 = -987654321098765;
+
+        original.set_field(&mut segment, 1);
+        let parsed = i64::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_option_i64_parse_some() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "555555").unwrap();
+
+        let result = Option::<i64>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, Some(555555));
+    }
+
+    #[test]
+    fn test_option_i64_parse_none() {
+        let segment = Segment::new("TEST");
+
+        let result = Option::<i64>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, None);
+    }
+
+    // Tests for bool type - parsing all supported formats
+    #[test]
+    fn test_bool_parse_y() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "Y").unwrap();
+
+        let result = bool::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn test_bool_parse_yes() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "YES").unwrap();
+
+        let result = bool::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn test_bool_parse_t() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "T").unwrap();
+
+        let result = bool::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn test_bool_parse_true() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "TRUE").unwrap();
+
+        let result = bool::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn test_bool_parse_one() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "1").unwrap();
+
+        let result = bool::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn test_bool_parse_n() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "N").unwrap();
+
+        let result = bool::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn test_bool_parse_no() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "NO").unwrap();
+
+        let result = bool::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn test_bool_parse_f() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "F").unwrap();
+
+        let result = bool::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn test_bool_parse_false() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "FALSE").unwrap();
+
+        let result = bool::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn test_bool_parse_zero() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "0").unwrap();
+
+        let result = bool::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn test_bool_parse_case_insensitive() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "yes").unwrap();
+
+        let result = bool::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, true);
+
+        segment.set_field_value(1, "No").unwrap();
+        let result = bool::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn test_bool_serialize_true() {
+        let mut segment = Segment::new("TEST");
+        let value = true;
+
+        value.set_field(&mut segment, 1);
+        assert_eq!(segment.get_field_value(1).unwrap(), "Y");
+    }
+
+    #[test]
+    fn test_bool_serialize_false() {
+        let mut segment = Segment::new("TEST");
+        let value = false;
+
+        value.set_field(&mut segment, 1);
+        assert_eq!(segment.get_field_value(1).unwrap(), "N");
+    }
+
+    #[test]
+    fn test_bool_roundtrip_true() {
+        let mut segment = Segment::new("TEST");
+        let original = true;
+
+        original.set_field(&mut segment, 1);
+        let parsed = bool::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_bool_roundtrip_false() {
+        let mut segment = Segment::new("TEST");
+        let original = false;
+
+        original.set_field(&mut segment, 1);
+        let parsed = bool::parse_field(&segment, 1, "TEST").unwrap();
+
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn test_option_bool_parse_some() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "Y").unwrap();
+
+        let result = Option::<bool>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, Some(true));
+    }
+
+    #[test]
+    fn test_option_bool_parse_none() {
+        let segment = Segment::new("TEST");
+
+        let result = Option::<bool>::parse_field(&segment, 1, "TEST").unwrap();
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_bool_parse_invalid_value() {
+        let mut segment = Segment::new("TEST");
+        segment.set_field_value(1, "INVALID").unwrap();
+
+        let result = bool::parse_field(&segment, 1, "TEST");
+        assert!(result.is_err());
     }
 }

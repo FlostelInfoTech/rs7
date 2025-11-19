@@ -333,7 +333,7 @@ message.add_custom_segment(new_zpv);
 - Type-safe segment definitions with compile-time validation
 - Fluent builder API for ergonomic segment creation
 - Custom validation hooks for business rules
-- Support for String, u32, f64, and Option<T> field types
+- Support for String, u32, i32, i64, f64, bool, and Option<T> field types
 - Zero overhead for standard HL7 segments
 
 See [rs7-custom/README.md](crates/rs7-custom/README.md) for complete documentation and examples.
