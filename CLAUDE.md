@@ -1,0 +1,247 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+RS7 is a comprehensive Rust library for parsing, validating, and creating HL7 v2.x healthcare messages, inspired by the Java HAPI library. The project uses a workspace architecture with 10 specialized crates.
+
+## Build, Test, and Development Commands
+
+### Building
+```bash
+# Build entire workspace
+cargo build --workspace
+
+# Build specific crate
+cargo build -p rs7-core
+cargo build -p rs7-parser
+
+# Build with release optimizations
+cargo build --release --workspace
+
+# Build CLI tool
+cargo build -p rs7-cli --release
+```
+
+### Testing
+```bash
+# Run all tests in workspace
+cargo test --workspace
+
+# Run tests for specific crate
+cargo test -p rs7-parser
+cargo test -p rs7-validator
+
+# Run specific test with output
+cargo test test_name -- --nocapture
+
+# Run tests with all features enabled
+cargo test --workspace --all-features
+```
+
+### Running Examples
+```bash
+# Core examples
+cargo run --example parse_adt
+cargo run --example create_message
+cargo run --example message_builders
+cargo run --example schema_validation
+cargo run --example datatype_validation
+cargo run --example complete_validation
+
+# MLLP examples (requires two terminals)
+cargo run --example mllp_server    # Terminal 1
+cargo run --example mllp_client    # Terminal 2
+
+# HTTP examples (requires two terminals)
+cargo run --example http_server -p rs7-http   # Terminal 1
+cargo run --example http_client -p rs7-http   # Terminal 2
+
+# FHIR conversion examples
+cargo run --example convert_adt -p rs7-fhir
+cargo run --example convert_oru -p rs7-fhir
+```
+
+### CLI Tool
+```bash
+# Install CLI
+cargo install --path crates/rs7-cli
+
+# CLI commands
+rs7 parse message.hl7 --format pretty
+rs7 validate message.hl7
+rs7 extract message.hl7 PID-5 PID-7 PID-8
+rs7 convert message.hl7 --to json --pretty
+rs7 info message.hl7
+```
+
+### Benchmarking
+```bash
+# Run all benchmarks
+cargo bench --workspace
+
+# Benchmark specific crate
+cargo bench -p rs7-parser
+cargo bench -p rs7-terser
+```
+
+### WebAssembly
+```bash
+# Build WASM package
+cd crates/rs7-wasm
+wasm-pack build --target web
+wasm-pack build --target nodejs
+```
+
+## Architecture
+
+### Workspace Structure
+
+```
+rs7/
+├── rs7-core       - Core data structures (Message, Segment, Field, Component, Subcomponent)
+├── rs7-parser     - HL7 message parser using nom (zero-copy parsing)
+├── rs7-validator  - Schema-based validation, data type validation, vocabulary validation
+├── rs7-terser     - Path-based field access API (similar to HAPI's Terser)
+├── rs7-mllp       - MLLP protocol for intra-organization network transmission
+├── rs7-http       - HTTP transport for inter-organization communication
+├── rs7-fhir       - HL7 v2 to FHIR R4 conversion (9 converters)
+├── rs7-wasm       - WebAssembly bindings for JavaScript/TypeScript
+├── rs7-cli        - Command-line interface for message analysis
+└── rs7-macros     - Derive macros for message types (placeholder)
+```
+
+### Core Concepts
+
+**Message Hierarchy:**
+```
+Message
+  └─ Segment (MSH, PID, OBX, etc.)
+       └─ Field (separated by |)
+            └─ Repetition (separated by ~)
+                 └─ Component (separated by ^)
+                      └─ Subcomponent (separated by &)
+```
+
+**Supported HL7 Versions:** v2.3, v2.3.1, v2.4, v2.5, v2.5.1, v2.6, v2.7, v2.7.1
+
+**Message Types:** ADT (A01-A40), SIU (S12-S15), MDM (T01-T04), DFT (P03, P11), QRY (A19, Q01-Q02), BAR (P01-P02), Pharmacy (RDE, RAS, RDS, RGV, RRD, RRA), Laboratory (OUL, OML), ORM, ORU, ACK, MFN
+
+### Key Design Patterns
+
+**Builders Pattern:**
+The project uses fluent builders for message creation. Builders are located in `rs7-core/src/builders/`:
+- `adt.rs` - ADT message builders (A01-A13, A17, A28, A31, A40)
+- `siu.rs` - Scheduling messages
+- `orm.rs`, `oru.rs` - Order/result messages
+- `pharmacy.rs`, `laboratory.rs` - Specialized message builders
+- `fields.rs` - Complex field builders (XPN, XAD, XTN, CX, XCN)
+
+**Validation Architecture:**
+Three-layer validation system in `rs7-validator`:
+1. Schema validation - Message structure against HL7 standards (JSON schemas in `schemas/v2_X/`)
+2. Data type validation - Format checking (dates, times, numerics, coded values) in `datatype.rs`
+3. Vocabulary validation - Code set validation against HL7 tables (Table 0001, etc.) in `vocabulary.rs`
+
+**Terser API:**
+Field access uses path notation (e.g., `PID-5-1`, `OBX(2)-5`). Two implementations:
+- `Terser` - Standard field access
+- `CachedTerser` - 5-10x faster for repeated access to same fields
+
+**Parser Design:**
+Uses `nom` parser combinators for zero-copy parsing with minimal allocations. The `optimized.rs` module contains pre-allocation strategies for common patterns.
+
+## Important Implementation Details
+
+### Terser Path Notation
+
+**IMPORTANT: Terser segment indexing is 1-based** (e.g., `OBX(1)` for first OBX, `OBX(2)` for second OBX). This matches HAPI conventions and HL7's 1-based field numbering.
+
+Path examples:
+- `PID-5` - PID segment, field 5
+- `PID-5-1` - PID segment, field 5, component 1
+- `PID-5-1-2` - PID segment, field 5, component 1, subcomponent 2
+- `OBX(1)-5` - First OBX segment, field 5
+- `OBX(2)-5` - Second OBX segment, field 5
+- `PID-11(1)-1` - PID segment, field 11, second repetition, component 1
+
+**Note:** Repetition indexing remains 0-based internally (first repetition is index 0).
+
+### Workspace Dependencies
+
+All shared dependencies are defined in the root `Cargo.toml` under `[workspace.dependencies]`. When adding dependencies to individual crates, use `dep.workspace = true` to reference the workspace version.
+
+### Schema Organization
+
+Validation schemas are JSON files organized by HL7 version:
+```
+crates/rs7-validator/schemas/
+├── v2_3/
+├── v2_4/
+├── v2_5/
+├── v2_6/
+└── v2_7/
+```
+
+Each contains message-specific schemas (e.g., `ADT_A01.json`, `ORU_R01.json`).
+
+### Performance Considerations
+
+The library is optimized for high-throughput processing:
+- Zero-copy parsing with minimal allocations
+- CachedTerser for repeated field access (5-10x faster)
+- Pre-allocation strategies in parser
+- Typical performance: 40,000-100,000 messages/sec depending on size
+
+When making changes that could affect performance, run benchmarks before and after.
+
+### Error Handling
+
+Errors use `thiserror` for consistent error types:
+- `rs7_core::Error` - Core errors (parsing, encoding)
+- `rs7_validator::ValidationError` - Validation-specific errors
+- Results use `rs7_core::Result<T>` type alias
+
+### Testing Patterns
+
+Tests are co-located with source code in `#[cfg(test)] mod tests` blocks. Property-based testing uses `proptest` for data structure validation.
+
+## Network Protocols
+
+### MLLP (Minimal Lower Layer Protocol)
+Intra-organization communication on TCP. MLLP frames messages with:
+- Start byte: 0x0B (VT)
+- End bytes: 0x1C 0x0D (FS CR)
+
+Implementation in `rs7-mllp` uses Tokio for async I/O.
+
+### HTTP Transport
+Inter-organization communication using HL7-over-HTTP. Implementation in `rs7-http` supports:
+- Basic authentication
+- Configurable timeouts
+- Automatic ACK generation
+
+## FHIR Conversion
+
+Located in `rs7-fhir`, provides converters from HL7 v2 to FHIR R4:
+- Patient (PID → Patient)
+- Observation (OBX → Observation)
+- Encounter (PV1 → Encounter)
+- DiagnosticReport (OBR → DiagnosticReport)
+- Practitioner (PV1/ORC → Practitioner)
+- AllergyIntolerance (AL1 → AllergyIntolerance)
+- MedicationAdministration (RXA → MedicationAdministration)
+- Condition (PRB/DG1 → Condition)
+- Procedure (PR1 → Procedure)
+
+Each converter is in a separate module and uses the standard FHIR R4 resource structure.
+
+## Edition and Toolchain
+
+This project uses Rust edition 2024. Ensure your toolchain is up to date:
+```bash
+rustup update
+```
+
+Required: Rust 1.91.0 or later
