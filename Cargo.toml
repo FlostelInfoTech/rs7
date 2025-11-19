@@ -32,13 +32,14 @@ members = [
     "crates/rs7-http",
     "crates/rs7-macros",
     "crates/rs7-fhir",
+    "crates/rs7-custom",
     "crates/rs7-wasm",
     "crates/rs7-cli",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.6.0"
+version = "0.8.0"
 edition = "2024"
 authors = ["Alex Shao <alex.fanshao@gmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -78,6 +79,12 @@ proc-macro2 = "1.0"
 quote = "1.0"
 syn = { version = "2.0", features = ["full"] }
 
+# Synchronization
+once_cell = "1.19"
+
+# Macro utilities
+paste = "1.0"
+
 # Internal crates
 rs7-core = { path = "crates/rs7-core" }
 rs7-parser = { path = "crates/rs7-parser" }
@@ -86,6 +93,7 @@ rs7-terser = { path = "crates/rs7-terser" }
 rs7-mllp = { path = "crates/rs7-mllp" }
 rs7-http = { path = "crates/rs7-http" }
 rs7-fhir = { path = "crates/rs7-fhir" }
+rs7-custom = { path = "crates/rs7-custom" }
 rs7-macros = { path = "crates/rs7-macros" }
 
 [profile.release]

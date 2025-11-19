@@ -7,6 +7,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2025-11-19
+
+### Added - Custom Z-Segment Framework 🔧
+
+- **rs7-custom Crate** - Type-safe framework for custom organization-specific Z-segments:
+  - Declarative `z_segment!` macro for defining custom segments
+  - Compile-time type checking for segment fields
+  - Support for String, u32, f64, and Option<T> field types
+  - Zero overhead for standard HL7 segments
+
+- **Core Features**:
+  - `CustomSegment` trait for segment definitions
+  - `CustomSegmentRegistry` for dynamic segment registration
+  - `MessageExt` extension trait for seamless Message integration
+  - Fluent builder API for ergonomic segment creation
+  - Custom validation hooks for business rules
+
+- **Message Operations**:
+  - `get_custom_segment<T>()` - Extract first occurrence by type
+  - `get_custom_segments<T>()` - Extract all occurrences
+  - `has_custom_segment<T>()` - Check existence
+  - `set_custom_segment<T>()` - Replace or add segment
+  - `add_custom_segment<T>()` - Append segment
+  - `remove_custom_segments<T>()` - Remove all of type
+
+- **Builder Pattern**:
+  - Type-safe field setters with automatic type conversion
+  - Required field validation at build time
+  - Optional field support without explicit None
+  - Validation runs automatically on build
+
+- **Examples**:
+  - `zpv_visit_segment.rs` - Basic Z-segment usage
+  - `zcu_customer_segment.rs` - Validation and error handling
+  - `message_manipulation.rs` - Comprehensive message operations
+
+- **Testing**:
+  - 25 unit tests covering core functionality
+  - 18 integration tests for end-to-end workflows
+  - All tests passing with zero warnings
+
+- **Documentation**:
+  - Comprehensive README with quick start guide
+  - API documentation for all public types
+  - Best practices and performance notes
+  - Updated main README with Z-segment section
+
+### Technical Details
+
+- **Trait-Based Architecture**: Uses specialized traits (ParseSegmentField, SerializeSegmentField, BuildableField) for type-safe field handling
+- **Macro Implementation**: Declarative macro generates struct, CustomSegment impl, and builder struct
+- **Validation Integration**: Custom validation functions run on parsing and building
+- **Zero Runtime Cost**: All type checking happens at compile time
+
+## [0.7.0] - 2025-11-19
+
+### Changed - HL7 Standards Compliance 🔧
+
+**BREAKING CHANGE**: Terser segment indexing changed from 0-based to 1-based to match HAPI and HL7 conventions.
+
+- **Terser Segment Indexing (BREAKING)**:
+  - Changed from 0-based to 1-based indexing for segment access
+  - `OBX(1)` now refers to the **first** OBX segment (previously second)
+  - `OBX(2)` now refers to the **second** OBX segment (previously third)
+  - `OBX` without index still refers to the first OBX segment
+  - Attempting to use index 0 (e.g., `OBX(0)`) now returns an error
+  - This matches HAPI's convention and aligns with HL7's 1-based field numbering
+
+- **Migration Guide**:
+  - Review all code using segment indexing in Terser paths
+  - Update indexed segment references: `OBX(N)` → `OBX(N+1)` for N > 0
+  - First segment: `OBX(0)` → `OBX` or `OBX(1)`
+  - Second segment: `OBX(1)` → `OBX(2)`
+  - Third segment: `OBX(2)` → `OBX(3)`, etc.
+
+### Fixed
+
+- **ACK Message Generation**:
+  - ACK messages now correctly include trigger event in MSH-9
+  - Format changed from `"ACK"` to `"ACK^{trigger}"` (e.g., `"ACK^A01"` for ADT^A01)
+  - Complies with HL7 v2.x acknowledgment message standards
+
+### Documentation
+
+- Updated all examples to use 1-based segment indexing
+- Updated README.md, CLAUDE.md, and crate READMEs with correct indexing
+- Clarified that component and subcomponent indexing remains 1-based (unchanged)
+- Added migration notes for upgrading from 0.6.x
+
 ## [0.6.0] - 2025-10-08
 
 ### Added - CLI Tool for Message Analysis 🖥️

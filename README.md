@@ -19,6 +19,7 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 - **✅ MLLP Support**: Network transmission using Minimal Lower Layer Protocol (intra-organization)
 - **✅ HTTP Transport**: HL7-over-HTTP support for inter-organization communication
 - **✅ FHIR Conversion**: Convert HL7 v2 messages to FHIR R4 resources (Patient, Observation, Encounter, DiagnosticReport, etc.)
+- **✅ Custom Z-Segments**: Type-safe framework for defining and parsing custom organization-specific Z-segments
 - **🚀 Fast and Safe**: Built with Rust for performance and memory safety
 - **📦 Modular Design**: Use only the components you need
 
@@ -30,6 +31,7 @@ rs7/
 ├── rs7-parser    - HL7 message parser using nom
 ├── rs7-validator - Message validation against HL7 standards
 ├── rs7-terser    - Path-based field access API
+├── rs7-custom    - Type-safe custom Z-segment framework
 ├── rs7-mllp      - MLLP protocol for network transmission (intra-organization)
 ├── rs7-http      - HTTP transport for inter-organization communication
 ├── rs7-fhir      - HL7 v2 to FHIR R4 conversion
@@ -44,13 +46,14 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rs7-core = "0.6"
-rs7-parser = "0.6"
-rs7-terser = "0.6"
-rs7-validator = "0.6"
-rs7-mllp = "0.6"  # Optional: for MLLP network support (intra-organization)
-rs7-http = "0.6"  # Optional: for HTTP transport (inter-organization)
-rs7-fhir = "0.6"  # Optional: for FHIR conversion
+rs7-core = "0.8"
+rs7-parser = "0.8"
+rs7-terser = "0.8"
+rs7-validator = "0.8"
+rs7-custom = "0.8"  # Optional: for custom Z-segment support
+rs7-mllp = "0.8"    # Optional: for MLLP network support (intra-organization)
+rs7-http = "0.8"    # Optional: for HTTP transport (inter-organization)
+rs7-fhir = "0.8"    # Optional: for FHIR conversion
 ```
 
 ### Parsing a Message
@@ -282,6 +285,59 @@ println!("{}", json);
 
 See [rs7-fhir/README.md](crates/rs7-fhir/README.md) for complete documentation.
 
+### Custom Z-Segments
+
+RS7 provides a type-safe framework for working with custom organization-specific Z-segments:
+
+```rust
+use rs7_custom::{z_segment, MessageExt};
+use rs7_parser::parse_message;
+
+// Define a custom Z-segment
+z_segment! {
+    ZPV,  // Patient Visit Extension
+    id = "ZPV",
+    fields = {
+        1 => visit_type: String,
+        2 => visit_number: String,
+        3 => patient_class: Option<String>,
+        4 => department_code: Option<String>,
+    }
+}
+
+// Parse a message containing the Z-segment
+let hl7 = r"MSH|^~\&|SendApp|SendFac|RecApp|RecFac|20240315||ADT^A01|12345|P|2.5
+PID|1|12345|67890^^^MRN|DOE^JOHN^A||19800101|M
+ZPV|OUTPATIENT|V12345|O|CARDIO";
+
+let message = parse_message(hl7)?;
+
+// Extract the custom segment
+if let Some(zpv) = message.get_custom_segment::<ZPV>()? {
+    println!("Visit Type: {}", zpv.visit_type);
+    println!("Visit Number: {}", zpv.visit_number);
+}
+
+// Build a Z-segment programmatically
+let new_zpv = ZPV::builder()
+    .visit_type("EMERGENCY")
+    .visit_number("V99999")
+    .patient_class("E")
+    .build()?;
+
+// Add to message
+message.add_custom_segment(new_zpv);
+```
+
+**Features:**
+- Type-safe segment definitions with compile-time validation
+- Fluent builder API for ergonomic segment creation
+- Custom validation hooks for business rules
+- Support for String, u32, f64, and Option<T> field types
+- Zero overhead for standard HL7 segments
+
+See [rs7-custom/README.md](crates/rs7-custom/README.md) for complete documentation and examples.
+
 ### WebAssembly (JavaScript/TypeScript)
 
 RS7 can be used in browsers and Node.js via WebAssembly:
@@ -338,7 +394,7 @@ rs7 info message.hl7
 **Commands:**
 - `parse` - Parse and display HL7 message structure (text, JSON, pretty formats)
 - `validate` - Validate messages against HL7 standards with detailed error reports
-- `extract` - Extract field values using Terser paths (supports indexing like `OBX(0)-5`)
+- `extract` - Extract field values using Terser paths (supports indexing like `OBX(1)-5`)
 - `convert` - Convert to JSON or FHIR R4 format
 - `info` - Display comprehensive message information and statistics
 
@@ -404,7 +460,7 @@ The Terser API uses a simple path notation for accessing fields:
 | `PID-5` | PID segment, field 5 |
 | `PID-5-1` | PID segment, field 5, component 1 |
 | `PID-5-1-2` | PID segment, field 5, component 1, subcomponent 2 |
-| `OBX(2)-5` | Third OBX segment (0-indexed), field 5 |
+| `OBX(2)-5` | Second OBX segment (1-indexed), field 5 |
 | `PID-11(1)-1` | PID segment, field 11, second repetition, component 1 |
 
 ## HL7 Message Hierarchy
@@ -575,6 +631,7 @@ Contributions are welcome! Please:
 - [x] WebAssembly support ✅ (Full JavaScript/TypeScript bindings - see rs7-wasm/README.md)
 - [x] CLI tool for message analysis ✅ (5 commands: parse, validate, extract, convert, info - see rs7-cli/README.md)
 - [x] HTTP transport support ✅ (HL7-over-HTTP for inter-organization communication - see rs7-http/README.md)
+- [x] Custom Z-segment framework ✅ (Type-safe custom segment support with validation - see rs7-custom/README.md)
 
 ## License
 
