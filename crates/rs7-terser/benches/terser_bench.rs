@@ -37,7 +37,8 @@ fn bench_terser_get_indexed_segment(c: &mut Criterion) {
 
     c.bench_function("terser_get_indexed_segment", |b| {
         b.iter(|| {
-            terser.get(black_box("OBX(1)-5")).unwrap()
+            // OBX(2) = second OBX segment (1-based indexing)
+            terser.get(black_box("OBX(2)-5")).unwrap()
         })
     });
 }
@@ -56,8 +57,9 @@ fn bench_terser_multiple_gets(c: &mut Criterion) {
             let _ = terser.get(black_box("OBX-3")).unwrap();
             let _ = terser.get(black_box("OBX-3-1")).unwrap();
             let _ = terser.get(black_box("OBX-5")).unwrap();
-            let _ = terser.get(black_box("OBX(1)-3")).unwrap();
-            let _ = terser.get(black_box("OBX(1)-5")).unwrap();
+            // OBX(2) = second OBX segment (1-based indexing)
+            let _ = terser.get(black_box("OBX(2)-3")).unwrap();
+            let _ = terser.get(black_box("OBX(2)-5")).unwrap();
         })
     });
 }

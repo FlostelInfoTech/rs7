@@ -24,7 +24,7 @@ impl TerserPath {
     /// - PID-5 (field 5 of first PID)
     /// - PID-5-1 (field 5, component 1)
     /// - PID-5-1-2 (field 5, component 1, subcomponent 2)
-    /// - OBX(2)-5 (field 5 of third OBX, 0-indexed)
+    /// - OBX(2)-5 (field 5 of second OBX, 1-indexed)
     /// - PID-11(1)-1 (field 11, second repetition, component 1)
     pub fn parse(path: &str) -> Result<Self> {
         let parts: Vec<&str> = path.split('-').collect();
@@ -68,6 +68,8 @@ impl TerserPath {
     }
 
     /// Parse segment part (e.g., "PID" or "OBX(2)")
+    /// Note: Uses 1-based indexing in API (OBX(1) = first, OBX(2) = second)
+    /// but converts to 0-based internally for array access
     fn parse_segment_part(part: &str) -> Result<(String, usize)> {
         if let Some(paren_pos) = part.find('(') {
             let id = part[..paren_pos].to_string();
@@ -77,11 +79,21 @@ impl TerserPath {
                 let index = index_str[..close_paren]
                     .parse::<usize>()
                     .map_err(|_| Error::terser_path("Invalid segment index"))?;
-                Ok((id, index))
+
+                // Validate 1-based index (must be > 0)
+                if index == 0 {
+                    return Err(Error::terser_path(
+                        "Invalid segment index 0: HL7 uses 1-based indexing (use 1 for first segment)"
+                    ));
+                }
+
+                // Convert 1-based to 0-based for internal use
+                Ok((id, index - 1))
             } else {
                 Err(Error::terser_path("Missing closing parenthesis"))
             }
         } else {
+            // No index specified = first segment (internal index 0)
             Ok((part.to_string(), 0))
         }
     }
@@ -151,10 +163,26 @@ mod tests {
 
     #[test]
     fn test_parse_segment_index() {
+        // OBX(2) = second OBX segment (1-based) = internal index 1 (0-based)
         let path = TerserPath::parse("OBX(2)-5").unwrap();
         assert_eq!(path.segment_id, "OBX");
-        assert_eq!(path.segment_index, 2);
+        assert_eq!(path.segment_index, 1); // Internal 0-based index
         assert_eq!(path.field_index, 5);
+
+        // OBX(1) = first OBX segment (1-based) = internal index 0 (0-based)
+        let path = TerserPath::parse("OBX(1)-5").unwrap();
+        assert_eq!(path.segment_index, 0); // Internal 0-based index
+
+        // OBX without index = first OBX segment = internal index 0
+        let path = TerserPath::parse("OBX-5").unwrap();
+        assert_eq!(path.segment_index, 0); // Internal 0-based index
+    }
+
+    #[test]
+    fn test_parse_segment_index_zero_is_invalid() {
+        // OBX(0) should be invalid (HL7 uses 1-based indexing)
+        let result = TerserPath::parse("OBX(0)-5");
+        assert!(result.is_err());
     }
 
     #[test]

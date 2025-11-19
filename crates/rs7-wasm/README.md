@@ -262,10 +262,10 @@ The Terser API uses simple path notation to access fields:
 | Path | Description |
 |------|-------------|
 | `PID-5` | PID segment, field 5 (full field) |
-| `PID-5-0` | PID segment, field 5, component 1 (0-indexed) |
-| `PID-5-1` | PID segment, field 5, component 2 |
-| `OBX(2)-5` | Third OBX segment (0-indexed), field 5 |
-| `PID-11(1)-1` | PID segment, field 11, second repetition, component 2 |
+| `PID-5-1` | PID segment, field 5, component 1 (1-indexed) |
+| `PID-5-2` | PID segment, field 5, component 2 |
+| `OBX(2)-5` | Second OBX segment (1-indexed), field 5 |
+| `PID-11(1)-1` | PID segment, field 11, second repetition, component 1 |
 
 ## Building from Source
 

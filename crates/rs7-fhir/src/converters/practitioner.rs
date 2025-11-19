@@ -59,9 +59,14 @@ impl PractitionerConverter {
     }
 
     /// Convert practitioner information from OBX-16 (Responsible Observer) to a FHIR Practitioner resource
+    /// Note: obx_index is 0-based internally, but Terser uses 1-based segment indexing
     pub fn convert_responsible_observer(message: &Message, obx_index: usize) -> ConversionResult<Practitioner> {
         let terser = Terser::new(message);
-        let path = format!("OBX({})-16", obx_index);
+        let path = if obx_index == 0 {
+            "OBX-16".to_string()
+        } else {
+            format!("OBX({})-16", obx_index + 1)
+        };
         Self::convert_xcn_to_practitioner(&terser, &path)
     }
 
@@ -82,11 +87,11 @@ impl PractitionerConverter {
     /// 12. Check Digit Scheme
     /// 13. Identifier Type Code
     ///
-    /// Note: Terser uses 0-based component indexing
+    /// Note: Terser uses 1-based component indexing
     fn convert_xcn_to_practitioner(terser: &Terser, base_path: &str) -> ConversionResult<Practitioner> {
         let mut practitioner = Practitioner::new();
 
-        // XCN-1: ID Number -> Practitioner.identifier (component index 0 in 0-based)
+        // XCN-1: ID Number -> Practitioner.identifier (component 1, 1-based indexing)
         if let Ok(Some(id_number)) = terser.get(base_path)
             && !id_number.is_empty() {
                 let mut identifier = Identifier {
@@ -97,14 +102,14 @@ impl PractitionerConverter {
                     assigner: None,
                 };
 
-                // XCN-9: Assigning Authority (component index 8 in 0-based)
-                if let Ok(Some(authority)) = terser.get(&format!("{}-8", base_path))
+                // XCN-9: Assigning Authority (component 9, 1-based indexing)
+                if let Ok(Some(authority)) = terser.get(&format!("{}-9", base_path))
                     && !authority.is_empty() {
                         identifier.system = Some(format!("urn:oid:{}", authority));
                     }
 
-                // XCN-13: Identifier Type Code (component index 12 in 0-based)
-                if let Ok(Some(id_type)) = terser.get(&format!("{}-12", base_path))
+                // XCN-13: Identifier Type Code (component 13, 1-based indexing)
+                if let Ok(Some(id_type)) = terser.get(&format!("{}-13", base_path))
                     && !id_type.is_empty() {
                         identifier.type_ = Some(CodeableConcept {
                             coding: Some(vec![Coding {
@@ -122,8 +127,8 @@ impl PractitionerConverter {
             }
 
         // XCN-2 through XCN-7: Name components -> Practitioner.name
-        // XCN-2: Family Name (component index 1 in 0-based)
-        if let Ok(Some(family)) = terser.get(&format!("{}-1", base_path))
+        // XCN-2: Family Name (component 2, 1-based indexing)
+        if let Ok(Some(family)) = terser.get(&format!("{}-2", base_path))
             && !family.is_empty() {
                 let mut name = HumanName {
                     use_: Some("official".to_string()),
@@ -134,13 +139,13 @@ impl PractitionerConverter {
                     suffix: None,
                 };
 
-                // XCN-3: Given Name (component index 2 in 0-based)
-                if let Ok(Some(given)) = terser.get(&format!("{}-2", base_path))
+                // XCN-3: Given Name (component 3, 1-based indexing)
+                if let Ok(Some(given)) = terser.get(&format!("{}-3", base_path))
                     && !given.is_empty() {
                         let mut given_names = vec![given.to_string()];
 
-                        // XCN-4: Second/Middle Name (component index 3 in 0-based)
-                        if let Ok(Some(middle)) = terser.get(&format!("{}-3", base_path))
+                        // XCN-4: Second/Middle Name (component 4, 1-based indexing)
+                        if let Ok(Some(middle)) = terser.get(&format!("{}-4", base_path))
                             && !middle.is_empty() {
                                 given_names.push(middle.to_string());
                             }
@@ -148,14 +153,14 @@ impl PractitionerConverter {
                         name.given = Some(given_names);
                     }
 
-                // XCN-5: Suffix (component index 4 in 0-based)
-                if let Ok(Some(suffix)) = terser.get(&format!("{}-4", base_path))
+                // XCN-5: Suffix (component 5, 1-based indexing)
+                if let Ok(Some(suffix)) = terser.get(&format!("{}-5", base_path))
                     && !suffix.is_empty() {
                         name.suffix = Some(vec![suffix.to_string()]);
                     }
 
-                // XCN-6: Prefix (component index 5 in 0-based)
-                if let Ok(Some(prefix)) = terser.get(&format!("{}-5", base_path))
+                // XCN-6: Prefix (component 6, 1-based indexing)
+                if let Ok(Some(prefix)) = terser.get(&format!("{}-6", base_path))
                     && !prefix.is_empty() {
                         name.prefix = Some(vec![prefix.to_string()]);
                     }
@@ -179,8 +184,8 @@ impl PractitionerConverter {
                 practitioner.name = Some(vec![name]);
             }
 
-        // XCN-7: Degree -> Practitioner.qualification (component index 6 in 0-based)
-        if let Ok(Some(degree)) = terser.get(&format!("{}-6", base_path))
+        // XCN-7: Degree -> Practitioner.qualification (component 7, 1-based indexing)
+        if let Ok(Some(degree)) = terser.get(&format!("{}-7", base_path))
             && !degree.is_empty() {
                 let qualification = PractitionerQualification {
                     identifier: None,

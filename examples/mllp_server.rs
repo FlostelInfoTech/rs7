@@ -98,7 +98,15 @@ fn create_ack(
     }
 
     msh.set_field_value(7, Utc::now().format("%Y%m%d%H%M%S").to_string())?;
-    msh.set_field_value(9, "ACK")?;
+
+    // Set MSH-9 to ACK^{trigger_event} (e.g., ACK^A01 for ADT^A01)
+    let msg_type = if let Some((event_type, trigger)) = original.get_message_type() {
+        format!("ACK^{}", trigger)
+    } else {
+        String::from("ACK")
+    };
+    msh.set_field_value(9, &msg_type)?;
+
     msh.set_field_value(10, format!("ACK{}", Utc::now().timestamp()))?;
     msh.set_field_value(11, "P")?;
     if let Some(version) = original.get_version() {

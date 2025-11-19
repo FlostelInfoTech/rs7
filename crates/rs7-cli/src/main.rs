@@ -56,7 +56,7 @@ enum Commands {
         #[arg(value_name = "FILE")]
         input: String,
 
-        /// Terser paths to extract (e.g., PID-5, OBX(0)-5)
+        /// Terser paths to extract (e.g., PID-5, OBX(1)-5)
         #[arg(required = true)]
         paths: Vec<String>,
 

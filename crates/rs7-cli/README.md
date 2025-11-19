@@ -108,11 +108,11 @@ rs7 extract message.hl7 PID-5
 # Extract multiple fields
 rs7 extract message.hl7 PID-5 PID-3 MSH-10
 
-# Extract with component indexing
-rs7 extract message.hl7 "PID-5-0" "PID-5-1"
+# Extract with component indexing (1-based)
+rs7 extract message.hl7 "PID-5-1" "PID-5-2"
 
-# Extract from indexed segments
-rs7 extract message.hl7 "OBX(0)-5" "OBX(1)-5"
+# Extract from indexed segments (1-based)
+rs7 extract message.hl7 "OBX(1)-5" "OBX(2)-5"
 
 # JSON output
 rs7 extract message.hl7 PID-5 PID-3 --format json
@@ -127,14 +127,14 @@ MSH-10: MSG123
 
 **Terser Path Syntax:**
 - `SEG-field`: Field in first occurrence of segment (e.g., `PID-5`)
-- `SEG(index)-field`: Field in indexed segment (e.g., `OBX(1)-5`)
-- `SEG-field-component`: Component within field (e.g., `PID-5-0` for family name)
-- `SEG-field-component-subcomponent`: Subcomponent (e.g., `PID-11-0-0`)
+- `SEG(index)-field`: Field in indexed segment, 1-based (e.g., `OBX(1)-5` for first OBX, `OBX(2)-5` for second)
+- `SEG-field-component`: Component within field (e.g., `PID-5-1` for family name)
+- `SEG-field-component-subcomponent`: Subcomponent (e.g., `PID-11-1-1`)
 
-**Note:** Component indexing is 0-based:
-- `PID-5-0` = Family name
-- `PID-5-1` = Given name
-- `PID-5-2` = Middle name
+**Note:** Segment and component indexing is 1-based (matching HL7 standards):
+- `PID-5-1` = Family name (first component)
+- `PID-5-2` = Given name (second component)
+- `PID-5-3` = Middle name (third component)
 
 ### Convert - Convert messages to different formats
 
@@ -285,8 +285,8 @@ rs7 convert message.hl7 --to json --pretty | jq '.segments[] | select(.id == "PI
 # Count segment types
 rs7 parse message.hl7 --format json | jq '.segments[].id' | sort | uniq -c
 
-# Find all observation results
-rs7 extract message.hl7 "OBX(0)-5" "OBX(1)-5" "OBX(2)-5"
+# Find all observation results (1-based segment indexing)
+rs7 extract message.hl7 "OBX(1)-5" "OBX(2)-5" "OBX(3)-5"
 ```
 
 ### FHIR Conversion

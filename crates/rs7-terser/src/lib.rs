@@ -268,9 +268,10 @@ mod tests {
 
     #[test]
     fn test_parse_path_with_segment_index() {
+        // OBX(2) = second OBX (1-based API) = internal index 1 (0-based)
         let path = TerserPath::parse("OBX(2)-5").unwrap();
         assert_eq!(path.segment_id, "OBX");
-        assert_eq!(path.segment_index, 2);
+        assert_eq!(path.segment_index, 1); // Internal 0-based index
         assert_eq!(path.field_index, 5);
     }
 

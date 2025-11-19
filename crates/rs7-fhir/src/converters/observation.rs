@@ -61,11 +61,11 @@ impl ObservationConverter {
         let terser = Terser::new(message);
 
         // OBX-3: Observation Identifier -> Observation.code
-        // Note: Terser uses 0-based indexing for repeating segments and components
+        // Note: obx_index is 0-based internally, but Terser uses 1-based segment indexing
         let code_path = if obx_index == 0 {
             "OBX-3".to_string()
         } else {
-            format!("OBX({})-3", obx_index)
+            format!("OBX({})-3", obx_index + 1)
         };
         let code = if let Ok(Some(code_id)) = terser.get(&code_path) {
             let mut coding = Coding {
@@ -75,14 +75,14 @@ impl ObservationConverter {
                 display: None,
             };
 
-            // OBX-3-2: Text (component index 1 in 0-based)
-            if let Ok(Some(text)) = terser.get(&format!("{}-1", code_path))
+            // OBX-3-2: Text (second component, 1-based indexing)
+            if let Ok(Some(text)) = terser.get(&format!("{}-2", code_path))
                 && !text.is_empty() {
                     coding.display = Some(text.to_string());
                 }
 
-            // OBX-3-3: Name of Coding System (component index 2 in 0-based)
-            if let Ok(Some(system)) = terser.get(&format!("{}-2", code_path))
+            // OBX-3-3: Name of Coding System (third component, 1-based indexing)
+            if let Ok(Some(system)) = terser.get(&format!("{}-3", code_path))
                 && !system.is_empty() {
                     coding.system = Some(Self::convert_coding_system(system));
                 }
@@ -102,7 +102,7 @@ impl ObservationConverter {
         let status_path = if obx_index == 0 {
             "OBX-11".to_string()
         } else {
-            format!("OBX({})-11", obx_index)
+            format!("OBX({})-11", obx_index + 1)
         };
         let status = if let Ok(Some(status_code)) = terser.get(&status_path) {
             Self::convert_status(status_code)
@@ -116,7 +116,7 @@ impl ObservationConverter {
         let set_id_path = if obx_index == 0 {
             "OBX-1".to_string()
         } else {
-            format!("OBX({})-1", obx_index)
+            format!("OBX({})-1", obx_index + 1)
         };
         if let Ok(Some(set_id)) = terser.get(&set_id_path)
             && !set_id.is_empty() {
@@ -127,7 +127,7 @@ impl ObservationConverter {
         let value_type_path = if obx_index == 0 {
             "OBX-2".to_string()
         } else {
-            format!("OBX({})-2", obx_index)
+            format!("OBX({})-2", obx_index + 1)
         };
         let value_type = terser.get(&value_type_path).ok().flatten().unwrap_or("");
 
@@ -135,7 +135,7 @@ impl ObservationConverter {
         let value_path = if obx_index == 0 {
             "OBX-5".to_string()
         } else {
-            format!("OBX({})-5", obx_index)
+            format!("OBX({})-5", obx_index + 1)
         };
         if let Ok(Some(value)) = terser.get(&value_path)
             && !value.is_empty() {
@@ -146,7 +146,7 @@ impl ObservationConverter {
         let units_path = if obx_index == 0 {
             "OBX-6".to_string()
         } else {
-            format!("OBX({})-6", obx_index)
+            format!("OBX({})-6", obx_index + 1)
         };
         if let Ok(Some(units)) = terser.get(&units_path)
             && !units.is_empty()
@@ -158,7 +158,7 @@ impl ObservationConverter {
         let ref_range_path = if obx_index == 0 {
             "OBX-7".to_string()
         } else {
-            format!("OBX({})-7", obx_index)
+            format!("OBX({})-7", obx_index + 1)
         };
         if let Ok(Some(ref_range)) = terser.get(&ref_range_path)
             && !ref_range.is_empty() {
@@ -174,7 +174,7 @@ impl ObservationConverter {
         let interp_path = if obx_index == 0 {
             "OBX-8".to_string()
         } else {
-            format!("OBX({})-8", obx_index)
+            format!("OBX({})-8", obx_index + 1)
         };
         if let Ok(Some(interp)) = terser.get(&interp_path)
             && !interp.is_empty() {
@@ -193,7 +193,7 @@ impl ObservationConverter {
         let datetime_path = if obx_index == 0 {
             "OBX-14".to_string()
         } else {
-            format!("OBX({})-14", obx_index)
+            format!("OBX({})-14", obx_index + 1)
         };
         if let Ok(Some(datetime)) = terser.get(&datetime_path)
             && !datetime.is_empty() {
@@ -204,7 +204,7 @@ impl ObservationConverter {
         let observer_path = if obx_index == 0 {
             "OBX-16".to_string()
         } else {
-            format!("OBX({})-16", obx_index)
+            format!("OBX({})-16", obx_index + 1)
         };
         if let Ok(Some(observer_id)) = terser.get(&observer_path)
             && !observer_id.is_empty() {
@@ -215,8 +215,8 @@ impl ObservationConverter {
                     display: None,
                 };
 
-                // Get observer name if available (component index 1 in 0-based)
-                if let Ok(Some(observer_name)) = terser.get(&format!("{}-1", observer_path))
+                // Get observer name if available (component 2 = Family Name, 1-based indexing)
+                if let Ok(Some(observer_name)) = terser.get(&format!("{}-2", observer_path))
                     && !observer_name.is_empty() {
                         reference.display = Some(observer_name.to_string());
                     }
@@ -260,14 +260,14 @@ impl ObservationConverter {
                     display: None,
                 };
 
-                // Component 2: Text (component index 1 in 0-based)
-                if let Ok(Some(text)) = terser.get(&format!("{}-1", value_path))
+                // Component 2: Text (1-based indexing)
+                if let Ok(Some(text)) = terser.get(&format!("{}-2", value_path))
                     && !text.is_empty() {
                         coding.display = Some(text.to_string());
                     }
 
-                // Component 3: Coding System (component index 2 in 0-based)
-                if let Ok(Some(system)) = terser.get(&format!("{}-2", value_path))
+                // Component 3: Coding System (1-based indexing)
+                if let Ok(Some(system)) = terser.get(&format!("{}-3", value_path))
                     && !system.is_empty() {
                         coding.system = Some(Self::convert_coding_system(system));
                     }

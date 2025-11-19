@@ -162,12 +162,13 @@ impl PatientConverter {
         let mut names = Vec::new();
 
         // Try to get all repetitions of PID-5
-        // Note: Terser uses 0-based component indexing, so PID-5-0 or PID-5 is component 1 (family name)
+        // Note: Terser uses 1-based component indexing
+        // XPN structure: 1=Family, 2=Given, 3=Middle, 4=Suffix, 5=Prefix, 7=Type
         for rep in 0..5 {
             let family_path = if rep == 0 {
-                "PID-5".to_string()  // First component (family name) - 0-based indexing
+                "PID-5-1".to_string()  // Component 1 (family name) - 1-based indexing
             } else {
-                format!("PID-5({})", rep)  // For repetitions, also use 0-based
+                format!("PID-5({})-1", rep + 1)  // Repetitions also 1-based
             };
 
             if let Ok(Some(family)) = terser.get(&family_path) {
@@ -184,21 +185,21 @@ impl PatientConverter {
                     suffix: None,
                 };
 
-                // PID-5-2: Given Name (component index 1 in 0-based)
+                // PID-5-2: Given Name (component 2, 1-based indexing)
                 let given_path = if rep == 0 {
-                    "PID-5-1".to_string()
+                    "PID-5-2".to_string()
                 } else {
-                    format!("PID-5({})-1", rep)
+                    format!("PID-5({})-2", rep + 1)
                 };
                 if let Ok(Some(given)) = terser.get(&given_path)
                     && !given.is_empty() {
                         let mut given_names = vec![given.to_string()];
 
-                        // PID-5-3: Middle Name (component index 2 in 0-based)
+                        // PID-5-3: Middle Name (component 3, 1-based indexing)
                         let middle_path = if rep == 0 {
-                            "PID-5-2".to_string()
+                            "PID-5-3".to_string()
                         } else {
-                            format!("PID-5({})-2", rep)
+                            format!("PID-5({})-3", rep + 1)
                         };
                         if let Ok(Some(middle)) = terser.get(&middle_path)
                             && !middle.is_empty() {
@@ -208,33 +209,33 @@ impl PatientConverter {
                         name.given = Some(given_names);
                     }
 
-                // PID-5-4: Suffix (component index 3 in 0-based)
+                // PID-5-4: Suffix (component 4, 1-based indexing)
                 let suffix_path = if rep == 0 {
-                    "PID-5-3".to_string()
+                    "PID-5-4".to_string()
                 } else {
-                    format!("PID-5({})-3", rep)
+                    format!("PID-5({})-4", rep + 1)
                 };
                 if let Ok(Some(suffix)) = terser.get(&suffix_path)
                     && !suffix.is_empty() {
                         name.suffix = Some(vec![suffix.to_string()]);
                     }
 
-                // PID-5-5: Prefix (component index 4 in 0-based)
+                // PID-5-5: Prefix (component 5, 1-based indexing)
                 let prefix_path = if rep == 0 {
-                    "PID-5-4".to_string()
+                    "PID-5-5".to_string()
                 } else {
-                    format!("PID-5({})-4", rep)
+                    format!("PID-5({})-5", rep + 1)
                 };
                 if let Ok(Some(prefix)) = terser.get(&prefix_path)
                     && !prefix.is_empty() {
                         name.prefix = Some(vec![prefix.to_string()]);
                     }
 
-                // PID-5-7: Name Type Code (component index 6 in 0-based)
+                // PID-5-7: Name Type Code (component 7, 1-based indexing)
                 let type_path = if rep == 0 {
-                    "PID-5-6".to_string()
+                    "PID-5-7".to_string()
                 } else {
-                    format!("PID-5({})-6", rep)
+                    format!("PID-5({})-7", rep + 1)
                 };
                 if let Ok(Some(name_type)) = terser.get(&type_path) {
                     name.use_ = Some(match name_type {
@@ -260,12 +261,12 @@ impl PatientConverter {
         let mut addresses = Vec::new();
 
         // Try to get all repetitions of PID-11
-        // Note: Terser uses 0-based component indexing
+        // Note: Terser uses 1-based component indexing
         for rep in 0..5 {
             let street_path = if rep == 0 {
-                "PID-11".to_string()  // PID-11-1 (Street) -> use PID-11 or PID-11-0
+                "PID-11-1".to_string()  // PID-11-1 (Street, component 1)
             } else {
-                format!("PID-11({})", rep)
+                format!("PID-11({})-1", rep)
             };
 
             if let Ok(Some(street)) = terser.get(&street_path) {
@@ -284,11 +285,11 @@ impl PatientConverter {
                     country: None,
                 };
 
-                // PID-11-2: Other Designation (component index 1 in 0-based)
+                // PID-11-2: Other Designation (component 2, 1-based indexing)
                 let other_path = if rep == 0 {
-                    "PID-11-1".to_string()
+                    "PID-11-2".to_string()
                 } else {
-                    format!("PID-11({})-1", rep)
+                    format!("PID-11({})-2", rep)
                 };
                 if let Ok(Some(other)) = terser.get(&other_path)
                     && !other.is_empty()
@@ -296,55 +297,55 @@ impl PatientConverter {
                             lines.push(other.to_string());
                         }
 
-                // PID-11-3: City (component index 2 in 0-based)
+                // PID-11-3: City (component 3, 1-based indexing)
                 let city_path = if rep == 0 {
-                    "PID-11-2".to_string()
+                    "PID-11-3".to_string()
                 } else {
-                    format!("PID-11({})-2", rep)
+                    format!("PID-11({})-3", rep)
                 };
                 if let Ok(Some(city)) = terser.get(&city_path)
                     && !city.is_empty() {
                         address.city = Some(city.to_string());
                     }
 
-                // PID-11-4: State (component index 3 in 0-based)
+                // PID-11-4: State (component 4, 1-based indexing)
                 let state_path = if rep == 0 {
-                    "PID-11-3".to_string()
+                    "PID-11-4".to_string()
                 } else {
-                    format!("PID-11({})-3", rep)
+                    format!("PID-11({})-4", rep)
                 };
                 if let Ok(Some(state)) = terser.get(&state_path)
                     && !state.is_empty() {
                         address.state = Some(state.to_string());
                     }
 
-                // PID-11-5: Postal Code (component index 4 in 0-based)
+                // PID-11-5: Postal Code (component 5, 1-based indexing)
                 let zip_path = if rep == 0 {
-                    "PID-11-4".to_string()
+                    "PID-11-5".to_string()
                 } else {
-                    format!("PID-11({})-4", rep)
+                    format!("PID-11({})-5", rep)
                 };
                 if let Ok(Some(zip)) = terser.get(&zip_path)
                     && !zip.is_empty() {
                         address.postal_code = Some(zip.to_string());
                     }
 
-                // PID-11-6: Country (component index 5 in 0-based)
+                // PID-11-6: Country (component 6, 1-based indexing)
                 let country_path = if rep == 0 {
-                    "PID-11-5".to_string()
+                    "PID-11-6".to_string()
                 } else {
-                    format!("PID-11({})-5", rep)
+                    format!("PID-11({})-6", rep)
                 };
                 if let Ok(Some(country)) = terser.get(&country_path)
                     && !country.is_empty() {
                         address.country = Some(country.to_string());
                     }
 
-                // PID-11-7: Address Type (component index 6 in 0-based)
+                // PID-11-7: Address Type (component 7, 1-based indexing)
                 let type_path = if rep == 0 {
-                    "PID-11-6".to_string()
+                    "PID-11-7".to_string()
                 } else {
-                    format!("PID-11({})-6", rep)
+                    format!("PID-11({})-7", rep)
                 };
                 if let Ok(Some(addr_type)) = terser.get(&type_path) {
                     address.use_ = Some(match addr_type {
@@ -465,13 +466,6 @@ mod tests {
                    PID|1||67890^^^MRN||DOE^JOHN^A||19800101|M";
 
         let message = parse_message(hl7).unwrap();
-
-        // Debug terser paths
-        let terser = rs7_terser::Terser::new(&message);
-        eprintln!("DEBUG PID-5: {:?}", terser.get("PID-5"));
-        eprintln!("DEBUG PID-5-1: {:?}", terser.get("PID-5-1"));
-        eprintln!("DEBUG PID-5-2: {:?}", terser.get("PID-5-2"));
-
         let patient = PatientConverter::convert(&message).unwrap();
 
         assert_eq!(patient.resource_type, "Patient");
@@ -479,7 +473,6 @@ mod tests {
         assert_eq!(patient.birth_date, Some("1980-01-01".to_string()));
 
         let names = patient.name.as_ref().unwrap();
-        eprintln!("DEBUG: family = {:?}, given = {:?}", names[0].family, names[0].given);
         assert_eq!(names[0].family, Some("DOE".to_string()));
         assert_eq!(names[0].given, Some(vec!["JOHN".to_string(), "A".to_string()]));
     }

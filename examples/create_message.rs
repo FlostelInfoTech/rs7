@@ -100,7 +100,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     terser.set("PID-5-1", "JONES")?; // Change family name
     terser.set("PID-8", "M")?; // Change gender
-    terser.set("OBX(1)-5", "8.2")?; // Change second OBX value
+    terser.set("OBX(2)-5", "8.2")?; // Change second OBX value (1-based segment indexing)
 
     println!("✓ Values modified using Terser\n");
 

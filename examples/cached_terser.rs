@@ -23,20 +23,20 @@ OBX|3|NM|HGB^Hemoglobin^LN||14.5|g/dL|12.0-16.0|N|||F|||20240315120000";
     // Define the fields we'll be accessing repeatedly
     let fields = vec![
         "PID-5",    // Patient name
-        "PID-5-0",  // Family name
-        "PID-5-1",  // Given name
+        "PID-5-1",  // Family name (1-based component indexing)
+        "PID-5-2",  // Given name (1-based component indexing)
         "PID-7",    // Date of birth
         "PID-8",    // Gender
         "PID-11",   // Address
-        "PID-11-0", // Street
-        "PID-11-2", // City
+        "PID-11-1", // Street (1-based component indexing)
+        "PID-11-3", // City (1-based component indexing)
         "PID-13",   // Phone
         "PV1-2",    // Patient class
         "PV1-7",    // Attending doctor
-        "OBX-3",    // Observation identifier
-        "OBX-5",    // Observation value
-        "OBX(1)-3", // Second observation identifier
-        "OBX(1)-5", // Second observation value
+        "OBX-3",    // Observation identifier (first OBX)
+        "OBX-5",    // Observation value (first OBX)
+        "OBX(2)-3", // Second observation identifier (1-based segment indexing)
+        "OBX(2)-5", // Second observation value (1-based segment indexing)
     ];
 
     // Part 1: Regular Terser (no caching)
@@ -115,9 +115,9 @@ OBX|3|NM|HGB^Hemoglobin^LN||14.5|g/dL|12.0-16.0|N|||F|||20240315120000";
     let mut terser = CachedTerser::new(&message);
 
     println!("Patient Name: {}", terser.get("PID-5")?.unwrap_or("N/A"));
-    println!("  Family: {}", terser.get("PID-5-0")?.unwrap_or("N/A"));
-    println!("  Given:  {}", terser.get("PID-5-1")?.unwrap_or("N/A"));
-    println!("  Middle: {}", terser.get("PID-5-2")?.unwrap_or("N/A"));
+    println!("  Family: {}", terser.get("PID-5-1")?.unwrap_or("N/A"));
+    println!("  Given:  {}", terser.get("PID-5-2")?.unwrap_or("N/A"));
+    println!("  Middle: {}", terser.get("PID-5-3")?.unwrap_or("N/A"));
     println!("Date of Birth: {}", terser.get("PID-7")?.unwrap_or("N/A"));
     println!("Gender: {}", terser.get("PID-8")?.unwrap_or("N/A"));
     println!("Patient Class: {}", terser.get("PV1-2")?.unwrap_or("N/A"));
@@ -125,7 +125,8 @@ OBX|3|NM|HGB^Hemoglobin^LN||14.5|g/dL|12.0-16.0|N|||F|||20240315120000";
 
     println!("\nObservations:");
     for i in 0..3 {
-        let path_prefix = if i == 0 { String::from("OBX") } else { format!("OBX({})", i) };
+        // Use 1-based segment indexing: OBX or OBX(1) for first, OBX(2) for second, etc.
+        let path_prefix = if i == 0 { String::from("OBX") } else { format!("OBX({})", i + 1) };
         let test_name = terser.get(&format!("{}-3-1", path_prefix))?.unwrap_or("N/A").to_string();
         let value = terser.get(&format!("{}-5", path_prefix))?.unwrap_or("N/A").to_string();
         let units = terser.get(&format!("{}-6", path_prefix))?.unwrap_or("").to_string();
