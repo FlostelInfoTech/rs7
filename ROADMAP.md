@@ -12,26 +12,35 @@ Transform RS7 into the most comprehensive, performant, and feature-rich HL7 libr
 
 ---
 
-## Current Status (v0.9.0)
+## Current Status (v0.12.0)
 
 ### Completed Features ✅
 
 - **Core HL7 Parsing**: Zero-copy parser with nom, support for v2.3-v2.7.1
 - **Terser API**: Path-based field access (e.g., `PID-5-1`, `OBX(2)-5`)
 - **Cached Terser**: 5-10x faster repeated field access
-- **Message Builders**: ADT (13 variants), ORU, ORM, SIU, MDM, DFT, QRY
-- **Complex Field Builders**: XPN, XAD, XTN, CX, XCN
+- **Enhanced Terser**: Bulk extraction, pattern matching, field iteration, conditional queries ✨ v0.10.0
+- **Message Builders**: ADT (13 variants), ORU, ORM, SIU, MDM, DFT, QRY, QBP, RSP
+- **Complex Field Builders**: XPN, XAD, XTN, CX, XCN, QPD, RCP, QAK ✨ v0.12.0
 - **Schema Validation**: 32 message types across 5 HL7 versions
 - **Data Type Validation**: All HL7 data types (dates, times, numerics, coded values)
 - **Vocabulary Validation**: HL7 standard tables (13 tables)
 - **Conformance Profile Validation**: Phase 1 MVP (Usage, Cardinality, Length)
 - **Custom Z-Segments**: Type-safe custom segment framework
-- **FHIR Conversion**: 9 converters (Patient, Observation, Encounter, etc.)
+- **FHIR Conversion**: 12 converters (Patient, Observation, Encounter, Immunization, ServiceRequest, Specimen, etc.) ✨ v0.11.0
+- **Query/Response Support**: QBP/RSP builders, QueryResultParser, pagination ✨ v0.12.0
 - **MLLP Protocol**: Network transmission support
 - **HTTP Transport**: HL7-over-HTTP support
 - **WebAssembly**: JavaScript/TypeScript bindings
 - **CLI Tool**: Parse, validate, extract, convert, info commands
-- **Test Coverage**: 335+ tests across all crates
+- **Test Coverage**: 485+ tests across all crates
+
+### Phase 1 Complete ✅
+
+All Phase 1 sprints have been successfully implemented:
+- ✅ **Sprint 1 (v0.10.0)**: Enhanced Terser Capabilities
+- ✅ **Sprint 2 (v0.11.0)**: FHIR Converters Expansion
+- ✅ **Sprint 3 (v0.12.0)**: Query/Response Support
 
 ### Current Architecture
 
@@ -53,12 +62,13 @@ rs7/
 
 ---
 
-## PHASE 1: Quick Wins (v0.10.0)
+## PHASE 1: Quick Wins ✅ COMPLETE
 
 **Timeline**: 2-3 weeks
 **Goal**: Deliver immediate productivity improvements
+**Status**: ✅ **COMPLETED** - All 3 sprints delivered (v0.10.0, v0.11.0, v0.12.0)
 
-### 1.1 Enhanced Terser Capabilities (3 days)
+### 1.1 Enhanced Terser Capabilities ✅ (v0.10.0)
 
 **New Features:**
 - **Bulk Extraction**: Extract multiple fields in one call
@@ -81,11 +91,11 @@ rs7/
 
 **HAPI Equivalent**: `Terser.getFinder()`, `MessageIterator`
 
-**Deliverable**: rs7-terser v0.10.0
+**Deliverable**: ✅ rs7-terser v0.10.0 - COMPLETED
 
 ---
 
-### 1.2 Additional FHIR Converters (5 days)
+### 1.2 FHIR Converters Expansion ✅ (v0.11.0)
 
 **New Converters:**
 1. **ServiceRequest** (ORC/OBR → FHIR ServiceRequest)
@@ -117,13 +127,13 @@ rs7/
 - FHIR resource structures if needed (~300 LOC)
 - Tests (~400 LOC)
 
-**Result**: 14 total FHIR converters (complete core resource coverage)
+**Result**: 12 total FHIR converters (complete core resource coverage)
 
-**Deliverable**: rs7-fhir v0.10.0
+**Deliverable**: ✅ rs7-fhir v0.11.0 - COMPLETED
 
 ---
 
-### 1.3 Query/Response Support (4 days)
+### 1.3 Query/Response Support ✅ (v0.12.0)
 
 **New Features:**
 - **QBP Builder** (Query by Parameter)
@@ -151,11 +161,11 @@ rs7/
 
 **HAPI Equivalent**: `QueryResponseMessageBuilder`, `MessageQuery`
 
-**Deliverable**: rs7-core v0.10.0
+**Deliverable**: ✅ rs7-core v0.12.0, rs7-terser v0.12.0 - COMPLETED
 
 ---
 
-### Phase 1 Summary
+### Phase 1 Summary ✅ COMPLETE
 
 **Total Code**: ~3,100 LOC (implementation + tests)
 **New Crate Versions**: rs7-terser v0.10.0, rs7-fhir v0.10.0, rs7-core v0.10.0
@@ -633,7 +643,7 @@ orchestrator.execute_async(message).await?;
 
 ## Next Steps
 
-1. **Start Phase 1**: Enhanced Terser Capabilities
+1. **Start Phase 2**: Batch/File Support (Section 2.1)
 2. **Track Progress**: Update this roadmap as features are completed
 3. **Regular Releases**: Version bump and publish at end of each phase
 4. **Documentation**: Maintain CHANGELOG.md with detailed release notes
@@ -649,5 +659,5 @@ This roadmap is a living document and will be updated as:
 - Performance targets are achieved
 
 **Last Updated**: 2025-11-20
-**Current Version**: v0.9.0
-**Next Milestone**: Phase 1 (v0.10.0)
+**Current Version**: v0.12.0
+**Next Milestone**: Phase 2 - Batch/File Support (v0.13.0)
