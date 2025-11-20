@@ -38,6 +38,7 @@ members = [
     "crates/rs7-fhir",
     "crates/rs7-custom",
     "crates/rs7-conformance",
+    "crates/rs7-orchestration",
     "crates/rs7-wasm",
     "crates/rs7-cli",
 ]

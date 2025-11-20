@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2025-01-20
+
+### Added - Phase 3.3 Message Routing & Orchestration 🔄
+
+- **rs7-orchestration** - New crate for message routing and workflow orchestration:
+  - **ContentRouter** - Content-based message routing:
+    - `add_route(name, condition, handler)` - Add route with predicate and async handler
+    - `set_default_handler(handler)` - Set fallback handler for unmatched messages
+    - `route(message)` - Route to first matching handler
+    - `route_all(message)` - Route to all matching handlers
+    - `route_count()` - Get number of configured routes
+    - `clear()` - Remove all routes
+  - **MessageOrchestrator** - Multi-step async workflow engine:
+    - `add_step(name, handler)` - Add orchestration step
+    - `add_step_with_retry(name, handler, config)` - Add step with retry logic
+    - `set_error_handler(handler)` - Set error handler for failed steps
+    - `execute(message)` - Execute workflow (fail-fast on errors)
+    - `execute_continue_on_error(message)` - Execute all steps regardless of errors
+    - `step_count()` - Get number of steps
+    - `clear()` - Remove all steps
+  - **RetryConfig** - Configurable retry behavior:
+    - `none()` - No retries (1 attempt)
+    - `standard()` - 3 attempts with 100ms delay
+    - `aggressive()` - 5 attempts with 50ms delay
+    - `new(attempts, delay_ms)` - Custom retry configuration
+    - Exponential backoff support
+  - **MessageFilter** - Predicate-based message filtering:
+    - `new()` - Create filter with ALL mode (AND logic)
+    - `new_any()` - Create filter with ANY mode (OR logic)
+    - `add_rule(name, predicate)` - Add filter rule
+    - `matches(message)` - Check if message passes filters
+    - `filter(message)` - Filter with Result return
+    - `filter_count()` - Get number of filters
+    - `clear()` - Remove all filters
+  - **FilterMode** - Filter combination modes:
+    - `All` - All filters must pass (AND logic)
+    - `Any` - At least one filter must pass (OR logic)
+  - **OrchestrationError** - Structured error handling:
+    - `NoMatchingRoute` - No route found for message
+    - `RouteExecutionFailed` - Route handler failed
+    - `StepExecutionFailed` - Orchestration step failed
+    - `FilterFailed` - Message filter rejected message
+    - `RetryLimitExceeded` - Retry attempts exhausted
+    - `Custom` - Custom error messages
+
+- **Examples**:
+  - `routing_example` - Content-based routing demonstration
+  - `filtering_example` - Message filtering with ALL/ANY modes
+  - `workflow_example` - Complete workflow with filtering, orchestration, and routing
+
+- **Testing**:
+  - 18 unit tests covering all orchestration features
+  - 6 doctests for public API examples
+  - Tests for retry logic, error handling, and concurrent routing
+
 ## [0.17.0] - 2025-01-20
 
 ### Added - Phase 3.2 Advanced Validation Rules 📋
