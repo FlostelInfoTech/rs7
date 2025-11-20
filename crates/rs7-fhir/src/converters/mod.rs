@@ -9,6 +9,9 @@ pub mod allergy_intolerance;
 pub mod medication;
 pub mod condition;
 pub mod procedure;
+pub mod immunization;
+pub mod service_request;
+pub mod specimen;
 
 pub use patient::PatientConverter;
 pub use observation::ObservationConverter;
@@ -19,3 +22,6 @@ pub use allergy_intolerance::AllergyIntoleranceConverter;
 pub use medication::MedicationConverter;
 pub use condition::ConditionConverter;
 pub use procedure::ProcedureConverter;
+pub use immunization::ImmunizationConverter;
+pub use service_request::ServiceRequestConverter;
+pub use specimen::SpecimenConverter;

@@ -7,6 +7,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2025-11-20
+
+### Added - FHIR Converters Expansion 🏥
+
+- **Three New FHIR R4 Converters** - rs7-fhir now includes 12 production-ready converters:
+  - **ImmunizationConverter** (RXA → Immunization)
+    - Complete vaccine administration records with CVX coding system
+    - Lot numbers, expiration dates, manufacturer references
+    - Dose quantity, administration site, and route mapping
+    - Performer (administering provider) and location tracking
+    - Status conversions (CP→completed, RE→not-done)
+    - Primary source and report origin tracking
+  - **ServiceRequestConverter** (ORC/OBR → ServiceRequest)
+    - Laboratory and diagnostic service orders
+    - Placer and filler order identifiers with requisition grouping
+    - Priority mappings (S→stat, A→asap, R→routine)
+    - Status conversions (A→active, CA→revoked, CM→completed)
+    - Ordering provider references and clinical notes
+    - Specimen and reason code linking
+  - **SpecimenConverter** (SPM → Specimen)
+    - Complete specimen collection details
+    - Collection method, body site, and quantity tracking
+    - Received time and availability status
+    - Container information and accession identifiers
+    - Specimen condition tracking
+    - Links to patient and associated service requests
+
+- **FHIR Resource Structures**:
+  - `Immunization` - Comprehensive vaccine administration resource
+  - `ImmunizationPerformer` - Who performed the immunization
+  - `ImmunizationProtocolApplied` - Vaccine protocol details
+  - `ServiceRequest` - Diagnostic and therapeutic service requests
+  - `Specimen` - Specimen/sample resource
+  - `SpecimenCollection` - Collection details and provenance
+  - `SpecimenContainer` - Container and handling information
+  - `Period`, `Annotation` - Additional FHIR data types
+
+- **Examples**:
+  - `convert_vxu.rs` - VXU^V04 immunization message conversion
+    - Demonstrates vaccine record updates with multiple immunizations
+    - Shows lot tracking, expiration management, and performer details
+  - `convert_orm.rs` - ORM^O01 laboratory order conversion
+    - Multiple order handling with requisition grouping
+    - Priority-based filtering and order status tracking
+  - `convert_oml.rs` - OML^O21 specimen collection conversion
+    - Multiple specimen types (blood, serum, etc.)
+    - Collection details, container information, and condition tracking
+    - Specimen availability and accession management
+
+- **Testing**:
+  - 17 new tests (5 immunization + 6 service request + 6 specimen) all passing
+  - Total rs7-fhir test suite: 33 tests all passing ✅
+  - Comprehensive coverage of field mappings and edge cases
+  - Multiple segment handling validated
+
+- **Documentation**:
+  - Updated rs7-fhir README with new converters
+  - Detailed field mapping documentation for each converter
+  - Working examples with realistic HL7 messages
+  - Status and priority conversion tables
+
+### Technical Details
+
+- **Message Type Support**:
+  - VXU^V04 - Unsolicited vaccination record update
+  - ORM^O01 - General laboratory order
+  - OML^O21 - Laboratory order for multiple orders related to a single specimen
+
+- **HL7 Segment Mapping**:
+  - RXA (Pharmacy/Treatment Administration) → Immunization
+  - ORC (Common Order) → ServiceRequest
+  - OBR (Observation Request) → ServiceRequest (supplemental data)
+  - SPM (Specimen) → Specimen
+  - TQ1 (Timing/Quantity) → ServiceRequest priority
+
+- **Code System Mappings**:
+  - CVX (CDC Vaccine Codes) for immunization vaccine codes
+  - HL7 Table 0227 (Manufacturer) for vaccine manufacturers
+  - HL7 Table 0292 (Vaccines Administered) for immunization status
+  - HL7 Table 0487 (Specimen Type) for specimen classification
+  - HL7 Table 0488 (Specimen Collection Method)
+  - HL7 Table 0163 (Body Site) for specimen collection sites
+  - HL7 Table 0340 (Reason for Study) for service request reasons
+
+### Phase 1, Sprint 2 Complete
+
+This release completes the second sprint of RS7's enhanced feature roadmap:
+- ✅ Enhanced Terser Capabilities (Sprint 1 - v0.10.0)
+- ✅ FHIR Converters Expansion (Sprint 2 - v0.11.0)
+- Next: Custom Z-Segment Framework (Sprint 3)
+
 ## [0.10.0] - 2025-11-20
 
 ### Added - Enhanced Terser Capabilities 🚀

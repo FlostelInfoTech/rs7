@@ -7,12 +7,12 @@ Converter library for transforming HL7 v2.x messages to FHIR R4 resources.
 ✅ **Core Functionality Complete** - Production-ready converters with comprehensive testing
 
 ### Completed ✅
-- **9 FHIR R4 resource definitions:**
+- **12 FHIR R4 resource definitions:**
   - Patient, Observation, Practitioner, Encounter
   - DiagnosticReport, AllergyIntolerance, Medication/MedicationAdministration
-  - Condition, Procedure
+  - Condition, Procedure, Immunization, ServiceRequest, Specimen
 - Common FHIR data types (HumanName, Address, ContactPoint, Identifier, CodeableConcept, Period, etc.)
-- **9 Production-ready converters:**
+- **12 Production-ready converters:**
   - Patient (PID → Patient) - **100% tested**
   - Observation (OBX → Observation) - **100% tested**
   - Practitioner (PV1/ORC → Practitioner) - **100% tested**
@@ -22,13 +22,16 @@ Converter library for transforming HL7 v2.x messages to FHIR R4 resources.
   - MedicationAdministration (RXA → MedicationAdministration) - **100% tested**
   - Condition (PRB/DG1 → Condition) - **100% tested**
   - Procedure (PR1 → Procedure) - **100% tested**
+  - Immunization (RXA → Immunization) - **100% tested** ✨ NEW
+  - ServiceRequest (ORC → ServiceRequest) - **100% tested** ✨ NEW
+  - Specimen (SPM → Specimen) - **100% tested** ✨ NEW
 - Error handling and conversion result types
-- Complete test suite - **All 16 tests passing ✅**
+- Complete test suite - **All 33 tests passing ✅**
 - Terser 0-based component indexing - **Fixed and documented** (see TERSER_INDEXING.md)
-- **Working examples** - ADT and ORU message conversion demos (see EXAMPLES.md)
+- **Working examples** - ADT, ORU, VXU, ORM, and OML message conversion demos (see EXAMPLES.md)
 
 ### Future Enhancements 📋
-- Additional resources (Immunization, CarePlan, Goal, etc.)
+- Additional resources (CarePlan, Goal, CareTeam, etc.)
 - Batch/Bundle processing for multiple resources
 - Performance optimization for large message volumes
 - Extended validation and conformance checking
@@ -54,7 +57,10 @@ rs7-fhir/
 │       └── practitioner.rs   # PV1/ORC → Practitioner converter
 ├── examples/
 │   ├── convert_adt.rs        # ADT^A01 patient admission example
-│   └── convert_oru.rs        # ORU^R01 laboratory results example
+│   ├── convert_oru.rs        # ORU^R01 laboratory results example
+│   ├── convert_vxu.rs        # VXU^V04 immunization record example ✨ NEW
+│   ├── convert_orm.rs        # ORM^O01 laboratory order example ✨ NEW
+│   └── convert_oml.rs        # OML^O21 specimen collection example ✨ NEW
 ├── TERSER_INDEXING.md        # Component indexing documentation (0-based)
 ├── EXAMPLES.md               # Detailed examples documentation
 └── README.md                 # This file
@@ -127,6 +133,30 @@ All converters use 0-based component indexing as documented in TERSER_INDEXING.m
 - PR1-3 → code, PR1-5 → performedDateTime
 - Links to Patient (subject), Default status: completed
 
+### ImmunizationConverter (RXA → Immunization) ✨ NEW
+- RXA-3 → occurrenceDateTime, RXA-5 → vaccineCode (CVX system)
+- RXA-6/7 → doseQuantity, RXA-9 → primarySource/reportOrigin
+- RXA-10 → performer, RXA-11 → site, RXA-15 → lotNumber
+- RXA-16 → expirationDate, RXA-17 → manufacturer
+- RXA-20 → status (CP→completed, RE→not-done), RXA-27 → location
+- Links to Patient (subject), Encounter (PV1-19)
+
+### ServiceRequestConverter (ORC/OBR → ServiceRequest) ✨ NEW
+- ORC-2 → identifier (placer order), ORC-3 → identifier (filler order)
+- ORC-4 → requisition, ORC-5 → status (A→active, CA→revoked, CM→completed)
+- ORC-12 → requester, OBR-4 → code (service identifier)
+- OBR-5 or TQ1-9 → priority (S→stat, A→asap, R→routine)
+- OBR-13 → note, OBR-15 → specimen, OBR-31 → reasonCode
+- Links to Patient (subject), Encounter (PV1-19)
+
+### SpecimenConverter (SPM → Specimen) ✨ NEW
+- SPM-2 → identifier, SPM-4 → type (specimen type code)
+- SPM-7 → collection.method, SPM-8 → collection.bodySite
+- SPM-12 → collection.quantity, SPM-17 → collection.collectedDateTime
+- SPM-18 → receivedTime, SPM-20 → status (Y→available, N→unavailable)
+- SPM-24 → condition, SPM-30 → accessionIdentifier
+- Links to Patient (subject)
+
 ## Data Type Conversions
 
 ### Date/Time
@@ -160,6 +190,15 @@ cargo run --example convert_adt -p rs7-fhir
 
 # Convert an ORU^R01 laboratory results message
 cargo run --example convert_oru -p rs7-fhir
+
+# Convert a VXU^V04 immunization record message
+cargo run --example convert_vxu -p rs7-fhir
+
+# Convert an ORM^O01 laboratory order message
+cargo run --example convert_orm -p rs7-fhir
+
+# Convert an OML^O21 specimen collection message
+cargo run --example convert_oml -p rs7-fhir
 ```
 
 ## Component Indexing

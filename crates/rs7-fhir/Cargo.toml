@@ -9,7 +9,7 @@ homepage.workspace = true
 documentation.workspace = true
 keywords.workspace = true
 categories.workspace = true
-description = "HL7 v2.x to FHIR R4 conversion library with 9 production-ready converters"
+description = "HL7 v2.x to FHIR R4 conversion library with 12 production-ready converters"
 
 [dependencies]
 # Internal crates

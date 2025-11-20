@@ -19,7 +19,7 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 - **✅ ACK Generation**: Automatic acknowledgment message creation
 - **✅ MLLP Support**: Network transmission using Minimal Lower Layer Protocol (intra-organization)
 - **✅ HTTP Transport**: HL7-over-HTTP support for inter-organization communication
-- **✅ FHIR Conversion**: Convert HL7 v2 messages to FHIR R4 resources (Patient, Observation, Encounter, DiagnosticReport, etc.)
+- **✅ FHIR Conversion**: Convert HL7 v2 messages to FHIR R4 resources - 12 production-ready converters (Patient, Observation, Encounter, DiagnosticReport, AllergyIntolerance, Condition, Procedure, Medication, Immunization, ServiceRequest, Specimen, and more)
 - **✅ Custom Z-Segments**: Type-safe framework for defining and parsing custom organization-specific Z-segments
 - **🚀 Fast and Safe**: Built with Rust for performance and memory safety
 - **📦 Modular Design**: Use only the components you need
@@ -48,15 +48,15 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rs7-core = "0.9"
-rs7-parser = "0.9"
-rs7-terser = "0.9"
-rs7-validator = "0.9"
-rs7-conformance = "0.9"  # Optional: for conformance profile validation
-rs7-custom = "0.9"       # Optional: for custom Z-segment support
-rs7-mllp = "0.9"         # Optional: for MLLP network support (intra-organization)
-rs7-http = "0.9"         # Optional: for HTTP transport (inter-organization)
-rs7-fhir = "0.9"         # Optional: for FHIR conversion
+rs7-core = "0.11"
+rs7-parser = "0.11"
+rs7-terser = "0.11"
+rs7-validator = "0.11"
+rs7-conformance = "0.11"  # Optional: for conformance profile validation
+rs7-custom = "0.11"       # Optional: for custom Z-segment support
+rs7-mllp = "0.11"         # Optional: for MLLP network support (intra-organization)
+rs7-http = "0.11"         # Optional: for HTTP transport (inter-organization)
+rs7-fhir = "0.11"         # Optional: for FHIR conversion (12 converters)
 ```
 
 ### Parsing a Message
@@ -288,13 +288,19 @@ let json = serde_json::to_string_pretty(&patient)?;
 println!("{}", json);
 ```
 
-**Available Converters:**
+**Available Converters (12 total):**
 - Patient (PID → Patient)
 - Observation (OBX → Observation)
 - Practitioner (PV1/ORC → Practitioner)
 - Encounter (PV1 → Encounter)
 - DiagnosticReport (OBR → DiagnosticReport)
 - AllergyIntolerance (AL1 → AllergyIntolerance)
+- MedicationAdministration (RXA → MedicationAdministration)
+- Condition (PRB/DG1 → Condition)
+- Procedure (PR1 → Procedure)
+- **Immunization (RXA → Immunization)** ✨ NEW
+- **ServiceRequest (ORC/OBR → ServiceRequest)** ✨ NEW
+- **Specimen (SPM → Specimen)** ✨ NEW
 - MedicationAdministration (RXA → MedicationAdministration)
 - Condition (PRB/DG1 → Condition)
 - Procedure (PR1 → Procedure)
