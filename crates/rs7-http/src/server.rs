@@ -59,7 +59,7 @@ pub struct HttpServer {
     #[cfg(feature = "tls")]
     tls_config: Option<TlsServerConfig>,
     #[cfg(feature = "compression")]
-    enable_compression: bool,
+    pub(crate) enable_compression: bool,
 }
 
 impl HttpServer {
@@ -302,7 +302,7 @@ impl Default for HttpServer {
 }
 
 /// Handle incoming HTTP POST requests with HL7 messages
-async fn handle_message(
+pub(crate) async fn handle_message(
     State(server): State<HttpServer>,
     headers: HeaderMap,
     body: String,

@@ -10,6 +10,10 @@
 #[cfg(feature = "tls")]
 pub mod tls;
 
+// Testing utilities (optional)
+#[cfg(feature = "testing")]
+pub mod testing;
+
 use rs7_core::{
     error::{Error, Result},
     message::Message,

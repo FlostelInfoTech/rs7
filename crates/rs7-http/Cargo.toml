@@ -95,8 +95,11 @@ batch = []
 routing = ["dep:rs7-terser"]
 webhooks = ["dep:rs7-terser"]
 
+# Testing features
+testing = []
+
 # Meta feature - enable all features
-full = ["tls", "auth", "oauth", "websocket", "retry", "logging", "metrics", "ratelimit", "compression", "queue", "batch", "routing", "webhooks"]
+full = ["tls", "auth", "oauth", "websocket", "retry", "logging", "metrics", "ratelimit", "compression", "queue", "batch", "routing", "webhooks", "testing"]
 
 [dev-dependencies]
 tokio-test = "0.4"

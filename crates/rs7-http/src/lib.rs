@@ -80,6 +80,9 @@ pub mod server;
 #[cfg(feature = "tls")]
 pub mod tls;
 
+#[cfg(feature = "testing")]
+pub mod testing;
+
 #[cfg(feature = "logging")]
 pub mod logging;
 
