@@ -7,6 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2025-11-19
+
+### Added - Conformance Profile Validation Framework 🎯
+
+- **rs7-conformance Crate** - Comprehensive HL7 v2 conformance profile validation system achieving HAPI feature parity:
+  - XML conformance profile parser supporting HL7v2xConformanceProfile format
+  - Programmatic conformance profile creation API
+  - Message validation against conformance profiles
+  - Detailed validation reporting with precise error locations
+  - Support for HL7 v2.3 through v2.7.1
+
+- **Core Components**:
+  - `ProfileParser` - Load and parse XML conformance profiles
+  - `ConformanceValidator` - Validate messages against profiles
+  - `ConformanceProfile` / `MessageProfile` / `SegmentProfile` / `FieldProfile` - Profile data structures
+  - `ConformanceValidationResult` - Detailed validation results with errors, warnings, and info messages
+  - `ProfileMetadata` - Version, organization, and conformance profile metadata
+
+- **Validation Features**:
+  - **Usage Validation**: Enforce R (Required), RE (Required if Known), O (Optional), X (Not Used)
+  - **Cardinality Validation**: Check min/max occurrence constraints with unbounded support
+  - **Length Validation**: Enforce maximum field lengths
+  - **Location Tracking**: Precise error locations at segment, field, and component levels
+  - **Severity Classification**: Error, Warning, and Info message types
+
+- **Error Types** (via `ConformanceErrorType` enum):
+  - `RequiredElementMissing` - Required elements (R) not present
+  - `NotUsedElementPresent` - Explicitly forbidden elements (X) found
+  - `CardinalityViolation` - Min/max occurrence constraints violated
+  - `LengthExceeded` - Field exceeds maximum allowed length
+  - `InvalidFormat` - Data format validation failures
+
+- **XML Parsing**:
+  - Event-based parsing using `quick-xml` for efficiency
+  - Support for self-closing and nested XML elements
+  - ItemNo field position parsing with leading zero handling (e.g., "00010" → 10)
+  - Unbounded cardinality support with "*" notation
+  - Robust error handling for malformed XML
+
+- **Examples** (2 comprehensive examples):
+  - `basic_validation.rs` - End-to-end validation workflow with programmatic profile creation
+  - `xml_parser_demo.rs` - XML profile parsing and validation demonstration
+
+- **Sample Profiles**:
+  - `sample_adt_a01.xml` - Example ADT^A01 conformance profile
+
+- **Testing**:
+  - 21 tests (14 unit + 6 integration + 1 doctest) all passing
+  - Complete test coverage for XML parsing edge cases
+  - Integration tests for end-to-end validation scenarios
+  - All workspace tests passing (335+ total tests)
+
+- **Documentation**:
+  - Complete API documentation for all public types
+  - Inline code examples in documentation
+  - Phase 1 MVP scope clearly defined
+  - Future enhancement roadmap
+
+### Technical Details
+
+- **Event-Based XML Parsing**: Efficient streaming XML parser using quick-xml
+- **Profile Structure**: Hierarchical profile structure matching HL7 v2 message hierarchy
+- **Validation Location Tracking**: Precise error locations with segment name, field number, and component position
+- **Severity-Based Classification**: Errors, warnings, and informational messages for flexible reporting
+- **Extensible Design**: Foundation for future enhancements (conditional predicates, value sets, co-constraints)
+
+### Phase 1 MVP Scope
+
+Initial release focuses on core validation features:
+- Basic XML profile parsing (segments and fields)
+- Usage code validation (R, RE, O, X)
+- Min/Max cardinality validation
+- Field length constraints
+
+### Future Enhancements
+
+Planned for future releases:
+- Conditional predicates (C usage codes with predicates)
+- Component-level validation
+- Data type flavors
+- Value set bindings
+- Co-constraints between fields
+- IZ (Initialize) and W (Withdrawn) usage codes
+
 ## [0.8.0] - 2025-11-19
 
 ### Added - Custom Z-Segment Framework 🔧

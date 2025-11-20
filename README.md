@@ -10,6 +10,7 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 - **✅ Schema-Based Validation**: Comprehensive schemas for all HL7 versions (2.3-2.7)
 - **✅ Data Type Validation**: Format checking for all HL7 data types (dates, times, numerics, coded values, etc.)
 - **✅ Vocabulary Validation**: Code set validation against HL7 standard tables (gender, patient class, processing ID, etc.)
+- **✅ Conformance Profile Validation**: Validate messages against HL7 v2 conformance profiles (XML-based)
 - **✅ Terser API**: Easy field access using path notation (e.g., `PID-5-1`, `OBX(2)-5`)
 - **✅ Encoding/Escaping**: Proper handling of HL7 escape sequences
 - **✅ Message Builders**: Fluent API for creating messages (ADT A01-A13/A17/A28/A31/A40, ORU, ORM, OUL, OML, RDE, RAS, RDS, RGV, RRA, RRD, SIU, MDM, DFT, QRY)
@@ -27,17 +28,18 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 
 ```
 rs7/
-├── rs7-core      - Core data structures (Message, Segment, Field)
-├── rs7-parser    - HL7 message parser using nom
-├── rs7-validator - Message validation against HL7 standards
-├── rs7-terser    - Path-based field access API
-├── rs7-custom    - Type-safe custom Z-segment framework
-├── rs7-mllp      - MLLP protocol for network transmission (intra-organization)
-├── rs7-http      - HTTP transport for inter-organization communication
-├── rs7-fhir      - HL7 v2 to FHIR R4 conversion
-├── rs7-wasm      - WebAssembly bindings for JavaScript/TypeScript
-├── rs7-cli       - Command-line interface for message analysis
-└── rs7-macros    - Derive macros for message types
+├── rs7-core        - Core data structures (Message, Segment, Field)
+├── rs7-parser      - HL7 message parser using nom
+├── rs7-validator   - Message validation against HL7 standards
+├── rs7-conformance - Conformance profile validation (XML-based)
+├── rs7-terser      - Path-based field access API
+├── rs7-custom      - Type-safe custom Z-segment framework
+├── rs7-mllp        - MLLP protocol for network transmission (intra-organization)
+├── rs7-http        - HTTP transport for inter-organization communication
+├── rs7-fhir        - HL7 v2 to FHIR R4 conversion
+├── rs7-wasm        - WebAssembly bindings for JavaScript/TypeScript
+├── rs7-cli         - Command-line interface for message analysis
+└── rs7-macros      - Derive macros for message types
 ```
 
 ## Quick Start
@@ -46,14 +48,15 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rs7-core = "0.8"
-rs7-parser = "0.8"
-rs7-terser = "0.8"
-rs7-validator = "0.8"
-rs7-custom = "0.8"  # Optional: for custom Z-segment support
-rs7-mllp = "0.8"    # Optional: for MLLP network support (intra-organization)
-rs7-http = "0.8"    # Optional: for HTTP transport (inter-organization)
-rs7-fhir = "0.8"    # Optional: for FHIR conversion
+rs7-core = "0.9"
+rs7-parser = "0.9"
+rs7-terser = "0.9"
+rs7-validator = "0.9"
+rs7-conformance = "0.9"  # Optional: for conformance profile validation
+rs7-custom = "0.9"       # Optional: for custom Z-segment support
+rs7-mllp = "0.9"         # Optional: for MLLP network support (intra-organization)
+rs7-http = "0.9"         # Optional: for HTTP transport (inter-organization)
+rs7-fhir = "0.9"         # Optional: for FHIR conversion
 ```
 
 ### Parsing a Message
@@ -164,6 +167,19 @@ let registry = TableRegistry::new();
 let vocab_result = registry.validate("0001", "M"); // Table 0001: Administrative Sex
 if vocab_result.is_valid() {
     println!("Valid gender code!");
+}
+
+// Conformance profile validation
+use rs7_conformance::{ProfileParser, ConformanceValidator};
+
+let profile = ProfileParser::parse_file("profiles/adt_a01.xml")?;
+let conformance_validator = ConformanceValidator::new(profile);
+let conformance_result = conformance_validator.validate(&message);
+
+if !conformance_result.is_valid() {
+    for error in &conformance_result.errors {
+        println!("Conformance error at {}: {}", error.location, error.message);
+    }
 }
 ```
 
@@ -632,6 +648,7 @@ Contributions are welcome! Please:
 - [x] CLI tool for message analysis ✅ (5 commands: parse, validate, extract, convert, info - see rs7-cli/README.md)
 - [x] HTTP transport support ✅ (HL7-over-HTTP for inter-organization communication - see rs7-http/README.md)
 - [x] Custom Z-segment framework ✅ (Type-safe custom segment support with validation - see rs7-custom/README.md)
+- [x] Conformance profile validation ✅ (XML-based conformance profiles with usage, cardinality, and length validation - see rs7-conformance crate)
 
 ## License
 
@@ -652,6 +669,7 @@ at your option.
 | Async I/O | Tokio | Blocking/NIO |
 | Terser API | ✅ | ✅ |
 | Validation | ✅ | ✅ |
+| Conformance Profiles | ✅ | ✅ |
 | MLLP | ✅ | ✅ |
 | HTTP Transport | ✅ | ✅ |
 | Message Types | In progress | Comprehensive |
