@@ -7,6 +7,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-11-20
+
+### Added - Enhanced Terser Capabilities 🚀
+
+- **BulkTerser API** - Efficient bulk field extraction and pattern matching:
+  - `get_multiple()` - Extract multiple fields at once with HashMap results
+  - `get_pattern()` - Pattern matching with wildcard support for repeating segments
+  - `get_all_from_segments()` - Convenience method for common extraction patterns
+  - Wildcard syntax: `OBX(*)-5` extracts field 5 from all OBX segments
+  - Support for both segment wildcards and field repetition wildcards
+
+- **Iterator API** - Standard Rust iterators for field traversal:
+  - `FieldIterator` - Iterate over field values from repeating segments
+  - `ComponentIterator` - Iterate over specific components across segments
+  - `RepetitionIterator` - Iterate over field repetitions
+  - Extension methods on `Terser`: `iter_field()`, `iter_component()`, `iter_repetitions()`
+  - Automatic empty value filtering for cleaner iteration
+  - Full support for standard iterator methods: `filter()`, `map()`, `count()`, `collect()`
+
+- **TerserQuery API** - Conditional queries and filtering:
+  - `find_segments()` - Find segments matching arbitrary predicates
+  - `filter_repeating()` - Filter segments by field value
+  - `find_first()` - Find first segment matching criteria
+  - `filter_by_component()` - Filter segments by component value
+  - `get_values_where()` - Extract values based on conditional filtering
+  - `count_where()` - Count segments matching predicate
+  - `any_match()` / `all_match()` - Boolean segment queries
+  - `get_if()` - Conditional field extraction based on message state
+
+- **Examples**:
+  - `enhanced_terser.rs` - Comprehensive demonstration of all new features
+    - 7 complete working examples showing real-world use cases
+    - Bulk extraction, pattern matching, iteration, and conditional queries
+    - ORU message with multiple OBX segments for realistic scenarios
+
+- **Documentation**:
+  - Complete README for rs7-terser crate
+  - API documentation for all public types
+  - Performance comparison table
+  - Path indexing reference
+  - Best practices guide
+
+- **Testing**:
+  - 27 new tests (9 bulk + 9 iterator + 9 query) all passing
+  - Complete test coverage for pattern matching edge cases
+  - Iterator behavior validation
+  - Complex query scenario testing
+  - All workspace tests passing (362+ total tests)
+
+### Technical Details
+
+- **Zero-Allocation Iteration**: Iterators use borrowed references with no heap allocations
+- **Pattern Matching**: Smart pattern detection distinguishes segment wildcards from field repetition patterns
+- **Lifetime Safety**: TerserQuery stores internal Terser to avoid lifetime issues
+- **1-Based HL7 Indexing**: Maintains HL7 standard conventions for component and segment indexing
+- **Performance**: Iterators and bulk operations optimized for high-throughput processing
+
+### Performance Considerations
+
+| API | Use Case | Characteristics |
+|-----|----------|-----------------|
+| `Terser` | Simple field access | ~200-300 ns/lookup |
+| `CachedTerser` | Repeated access | ~20-40 ns/lookup (5-10x faster) |
+| `BulkTerser` | Multiple fields | Efficient bulk operations |
+| Iterators | Repeating segments | Zero-allocation iteration |
+| `TerserQuery` | Complex filtering | Optimized predicates |
+
+### Phase 1, Sprint 1 Complete
+
+This release completes the first sprint of RS7's enhanced feature roadmap:
+- ✅ Enhanced Terser Capabilities (Week 1)
+- Next: FHIR Converters expansion (Week 2)
+
 ## [0.9.0] - 2025-11-19
 
 ### Added - Conformance Profile Validation Framework 🎯

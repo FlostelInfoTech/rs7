@@ -1,0 +1,653 @@
+# RS7 Development Roadmap
+
+This document outlines the planned development phases for RS7 to become a world-class, feature-rich HL7 v2.x library that exceeds HAPI capabilities.
+
+## Vision
+
+Transform RS7 into the most comprehensive, performant, and feature-rich HL7 library in any language, with:
+- **Feature parity** with HAPI (Java's leading HL7 library)
+- **Superior features** not available in HAPI (transformation, templates, advanced rules)
+- **Rust performance** and memory safety guarantees
+- **Enterprise-grade** reliability and robustness
+
+---
+
+## Current Status (v0.9.0)
+
+### Completed Features ✅
+
+- **Core HL7 Parsing**: Zero-copy parser with nom, support for v2.3-v2.7.1
+- **Terser API**: Path-based field access (e.g., `PID-5-1`, `OBX(2)-5`)
+- **Cached Terser**: 5-10x faster repeated field access
+- **Message Builders**: ADT (13 variants), ORU, ORM, SIU, MDM, DFT, QRY
+- **Complex Field Builders**: XPN, XAD, XTN, CX, XCN
+- **Schema Validation**: 32 message types across 5 HL7 versions
+- **Data Type Validation**: All HL7 data types (dates, times, numerics, coded values)
+- **Vocabulary Validation**: HL7 standard tables (13 tables)
+- **Conformance Profile Validation**: Phase 1 MVP (Usage, Cardinality, Length)
+- **Custom Z-Segments**: Type-safe custom segment framework
+- **FHIR Conversion**: 9 converters (Patient, Observation, Encounter, etc.)
+- **MLLP Protocol**: Network transmission support
+- **HTTP Transport**: HL7-over-HTTP support
+- **WebAssembly**: JavaScript/TypeScript bindings
+- **CLI Tool**: Parse, validate, extract, convert, info commands
+- **Test Coverage**: 335+ tests across all crates
+
+### Current Architecture
+
+```
+rs7/
+├── rs7-core        - Core data structures (Message, Segment, Field)
+├── rs7-parser      - HL7 message parser using nom
+├── rs7-validator   - Message validation against HL7 standards
+├── rs7-conformance - Conformance profile validation (XML-based)
+├── rs7-terser      - Path-based field access API
+├── rs7-custom      - Type-safe custom Z-segment framework
+├── rs7-mllp        - MLLP protocol for network transmission
+├── rs7-http        - HTTP transport for inter-organization communication
+├── rs7-fhir        - HL7 v2 to FHIR R4 conversion
+├── rs7-wasm        - WebAssembly bindings for JavaScript/TypeScript
+├── rs7-cli         - Command-line interface for message analysis
+└── rs7-macros      - Derive macros for message types
+```
+
+---
+
+## PHASE 1: Quick Wins (v0.10.0)
+
+**Timeline**: 2-3 weeks
+**Goal**: Deliver immediate productivity improvements
+
+### 1.1 Enhanced Terser Capabilities (3 days)
+
+**New Features:**
+- **Bulk Extraction**: Extract multiple fields in one call
+  - `get_multiple(&["PID-5-1", "PID-7", "PID-8"])` → HashMap
+- **Pattern Matching**: Find all fields matching a pattern
+  - `get_pattern("OBX(*)-5")` → All OBX observation values
+  - `get_pattern("PID-11(*)-1")` → All address street components
+- **Field Iteration**: Iterator API for walking through segments/fields
+  - `FieldIterator` for iterating over repeating segments
+- **Conditional Queries**: Get fields based on conditions
+  - `get_if("OBX-5", |v| v.parse::<f64>() > 100.0)`
+  - `filter_repeating("OBX", 3, "GLU")` → Find OBX where field 3 = "GLU"
+
+**New Modules:**
+- `rs7-terser/src/bulk.rs` (~200 LOC)
+- `rs7-terser/src/iterator.rs` (~150 LOC)
+- `rs7-terser/src/query.rs` (~250 LOC)
+- Pattern parser (~100 LOC)
+- Tests (~300 LOC)
+
+**HAPI Equivalent**: `Terser.getFinder()`, `MessageIterator`
+
+**Deliverable**: rs7-terser v0.10.0
+
+---
+
+### 1.2 Additional FHIR Converters (5 days)
+
+**New Converters:**
+1. **ServiceRequest** (ORC/OBR → FHIR ServiceRequest)
+   - Order control codes, universal service identifiers
+   - Priority, status, intent mapping
+
+2. **Specimen** (SPM → FHIR Specimen)
+   - Specimen type, collection method, body site
+   - Container, handling conditions
+
+3. **Coverage** (IN1/IN2 → FHIR Coverage)
+   - Insurance plan, subscriber information
+   - Coverage periods, relationship codes
+
+4. **Location** (PV1 → FHIR Location)
+   - Assigned patient location (PV1-3)
+   - Building, floor, room, bed
+
+5. **Organization** (MSH/NK1 → FHIR Organization)
+   - Sending/receiving facilities (MSH-3, MSH-4)
+   - Employer organization (NK1-13)
+
+**Implementation:**
+- `rs7-fhir/src/converters/service_request.rs` (~200 LOC)
+- `rs7-fhir/src/converters/specimen.rs` (~150 LOC)
+- `rs7-fhir/src/converters/coverage.rs` (~200 LOC)
+- `rs7-fhir/src/converters/location.rs` (~150 LOC)
+- `rs7-fhir/src/converters/organization.rs` (~150 LOC)
+- FHIR resource structures if needed (~300 LOC)
+- Tests (~400 LOC)
+
+**Result**: 14 total FHIR converters (complete core resource coverage)
+
+**Deliverable**: rs7-fhir v0.10.0
+
+---
+
+### 1.3 Query/Response Support (4 days)
+
+**New Features:**
+- **QBP Builder** (Query by Parameter)
+  - QPD segment support
+  - Query tag and parameter management
+  - Fluent builder API
+
+- **RSP Builder** (Response)
+  - Query acknowledgment codes (OK, NF, AE, AR)
+  - Response to original query
+  - Result segment management
+
+- **Query Result Parser**
+  - Extract results from RSP messages
+  - Parse query acknowledgment status
+  - Handle paginated results
+
+**Implementation:**
+- Extend `rs7-core/src/builders/qry.rs`
+- `QbpBuilder` (~200 LOC)
+- `RspBuilder` (~250 LOC)
+- QPD segment support (~100 LOC)
+- `QueryResultParser` (~200 LOC)
+- Tests and examples (~300 LOC)
+
+**HAPI Equivalent**: `QueryResponseMessageBuilder`, `MessageQuery`
+
+**Deliverable**: rs7-core v0.10.0
+
+---
+
+### Phase 1 Summary
+
+**Total Code**: ~3,100 LOC (implementation + tests)
+**New Crate Versions**: rs7-terser v0.10.0, rs7-fhir v0.10.0, rs7-core v0.10.0
+**Examples**: 5 new comprehensive examples
+**Value**: Immediate productivity boost, complete FHIR coverage, query support
+
+---
+
+## PHASE 2: Structural Enhancements (v0.11.0)
+
+**Timeline**: 3-4 weeks
+**Goal**: Add infrastructure for enterprise-scale processing
+
+### 2.1 Batch/File Support (5 days)
+
+**New Features:**
+- **FHS/BHS Segments**: File Header Segment, Batch Header Segment
+- **FTS/BTS Segments**: File Trailer Segment, Batch Trailer Segment
+- **Batch Structures**: `BatchMessage` with header, messages, trailer
+- **File Structures**: `FileMessage` with header, batches, trailer
+- **Batch Parser**: Parse batch/file HL7 messages
+- **Batch Builders**: Fluent API for creating batches/files
+- **Batch Validation**: Validate batch/file structure and counts
+
+**Implementation:**
+- FHS/BHS/FTS/BTS segment definitions in rs7-core (~100 LOC)
+- `BatchMessage` and `FileMessage` structures (~150 LOC)
+- Batch/file parser in rs7-parser (~300 LOC)
+- Batch/file builders (~200 LOC)
+- Batch validation (~150 LOC)
+- Tests and examples (~400 LOC)
+
+**HAPI Equivalent**: `Parser.parse()` with batch detection, `BatchParser`
+
+**Use Cases**: High-volume message processing, EDI file handling
+
+**Deliverable**: rs7-core v0.11.0, rs7-parser v0.11.0
+
+---
+
+### 2.2 Message Transformation Framework (6 days)
+
+**New Crate**: rs7-transform
+
+**Features:**
+- **Transformation Rules**: Source → Target field mapping
+- **Transform Functions**: Built-in transforms (uppercase, date format, etc.)
+- **Declarative Mapping**: YAML/JSON configuration files
+- **Fluent Builder API**: Programmatic mapping definition
+- **HL7 v2 → HL7 v2**: Transform between message types/versions
+- **Custom Transforms**: User-defined transformation functions
+
+**Architecture:**
+```rust
+pub struct TransformationRule {
+    source_path: String,
+    target_path: String,
+    transform_fn: Option<TransformFn>,
+}
+
+pub struct MessageTransformer {
+    rules: Vec<TransformationRule>,
+}
+```
+
+**Mapping File Example (YAML):**
+```yaml
+rules:
+  - source: "PID-5-1"
+    target: "PID-5-1"
+    transform: "uppercase"
+  - source: "PID-7"
+    target: "PID-7"
+    transform: "format_date:YYYYMMDD->YYYY-MM-DD"
+```
+
+**Implementation:**
+- Core transformation structures (~200 LOC)
+- `MessageTransformer` engine (~300 LOC)
+- Built-in transform functions (~200 LOC)
+- YAML/JSON parser (~200 LOC)
+- Fluent builder API (~150 LOC)
+- Tests and examples (~400 LOC)
+
+**Use Cases**: Version migration, message normalization, field mapping
+
+**Deliverable**: rs7-transform v0.1.0
+
+---
+
+### 2.3 Segment/Message Templates (5 days)
+
+**New Crate**: rs7-templates
+
+**Features:**
+- **Message Templates**: Reusable message patterns
+- **Segment Templates**: Reusable segment patterns
+- **Template Engine**: Create messages from templates with variable substitution
+- **YAML Templates**: Declarative template format
+- **Template Library**: 10+ standard templates (ADT, ORU, etc.)
+- **Template Inheritance**: Extend base templates
+- **Template Validation**: Validate messages against templates
+
+**Template Example (YAML):**
+```yaml
+name: "Basic ADT A01"
+version: "2.5"
+message_type: "ADT"
+trigger_event: "A01"
+segments:
+  - id: MSH
+    required: true
+    fields:
+      3: { required: true, placeholder: "{{sending_app}}" }
+      4: { required: true, placeholder: "{{sending_facility}}" }
+  - id: PID
+    required: true
+    fields:
+      5: { required: true, placeholder: "{{patient_name}}" }
+      7: { required: false, placeholder: "{{dob}}" }
+```
+
+**Implementation:**
+- Template structures (~200 LOC)
+- Template engine (~250 LOC)
+- YAML parser (~200 LOC)
+- Template validation (~150 LOC)
+- Standard template library (~300 LOC)
+- Inheritance support (~150 LOC)
+- Tests and examples (~400 LOC)
+
+**Use Cases**: Rapid message creation, organization-specific patterns
+
+**Deliverable**: rs7-templates v0.1.0
+
+---
+
+### Phase 2 Summary
+
+**Total Code**: ~4,050 LOC (implementation + tests)
+**New Crates**: rs7-transform v0.1.0, rs7-templates v0.1.0
+**Updated Crates**: rs7-core v0.11.0, rs7-parser v0.11.0
+**Examples**: 6 new examples
+**Value**: High-volume processing, message transformation, reusable patterns
+
+---
+
+## PHASE 3: Advanced Validation & Orchestration (v0.12.0)
+
+**Timeline**: 4-5 weeks
+**Goal**: Enterprise-grade validation and workflow capabilities
+
+### 3.1 Phase 2 Conformance Profiles (10 days)
+
+**Extensions to rs7-conformance:**
+
+**New Features:**
+- **Component-Level Validation**: Validate components within fields
+- **Conditional Predicates**: C (Conditional) usage with condition evaluation
+- **Value Set Binding**: Required/Extensible/Preferred/Example strength
+- **Co-Constraints**: Cross-field validation rules in profiles
+- **Predicate Engine**: Evaluate complex conditions using Terser
+- **Extended XML Parser**: Support Phase 2 XML elements
+
+**New Structures:**
+```rust
+pub struct ComponentProfile {
+    position: usize,
+    name: Option<String>,
+    usage: Usage,
+    datatype: Option<String>,
+    length: Option<usize>,
+    table_id: Option<String>,
+}
+
+pub enum ConditionalUsage {
+    Required,
+    RequiredIfKnown,
+    Optional,
+    NotUsed,
+    Conditional(Predicate),
+}
+
+pub struct Predicate {
+    condition: String,
+    true_usage: Usage,
+    false_usage: Usage,
+}
+
+pub struct ValueSet {
+    id: String,
+    name: String,
+    binding_strength: BindingStrength,
+    values: Vec<ValueSetEntry>,
+}
+
+pub struct CoConstraint {
+    id: String,
+    description: String,
+    condition: String,
+}
+```
+
+**Implementation:**
+- Component profile structures (~100 LOC)
+- Predicate parser and evaluator (~300 LOC)
+- Value set structures and validation (~200 LOC)
+- Co-constraint structures and validation (~250 LOC)
+- Extended XML parser (~200 LOC)
+- Extended validator (~300 LOC)
+- Tests (~500 LOC)
+
+**HAPI Equivalent**: `ConformanceProfileRule`, `Predicate` evaluation
+
+**Deliverable**: rs7-conformance v0.10.0 (Phase 2 complete)
+
+---
+
+### 3.2 Advanced Validation Rules (6 days)
+
+**Extensions to rs7-validator:**
+
+**New Features:**
+- **Custom Business Rules**: User-defined validation logic
+- **Rules Engine**: Execute validation rules on messages
+- **Cross-Field Validation**: Dependencies between fields
+- **Declarative Rules**: YAML/JSON rule configuration
+- **Rule Severity**: Error/Warning/Info classification
+- **Built-in Rules**: Common validation patterns
+
+**Architecture:**
+```rust
+pub struct ValidationRule {
+    name: String,
+    description: String,
+    severity: RuleSeverity,
+    condition: Box<dyn Fn(&Message) -> ValidationRuleResult>,
+}
+
+pub struct RulesEngine {
+    rules: Vec<ValidationRule>,
+}
+
+pub struct CrossFieldValidator;
+impl CrossFieldValidator {
+    fn if_then(...) -> ValidationRule;
+    fn mutually_exclusive(...) -> ValidationRule;
+    fn at_least_one(...) -> ValidationRule;
+}
+```
+
+**Declarative Rules Example (YAML):**
+```yaml
+rules:
+  - name: "Patient gender required"
+    severity: error
+    condition: "PID-8 IS VALUED"
+    message: "Patient gender must be provided"
+
+  - name: "Adult patients need SSN"
+    severity: warning
+    condition: "IF AGE(PID-7) > 18 THEN PID-19 IS VALUED"
+    message: "Adult patients should have SSN"
+```
+
+**Implementation:**
+- ValidationRule structures (~150 LOC)
+- RulesEngine (~200 LOC)
+- Rule DSL parser (~250 LOC)
+- Cross-field validators (~200 LOC)
+- Built-in common rules (~150 LOC)
+- Tests and examples (~400 LOC)
+
+**HAPI Equivalent**: `ValidationRule` interface, `RuleValidator`
+
+**Deliverable**: rs7-validator v0.10.0
+
+---
+
+### 3.3 Message Routing/Orchestration (6 days)
+
+**New Crate**: rs7-orchestration (or extend rs7-http)
+
+**Features:**
+- **Content-Based Routing**: Route by field values
+- **Message Orchestration**: Multi-step workflows
+- **Message Filtering**: Predicate-based filtering
+- **Async Workflows**: Tokio-based async orchestration
+- **Error Handling**: Retry logic, dead letter queues
+- **Workflow Builder**: Fluent API for defining workflows
+
+**Architecture:**
+```rust
+pub struct ContentRouter {
+    routes: Vec<ContentRoute>,
+}
+
+pub struct ContentRoute {
+    name: String,
+    condition: Box<dyn Fn(&Message) -> bool>,
+    handler: RouteHandler,
+}
+
+pub struct MessageOrchestrator {
+    steps: Vec<OrchestrationStep>,
+}
+
+pub struct MessageFilter {
+    filters: Vec<FilterRule>,
+}
+```
+
+**Example Usage:**
+```rust
+let mut orchestrator = MessageOrchestrator::new();
+orchestrator
+    .add_step("validate", |msg| validator.validate(&msg))
+    .add_step("transform", |msg| transformer.transform(&msg))
+    .add_step("route", |msg| router.route(&msg));
+
+orchestrator.execute_async(message).await?;
+```
+
+**Implementation:**
+- Content-based routing (~200 LOC)
+- Message filtering (~150 LOC)
+- Orchestration engine (~300 LOC)
+- Async orchestration (~200 LOC)
+- Builder pattern (~150 LOC)
+- Tests and examples (~400 LOC)
+
+**HAPI Equivalent**: Apache Camel integration (HAPI uses Camel)
+
+**Use Cases**: Integration engines, message processing pipelines
+
+**Deliverable**: rs7-orchestration v0.1.0 or rs7-http v0.10.0
+
+---
+
+### Phase 3 Summary
+
+**Total Code**: ~4,550 LOC (implementation + tests)
+**Updated Crates**: rs7-conformance v0.10.0, rs7-validator v0.10.0
+**New Crates**: rs7-orchestration v0.1.0
+**Examples**: 8 new examples
+**Value**: Production-ready validation, enterprise workflows
+
+---
+
+## Feature Parity Assessment
+
+### After Phase 3 Completion
+
+| Feature | HAPI | RS7 v0.9.0 | RS7 v0.12.0 |
+|---------|------|------------|-------------|
+| **Core Parsing** | ✅ | ✅ | ✅ |
+| **Terser Access** | ✅ | ✅ | ✅✅ (enhanced) |
+| **Bulk Operations** | ✅ | ❌ | ✅ |
+| **Pattern Matching** | ✅ | ❌ | ✅ |
+| **Schema Validation** | ✅ | ✅ | ✅ |
+| **Data Type Validation** | ✅ | ✅ | ✅ |
+| **Vocabulary Validation** | ✅ | ✅ | ✅ |
+| **Conformance Profiles** | ✅ Phase 1 | ✅ Phase 1 | ✅ Phase 2 |
+| **Batch/File Support** | ✅ | ❌ | ✅ |
+| **Query/Response** | ✅ | Partial | ✅ |
+| **FHIR Conversion** | ✅ | ✅ (9) | ✅ (14+) |
+| **Message Builders** | ✅ | ✅ | ✅ |
+| **MLLP Protocol** | ✅ | ✅ | ✅ |
+| **HTTP Transport** | ✅ | ✅ | ✅ |
+| **Transformation** | ❌ | ❌ | ✅ (RS7 exclusive) |
+| **Templates** | ❌ | ❌ | ✅ (RS7 exclusive) |
+| **Rules Engine** | ❌ | ❌ | ✅ (RS7 exclusive) |
+| **Orchestration** | Via Camel | Basic | ✅ |
+
+### RS7 Advantages Over HAPI
+
+**✅ Feature Parity Achieved:**
+- All core HAPI features implemented
+- Comprehensive conformance profile support
+- Complete query/response support
+
+**🚀 Features Exceeding HAPI:**
+- **Message Transformation Framework**: Declarative field mapping, version conversion
+- **Template System**: Reusable message patterns, organization-specific templates
+- **Advanced Rules Engine**: Declarative validation rules, cross-field validation
+- **Modern Architecture**: Rust performance, memory safety, async I/O
+- **Better Developer Experience**: Fluent builders, type safety, comprehensive examples
+
+---
+
+## Success Metrics
+
+### Code Quality
+- ✅ Maintain >80% test coverage
+- ✅ Zero compiler warnings
+- ✅ All features documented with examples
+- ✅ Benchmarks for performance-critical features
+
+### Performance Targets
+- ✅ Parse performance: <10 µs for medium messages
+- ✅ Terser cached access: <100 ns
+- ✅ Throughput: >50,000 messages/sec
+- ✅ Memory efficiency: Minimal allocations
+
+### Test Coverage
+- ✅ Current: 335+ tests
+- ✅ Phase 1: +150 tests (485 total)
+- ✅ Phase 2: +180 tests (665 total)
+- ✅ Phase 3: +270 tests (935 total)
+
+### Documentation
+- ✅ Every feature has working examples
+- ✅ API documentation for all public types
+- ✅ README per crate
+- ✅ Migration guides for breaking changes
+
+---
+
+## Implementation Principles
+
+### 1. Incremental Value Delivery
+- Each phase delivers independently useful features
+- No phase blocks on future phases
+- Regular releases (v0.10.0, v0.11.0, v0.12.0)
+
+### 2. Backward Compatibility
+- Maintain compatibility within major versions
+- Use deprecation warnings for breaking changes
+- Provide migration guides
+
+### 3. Performance First
+- Zero-copy parsing where possible
+- Benchmark all new features
+- Profile and optimize hot paths
+
+### 4. Comprehensive Testing
+- Unit tests for all new code
+- Integration tests with real HL7 messages
+- Property-based testing where applicable
+
+### 5. Clear Documentation
+- Example for every feature
+- API documentation with usage examples
+- Architecture documentation
+
+### 6. Following Existing Patterns
+- Workspace architecture
+- Builder patterns
+- Error handling with thiserror
+- Module organization
+
+---
+
+## Code Volume Summary
+
+| Phase | Implementation LOC | Test LOC | Total LOC |
+|-------|-------------------|----------|-----------|
+| Phase 1 | 2,100 | 1,000 | 3,100 |
+| Phase 2 | 2,650 | 1,400 | 4,050 |
+| Phase 3 | 3,450 | 1,100 | 4,550 |
+| **Total** | **8,200** | **3,500** | **11,700** |
+
+---
+
+## Timeline Summary
+
+| Phase | Duration | Features | Release |
+|-------|----------|----------|---------|
+| Phase 1 | 2-3 weeks | Enhanced Terser, FHIR, Query/Response | v0.10.0 |
+| Phase 2 | 3-4 weeks | Batch/File, Transformation, Templates | v0.11.0 |
+| Phase 3 | 4-5 weeks | Conformance Phase 2, Rules, Orchestration | v0.12.0 |
+| **Total** | **~12 weeks** | **9 major feature sets** | **3 releases** |
+
+---
+
+## Next Steps
+
+1. **Start Phase 1**: Enhanced Terser Capabilities
+2. **Track Progress**: Update this roadmap as features are completed
+3. **Regular Releases**: Version bump and publish at end of each phase
+4. **Documentation**: Maintain CHANGELOG.md with detailed release notes
+
+---
+
+## Maintenance
+
+This roadmap is a living document and will be updated as:
+- Features are completed (mark with ✅)
+- Priorities change
+- New requirements emerge
+- Performance targets are achieved
+
+**Last Updated**: 2025-11-20
+**Current Version**: v0.9.0
+**Next Milestone**: Phase 1 (v0.10.0)

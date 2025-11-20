@@ -11,6 +11,9 @@
 
 mod path;
 pub mod cache;
+pub mod bulk;
+pub mod iterator;
+pub mod query;
 
 use rs7_core::{
     error::{Error, Result},
@@ -19,12 +22,14 @@ use rs7_core::{
     segment::Segment,
 };
 
+pub use bulk::BulkTerser;
 pub use cache::CachedTerser;
+pub use query::TerserQuery;
 use path::TerserPath;
 
 /// Terser for accessing HL7 message fields using path notation
 pub struct Terser<'a> {
-    message: &'a Message,
+    pub(crate) message: &'a Message,
 }
 
 impl<'a> Terser<'a> {
