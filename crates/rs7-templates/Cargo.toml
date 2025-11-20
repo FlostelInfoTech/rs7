@@ -1,0 +1,27 @@
+[package]
+name = "rs7-templates"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Message and segment templates for RS7 HL7 library"
+
+[dependencies]
+rs7-core.workspace = true
+rs7-parser.workspace = true
+thiserror.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+serde_yaml.workspace = true
+regex.workspace = true
+
+[dev-dependencies]
+rs7-terser.workspace = true
+
+[features]
+default = []

@@ -22,6 +22,7 @@ rs7-mllp.workspace = true
 chrono.workspace = true
 tokio.workspace = true
 rs7-transform = { workspace = true, features = ["serde"] }
+rs7-templates.workspace = true
 
 [workspace]
 members = [
@@ -30,6 +31,7 @@ members = [
     "crates/rs7-validator",
     "crates/rs7-terser",
     "crates/rs7-transform",
+    "crates/rs7-templates",
     "crates/rs7-mllp",
     "crates/rs7-http",
     "crates/rs7-macros",
@@ -98,6 +100,7 @@ rs7-parser = { version = "0.11.0", path = "crates/rs7-parser" }
 rs7-validator = { version = "0.11.0", path = "crates/rs7-validator" }
 rs7-terser = { version = "0.11.0", path = "crates/rs7-terser" }
 rs7-transform = { version = "0.11.0", path = "crates/rs7-transform" }
+rs7-templates = { version = "0.11.0", path = "crates/rs7-templates" }
 rs7-mllp = { version = "0.11.0", path = "crates/rs7-mllp" }
 rs7-http = { version = "0.11.0", path = "crates/rs7-http" }
 rs7-fhir = { version = "0.11.0", path = "crates/rs7-fhir" }

@@ -7,6 +7,136 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2025-01-20
+
+### Added - Message Template System 📋
+
+- **Template System** - Comprehensive framework for creating and validating HL7 messages from templates:
+  - **MessageTemplate** - Reusable message patterns with segment and field definitions
+    - Message type and trigger event specification
+    - HL7 version string (e.g., "2.5", "2.5.1")
+    - Required and optional segment definitions
+    - Variable placeholder support using `{{variable}}` syntax
+    - Description and metadata fields
+    - Fluent builder API for programmatic construction
+  - **SegmentTemplate** - Individual segment specifications
+    - Required/optional segment markers
+    - Repeating segment support
+    - Field templates at specific positions
+    - Description and documentation fields
+  - **FieldTemplate** - Field-level definitions
+    - Required/optional field markers
+    - Data type specifications
+    - Maximum length constraints
+    - Variable placeholders for dynamic values
+    - Default value support
+    - Component-level templates for composite fields
+  - **ComponentTemplate** - Component specifications for composite fields
+    - Position within field
+    - Required/optional markers
+    - Placeholders and defaults
+    - Description fields
+
+- **Template Engine** - Create messages from templates with variable substitution:
+  - `TemplateEngine::new()` - Create engine instance
+  - `set_variable(key, value)` - Set variable for substitution
+  - `set_variables(map)` - Set multiple variables at once
+  - `create_message(template)` - Generate message from template
+  - Automatic variable replacement in placeholders
+  - Support for template-level default variables
+  - Engine variables override template defaults
+  - Proper handling of composite fields and components
+
+- **Template Validation** - Validate messages against template definitions:
+  - `TemplateValidator::validate()` - Validate message against template
+  - **ValidationResult** - Validation outcome with errors and warnings
+    - Valid/invalid status flag
+    - List of validation errors with locations
+    - List of validation warnings
+    - Helper methods: `has_errors()`, `has_warnings()`
+  - **ValidationError** - Error with message and field location
+  - **ValidationWarning** - Warning with message and field location
+  - Validates message type and trigger event
+  - Checks required segments present
+  - Validates required fields populated
+  - Field length validation
+  - Clear error messages with field locations (e.g., "PID-5")
+
+- **Template Inheritance** - Extend base templates to create specialized variants:
+  - **TemplateResolver** - Manages template hierarchy
+    - `register(template)` - Add template to registry
+    - `register_all(templates)` - Add multiple templates
+    - `resolve(name)` - Resolve template with inheritance
+  - Template extension via `extends` property
+  - Multi-level inheritance support (grandparent → parent → child)
+  - Child segments override base segments with same ID
+  - Child variables override base variables
+  - Segment field merging
+  - Circular dependency detection
+  - Clear error messages for missing base templates
+
+- **YAML/JSON Configuration** - Load and save templates:
+  - `MessageTemplate::from_yaml()` / `from_yaml_file()` - Load from YAML
+  - `MessageTemplate::from_json()` / `from_json_file()` - Load from JSON
+  - `MessageTemplate::to_yaml()` / `to_yaml_file()` - Save to YAML
+  - `MessageTemplate::to_json()` / `to_json_pretty()` / `to_json_file()` - Save to JSON
+  - Full serde support for all template types
+  - Human-readable configuration format
+  - Easy template sharing and version control
+
+- **Standard Template Library** - Pre-built templates for common messages:
+  - **TemplateLibrary::new()** - Create library with standard templates
+  - `get(name)` - Retrieve template by name
+  - `list_templates()` - List all available templates
+  - `add_template(template)` - Add custom template to library
+  - **7 Pre-built Templates**:
+    - **ADT_A01** - Admit/Visit Notification (MSH, EVN, PID, PV1)
+    - **ADT_A04** - Register a Patient (MSH, EVN, PID)
+    - **ADT_A08** - Update Patient Information (MSH, EVN, PID)
+    - **ORU_R01** - Unsolicited Observation Result (MSH, PID, OBR, OBX)
+    - **ORM_O01** - General Order Message (MSH, PID, ORC, OBR)
+    - **SIU_S12** - Notification of New Appointment Booking (MSH, SCH, PID)
+    - **MDM_T02** - Original Document Notification (MSH, EVN, PID, TXA, OBX)
+
+### Implementation Details
+
+- **Error Handling**:
+  - `Error::Parse` - Template parsing errors
+  - `Error::Validation` - Template validation errors
+  - `Error::Substitution` - Variable substitution errors (missing variables)
+  - `Error::NotFound` - Template not found in registry
+  - `Error::Inheritance` - Template inheritance errors (circular dependencies)
+  - `Error::Yaml` / `Error::Json` - Serialization errors
+  - Integration with rs7-core and rs7-parser error types
+
+- **Integration with Existing Crates**:
+  - Uses `rs7-core` message structures (Message, Segment, Field, Repetition, Component)
+  - Compatible with `rs7-parser` for parsing messages
+  - Works with all HL7 versions supported by rs7-core
+  - Validation complements `rs7-validator` schema validation
+
+### Testing
+
+- **47 Unit Tests** covering:
+  - Template creation and builders (4 tests)
+  - Template engine and variable substitution (6 tests)
+  - Template inheritance and resolution (8 tests)
+  - Standard template library (5 tests)
+  - YAML/JSON parsing and serialization (8 tests)
+  - Template validation (7 tests)
+  - Error handling (9 tests)
+- **14 Documentation Tests** embedded in API documentation
+- **3 Working Examples**:
+  - `template_basic.rs` - Basic template usage (111 LOC)
+  - `template_library.rs` - Standard library usage (114 LOC)
+  - `template_inheritance.rs` - Template inheritance (139 LOC)
+
+### Dependencies
+
+- Uses `serde`, `serde_json`, `serde_yaml` for configuration
+- Uses `regex` for placeholder matching
+- Depends on `rs7-core` and `rs7-parser`
+
 ## [0.14.0] - 2025-11-20
 
 ### Added - Message Transformation Framework 🔄

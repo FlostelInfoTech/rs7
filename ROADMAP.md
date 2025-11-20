@@ -12,7 +12,7 @@ Transform RS7 into the most comprehensive, performant, and feature-rich HL7 libr
 
 ---
 
-## Current Status (v0.14.0)
+## Current Status (v0.15.0)
 
 ### Completed Features ✅
 
@@ -24,6 +24,7 @@ Transform RS7 into the most comprehensive, performant, and feature-rich HL7 libr
 - **Complex Field Builders**: XPN, XAD, XTN, CX, XCN, QPD, RCP, QAK ✨ v0.12.0
 - **Batch/File Support**: BatchBuilder, FileBuilder, parse_batch(), parse_file() ✨ v0.13.0
 - **Message Transformation**: Field mapping, 15 built-in transforms, YAML/JSON config ✨ v0.14.0
+- **Message Templates**: Template system with variable substitution, inheritance, 7 pre-built templates ✨ v0.15.0
 - **Schema Validation**: 32 message types across 5 HL7 versions
 - **Data Type Validation**: All HL7 data types (dates, times, numerics, coded values)
 - **Vocabulary Validation**: HL7 standard tables (13 tables)
@@ -54,6 +55,7 @@ rs7/
 ├── rs7-conformance - Conformance profile validation (XML-based)
 ├── rs7-terser      - Path-based field access API
 ├── rs7-transform   - Message transformation framework ✨ v0.14.0
+├── rs7-templates   - Message template system ✨ v0.15.0
 ├── rs7-custom      - Type-safe custom Z-segment framework
 ├── rs7-mllp        - MLLP protocol for network transmission
 ├── rs7-http        - HTTP transport for inter-organization communication
@@ -177,11 +179,11 @@ rs7/
 
 ---
 
-## PHASE 2: Structural Enhancements (v0.14.0)
+## PHASE 2: Structural Enhancements ✅ COMPLETE
 
 **Timeline**: 3-4 weeks
 **Goal**: Add infrastructure for enterprise-scale processing
-**Status**: Sprints 1 & 2 complete ✅
+**Status**: ✅ **COMPLETED** - All 3 sprints delivered (v0.13.0, v0.14.0, v0.15.0)
 
 ### 2.1 Batch/File Support ✅ (v0.13.0)
 
@@ -263,18 +265,21 @@ rules:
 
 ---
 
-### 2.3 Segment/Message Templates (5 days)
+### 2.3 Segment/Message Templates ✅ (v0.15.0)
 
 **New Crate**: rs7-templates
 
 **Features:**
-- **Message Templates**: Reusable message patterns
-- **Segment Templates**: Reusable segment patterns
+- **Message Templates**: Reusable message patterns with metadata
+- **Segment Templates**: Reusable segment patterns with field definitions
+- **Field Templates**: Component-level templates with placeholders
 - **Template Engine**: Create messages from templates with variable substitution
-- **YAML Templates**: Declarative template format
-- **Template Library**: 10+ standard templates (ADT, ORU, etc.)
-- **Template Inheritance**: Extend base templates
-- **Template Validation**: Validate messages against templates
+- **YAML/JSON Templates**: Declarative template format with serde support
+- **Template Library**: 7 pre-built standard templates (ADT, ORU, ORM, SIU, MDM)
+- **Template Inheritance**: Multi-level inheritance with override support
+- **Template Validation**: Validate messages against template definitions
+- **Variable Substitution**: `{{variable}}` placeholder system
+- **Default Values**: Template and engine-level defaults
 
 **Template Example (YAML):**
 ```yaml
@@ -296,27 +301,32 @@ segments:
 ```
 
 **Implementation:**
-- Template structures (~200 LOC)
-- Template engine (~250 LOC)
-- YAML parser (~200 LOC)
-- Template validation (~150 LOC)
-- Standard template library (~300 LOC)
-- Inheritance support (~150 LOC)
-- Tests and examples (~400 LOC)
+- Template data structures with serde support (~390 LOC)
+- Template engine with variable substitution (~350 LOC)
+- YAML/JSON parser with roundtrip support (~360 LOC)
+- Template validation with errors/warnings (~400 LOC)
+- Standard template library with 7 templates (~345 LOC)
+- Inheritance resolver with circular detection (~360 LOC)
+- Error types and handling (~68 LOC)
+- 47 unit tests + 14 doc tests (~2100 LOC)
+- 3 working examples (~364 LOC)
 
-**Use Cases**: Rapid message creation, organization-specific patterns
+**HAPI Equivalent**: `ModelClassFactory`, message structure definitions
 
-**Deliverable**: rs7-templates v0.1.0
+**Use Cases**: Rapid message creation, organization-specific patterns, message validation
+
+**Deliverable**: ✅ rs7-templates v0.11.0 - COMPLETED
 
 ---
 
-### Phase 2 Summary
+### Phase 2 Summary ✅
 
-**Total Code**: ~4,050 LOC (implementation + tests)
-**New Crates**: rs7-transform v0.1.0, rs7-templates v0.1.0
-**Updated Crates**: rs7-core v0.11.0, rs7-parser v0.11.0
-**Examples**: 6 new examples
-**Value**: High-volume processing, message transformation, reusable patterns
+**Total Code**: ~6,723 LOC (implementation + tests + examples)
+**New Crates**: rs7-transform v0.11.0 ✅, rs7-templates v0.11.0 ✅
+**Updated Crates**: rs7-core v0.13.0 ✅, rs7-parser v0.13.0 ✅
+**Examples**: 9 new working examples (3 batch/file, 3 transformation, 3 template)
+**Tests**: 96 unit tests + 33 doc tests = 129 tests
+**Value**: High-volume batch processing, message transformation, reusable template patterns
 
 ---
 
