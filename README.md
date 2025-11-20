@@ -21,8 +21,9 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 - **✅ Complex Field Builders**: Builder patterns for composite data types (XPN, XAD, XTN, CX, XCN)
 - **✅ Message Types**: Support for ADT (A01-A40), SIU (S12-S15), MDM (T01-T04), DFT (P03, P11), QRY (A19, Q01-Q02), QBP (Q11/Q15/Q21/Q22), RSP (K11/K21/K22), BAR (P01-P02), Pharmacy (RDE, RAS, RDS, RGV, RRD, RRA), Laboratory (OUL, OML), MFN, ORM, ORU, ACK, and other message types
 - **✅ ACK Generation**: Automatic acknowledgment message creation
-- **✅ MLLP Support**: Network transmission using Minimal Lower Layer Protocol (intra-organization)
-- **✅ HTTP Transport**: HL7-over-HTTP support for inter-organization communication
+- **✅ MLLP Support**: Network transmission using Minimal Lower Layer Protocol (intra-organization) with TLS/mTLS security
+- **✅ HTTP Transport**: HL7-over-HTTP support for inter-organization communication with TLS/mTLS security
+- **✅ Testing Infrastructure**: Mock servers (MLLP & HTTP) and integration testing tools with automatic test certificate generation
 - **✅ FHIR Conversion**: Convert HL7 v2 messages to FHIR R4 resources - 12 production-ready converters (Patient, Observation, Encounter, DiagnosticReport, AllergyIntolerance, Condition, Procedure, Medication, Immunization, ServiceRequest, Specimen, and more)
 - **✅ Custom Z-Segments**: Type-safe framework for defining and parsing custom organization-specific Z-segments
 - **🚀 Fast and Safe**: Built with Rust for performance and memory safety
@@ -53,16 +54,16 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rs7-core = "0.18"
-rs7-parser = "0.18"
-rs7-terser = "0.18"
-rs7-validator = "0.18"
-rs7-conformance = "0.18"   # Optional: for conformance profile validation
-rs7-orchestration = "0.18" # Optional: for routing, filtering, and workflows
-rs7-custom = "0.18"        # Optional: for custom Z-segment support
-rs7-mllp = "0.18"          # Optional: for MLLP network support (intra-organization)
-rs7-http = "0.18"          # Optional: for HTTP transport (inter-organization)
-rs7-fhir = "0.18"          # Optional: for FHIR conversion (12 converters)
+rs7-core = "0.19"
+rs7-parser = "0.19"
+rs7-terser = "0.19"
+rs7-validator = "0.19"
+rs7-conformance = "0.19"   # Optional: for conformance profile validation
+rs7-orchestration = "0.19" # Optional: for routing, filtering, and workflows
+rs7-custom = "0.19"        # Optional: for custom Z-segment support
+rs7-mllp = "0.19"          # Optional: for MLLP network support with TLS/mTLS (intra-organization)
+rs7-http = "0.19"          # Optional: for HTTP transport with TLS/mTLS (inter-organization)
+rs7-fhir = "0.19"          # Optional: for FHIR conversion (12 converters)
 ```
 
 ### Parsing a Message
@@ -432,6 +433,123 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let ack = client.send_message(&message).await?;
     println!("ACK received: {:?}", ack.get_control_id());
+}
+```
+
+### MLLP with TLS/mTLS
+
+```rust
+use rs7_mllp::{MllpServer, MllpClient, tls::{TlsServerConfig, TlsClientConfig}};
+
+// Server with TLS
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let tls_config = TlsServerConfig::new("server-cert.pem", "server-key.pem")?;
+    let server = MllpServer::bind_tls("127.0.0.1:2575", tls_config).await?;
+
+    loop {
+        let mut conn = server.accept().await?;
+        tokio::spawn(async move {
+            let message = conn.receive_message().await?;
+            let ack = create_ack(&message)?;
+            conn.send_message(&ack).await?;
+        });
+    }
+}
+
+// Client with TLS
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let tls_config = TlsClientConfig::with_ca_cert("ca-cert.pem")?;
+    let mut client = MllpClient::connect_tls("127.0.0.1:2575", "localhost", tls_config).await?;
+
+    let ack = client.send_message(&message).await?;
+    client.close().await?;
+}
+
+// Server with mTLS (client certificate verification)
+let tls_config = TlsServerConfig::with_mtls(
+    "server-cert.pem",
+    "server-key.pem",
+    "ca-cert.pem"  // CA for verifying client certificates
+)?;
+
+// Client with mTLS (provides client certificate)
+let tls_config = TlsClientConfig::with_mtls(
+    "ca-cert.pem",
+    "client-cert.pem",
+    "client-key.pem"
+)?;
+```
+
+### HTTP with TLS/mTLS
+
+```rust
+use rs7_http::{HttpServer, HttpClient, tls::{TlsServerConfig, TlsClientConfig}};
+
+// Server with TLS
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let tls_config = TlsServerConfig::new("server-cert.pem", "server-key.pem")?;
+    let server = HttpServer::new()
+        .with_handler(handler)
+        .with_tls(tls_config);
+
+    server.serve_tls("127.0.0.1:8443").await?;
+}
+
+// Client with TLS
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let tls_config = TlsClientConfig::with_ca_cert("ca-cert.pem")?;
+    let client = HttpClient::new_tls("https://example.com/hl7", tls_config)?;
+
+    let ack = client.send_message(&message).await?;
+}
+```
+
+### Testing Infrastructure
+
+```rust
+use rs7_mllp::testing::MockMllpServer;
+use rs7_http::testing::MockHttpServer;
+
+// Mock MLLP server for integration tests
+#[tokio::test]
+async fn test_mllp_integration() {
+    let server = MockMllpServer::new()
+        .with_handler(|msg| {
+            // Custom message handler
+            Ok(create_ack(&msg))
+        })
+        .start()
+        .await
+        .unwrap();
+
+    let mut client = MllpClient::connect(&server.url()).await.unwrap();
+    let ack = client.send_message(&test_message).await.unwrap();
+    // Assertions...
+
+    server.shutdown().await.unwrap();
+}
+
+// Mock HTTP server for integration tests
+#[tokio::test]
+async fn test_http_integration() {
+    let server = MockHttpServer::new()
+        .with_auth("user".to_string(), "pass".to_string())
+        .start()
+        .await
+        .unwrap();
+
+    let client = HttpClient::new(&server.url())
+        .unwrap()
+        .with_auth("user".to_string(), "pass".to_string());
+
+    let ack = client.send_message(&test_message).await.unwrap();
+    // Assertions...
+
+    server.shutdown().await.unwrap();
 }
 ```
 

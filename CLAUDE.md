@@ -207,6 +207,110 @@ Errors use `thiserror` for consistent error types:
 
 Tests are co-located with source code in `#[cfg(test)] mod tests` blocks. Property-based testing uses `proptest` for data structure validation.
 
+#### Integration Testing with Mock Servers
+
+**MockMllpServer** (rs7-mllp):
+```rust
+use rs7_mllp::testing::MockMllpServer;
+use rs7_mllp::MllpClient;
+
+#[tokio::test]
+async fn test_mllp_with_mock_server() {
+    // Start mock server with automatic port allocation
+    let server = MockMllpServer::new()
+        .with_handler(|msg| {
+            // Custom message processing
+            Ok(create_ack(&msg))
+        })
+        .start()
+        .await
+        .unwrap();
+
+    // Connect client to mock server
+    let mut client = MllpClient::connect(&server.url()).await.unwrap();
+    let ack = client.send_message(&test_message).await.unwrap();
+
+    // Assertions...
+    assert_eq!(ack.segments[0].id, "MSH");
+
+    // Automatic cleanup on drop
+    server.shutdown().await.unwrap();
+}
+```
+
+**MockHttpServer** (rs7-http):
+```rust
+use rs7_http::testing::MockHttpServer;
+use rs7_http::HttpClient;
+
+#[tokio::test]
+async fn test_http_with_mock_server() {
+    let server = MockHttpServer::new()
+        .with_auth("user".to_string(), "pass".to_string())
+        .start()
+        .await
+        .unwrap();
+
+    let client = HttpClient::new(&server.url())
+        .unwrap()
+        .with_auth("user".to_string(), "pass".to_string());
+
+    let ack = client.send_message(&test_message).await.unwrap();
+    // Assertions...
+
+    server.shutdown().await.unwrap();
+}
+```
+
+#### TLS Integration Tests
+
+MLLP TLS integration tests are in `crates/rs7-mllp/tests/tls_integration.rs`. Test certificate generation utilities automatically create X.509 v3 certificates with proper extensions for rustls compatibility.
+
+**Running TLS integration tests:**
+```bash
+# Requires openssl to be installed
+cargo test -p rs7-mllp --features "tls,testing" --test tls_integration
+```
+
+**Test Certificate Generation:**
+```rust
+// Located in tests/test_certs.rs module
+mod test_certs;
+
+#[tokio::test]
+async fn test_with_tls() {
+    // Automatic certificate generation with cleanup
+    let certs = test_certs::generate_test_certs().await;
+
+    let server_config = TlsServerConfig::new(
+        &certs.server_cert_path,
+        &certs.server_key_path
+    )?;
+
+    // Use certificates for testing...
+
+    // Automatic cleanup via Drop trait
+    certs.cleanup();
+}
+```
+
+#### Testing Best Practices
+
+1. **Use mock servers for integration tests** instead of external dependencies
+2. **Enable features explicitly** when testing: `--features "tls,testing"`
+3. **Test both plain and TLS configurations** for network transports
+4. **Use automatic port allocation** (bind to "127.0.0.1:0") for test isolation
+5. **Clean up resources** with `.shutdown()` or rely on Drop trait
+6. **Test negative cases** (e.g., connection refused without proper CA)
+7. **Test concurrent connections** to verify thread safety
+8. **Use test certificates** generated dynamically (don't commit certificates to repo)
+
+#### Feature Flags for Testing
+
+- `testing`: Enables MockMllpServer and MockHttpServer
+- `tls`: Enables TLS/mTLS support for testing secure connections
+- Combine features: `cargo test --features "tls,testing"`
+
 ## Network Protocols
 
 ### MLLP (Minimal Lower Layer Protocol)
@@ -216,11 +320,24 @@ Intra-organization communication on TCP. MLLP frames messages with:
 
 Implementation in `rs7-mllp` uses Tokio for async I/O.
 
+**TLS/mTLS Support:**
+- `TlsServerConfig::new()` - Basic TLS with server certificate
+- `TlsServerConfig::with_mtls()` - Mutual TLS with client certificate verification
+- `TlsClientConfig::with_ca_cert()` - Client with CA certificate
+- `TlsClientConfig::with_mtls()` - Client with client certificate for mTLS
+- Feature flag: `tls`
+
 ### HTTP Transport
 Inter-organization communication using HL7-over-HTTP. Implementation in `rs7-http` supports:
 - Basic authentication
 - Configurable timeouts
 - Automatic ACK generation
+
+**TLS/mTLS Support:**
+- `HttpServer::with_tls()` and `.serve_tls()` for HTTPS
+- `HttpClient::new_tls()` for HTTPS clients
+- Both basic TLS and mutual TLS (client certificate) supported
+- Feature flag: `tls`
 
 ## FHIR Conversion
 

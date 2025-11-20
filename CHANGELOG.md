@@ -7,6 +7,172 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.0] - 2025-01-20
+
+### Added - Phase 4: Testing Infrastructure & TLS/mTLS Security 🔒
+
+- **TLS/mTLS Support for MLLP** - Secure network transmission with Transport Layer Security:
+  - **TlsServerConfig** - Server-side TLS configuration
+    - `new(cert_path, key_path)` - Basic TLS with server certificate
+    - `with_mtls(cert_path, key_path, ca_cert_path)` - Mutual TLS with client certificate verification
+    - X.509 v3 certificate support with proper extensions
+    - rustls-based implementation for memory safety
+  - **TlsClientConfig** - Client-side TLS configuration
+    - `new()` - Use system root certificates
+    - `with_ca_cert(ca_cert_path)` - Trust specific CA certificate
+    - `with_mtls(ca_cert_path, client_cert_path, client_key_path)` - Client certificate authentication
+    - Server Name Indication (SNI) support
+  - **MllpServer TLS methods**:
+    - `serve_tls(listener, tls_config, handler)` - Serve with TLS
+    - Automatic TLS handshake and stream wrapping
+    - Support for concurrent TLS connections
+  - **MllpClient TLS methods**:
+    - `connect_tls(addr, domain, tls_config)` - Connect with TLS
+    - SNI hostname verification
+    - Certificate validation
+  - Feature flag: `tls` (optional dependency on tokio-rustls, rustls, rustls-pemfile, webpki-roots)
+  - Examples: `mllp_tls_server.rs`, `mllp_tls_client.rs`
+
+- **TLS/mTLS Support for HTTP** - Secure HTTP transport with HTTPS:
+  - **TlsServerConfig** - HTTPS server configuration (shared with MLLP)
+    - Basic TLS and mutual TLS support
+    - Reusable configuration across protocols
+  - **TlsClientConfig** - HTTPS client configuration (shared with MLLP)
+    - CA certificate verification
+    - Client certificate authentication
+  - **HttpServer TLS methods**:
+    - `with_tls(tls_config)` - Configure TLS for server
+    - `serve_tls()` - Serve HTTPS traffic
+  - **HttpClient TLS methods**:
+    - `new_tls(url, tls_config)` - Create HTTPS client
+    - Certificate verification and hostname validation
+  - Feature flag: `tls` (optional dependency on native-tls or rustls)
+  - Examples: `http_tls_server.rs`, `http_tls_client.rs`
+
+- **MockMllpServer** - In-process MLLP test server for integration testing:
+  - Automatic port allocation (bind to "127.0.0.1:0")
+  - Configurable message handlers with `with_handler()`
+  - TLS support via `with_tls(tls_config)`
+  - Graceful shutdown with `shutdown()`
+  - Automatic cleanup via Drop trait
+  - URL and address accessors for client connections
+  - Default echo handler (returns received message)
+  - Zero external dependencies for testing
+  - Located in `rs7-mllp/src/testing.rs`
+
+- **MockHttpServer** - In-process HTTP test server for integration testing:
+  - Automatic port allocation for test isolation
+  - Custom message handlers via `with_handler()`
+  - TLS support via `with_tls(tls_config)` (HTTPS)
+  - Compression support via `with_compression()` (optional feature)
+  - HTTP Basic Authentication via `with_auth(username, password)`
+  - Graceful shutdown and cleanup
+  - URL accessor for client connections
+  - Built on axum for production-grade HTTP handling
+  - Located in `rs7-http/src/testing.rs`
+
+- **TLS Integration Tests** - Comprehensive test coverage for TLS/mTLS functionality:
+  - **8 Integration Tests** in `rs7-mllp/tests/tls_integration.rs`:
+    - `test_tls_basic_connection` - Basic TLS handshake and message exchange
+    - `test_tls_custom_handler` - Custom message handlers over TLS
+    - `test_mtls_with_client_cert` - Mutual TLS with client certificates
+    - `test_tls_multiple_messages` - Multiple messages over same TLS connection
+    - `test_tls_connection_refused_without_client_ca` - Security validation
+    - `test_tls_concurrent_connections` - 5 concurrent TLS connections
+    - Plus 2 certificate generation validation tests
+  - All tests passing with proper X.509 v3 certificate extensions
+
+- **Test Certificate Generation Utilities** - Automatic certificate creation for testing:
+  - **TestCerts** struct - CA and server certificate bundle
+    - Automatic CA certificate generation with v3_ca extensions
+    - Server certificate with proper X.509 v3 extensions
+    - subjectAltName with DNS:localhost and IP:127.0.0.1
+    - extendedKeyUsage for serverAuth
+    - Automatic cleanup via Drop trait
+  - **TestCertsWithClient** struct - Complete mTLS certificate bundle
+    - Includes client certificate for mutual TLS testing
+    - Client certificate with clientAuth extendedKeyUsage
+    - All certificates signed by test CA
+  - **Certificate Generation Functions**:
+    - `generate_test_certs()` - Generate CA and server certificates
+    - `generate_test_certs_with_client()` - Generate full mTLS certificate set
+  - Uses OpenSSL command-line tool for certificate generation
+  - Unique temporary directories with UUID for test isolation
+  - Located in `rs7-mllp/tests/test_certs.rs`
+
+- **Dependencies**:
+  - Added `tokio-rustls = "0.26"` (optional, tls feature)
+  - Added `rustls = "0.23"` (optional, tls feature)
+  - Added `rustls-pemfile = "2.2"` (optional, tls feature)
+  - Added `webpki-roots = "1.0"` (optional, tls feature)
+  - Added `uuid = "1.11"` (dev-dependencies for test certificates)
+
+### Changed
+
+- **rs7-mllp** crate:
+  - Added `testing` module with MockMllpServer
+  - Added `tls` module with TLS configuration types
+  - New features: `tls`, `testing`, `full` (meta feature)
+  - Updated examples to demonstrate TLS usage
+
+- **rs7-http** crate:
+  - Added `testing` module with MockHttpServer
+  - Added `tls` module with shared TLS configuration
+  - TLS support integrated into HttpServer and HttpClient
+  - Feature flags: `tls`, `compression`, `auth`
+
+### Documentation
+
+- **README.md Updates**:
+  - Added "Testing Infrastructure" to features list
+  - Updated version numbers from 0.18 to 0.19 in examples
+  - Added comprehensive TLS/mTLS examples for MLLP
+  - Added comprehensive TLS/mTLS examples for HTTP
+  - Added testing infrastructure section with MockMllpServer and MockHttpServer usage
+
+- **CLAUDE.md Updates**:
+  - Expanded "Testing Patterns" section with integration testing best practices
+  - Added TLS Integration Tests documentation
+  - Added 8 specific testing best practices guidelines
+  - Updated "Network Protocols" section with TLS/mTLS support details
+  - Feature flags documentation for testing
+
+### Testing
+
+- **Test Coverage**:
+  - 8 comprehensive TLS integration tests for MLLP
+  - 2 certificate generation validation tests
+  - All tests passing with proper X.509 v3 extensions
+  - Zero warnings across workspace
+
+### Technical Details
+
+- **X.509 v3 Certificate Requirements**:
+  - Certificates must include proper extensions for rustls compatibility
+  - basicConstraints, keyUsage, extendedKeyUsage required
+  - subjectAltName required for server certificates (DNS and IP)
+  - Extension config files created dynamically during test setup
+
+- **Security**:
+  - TLS 1.2 and TLS 1.3 support via rustls
+  - Certificate verification and hostname validation
+  - Mutual TLS (mTLS) for bidirectional authentication
+  - Memory-safe TLS implementation (no OpenSSL runtime dependency)
+
+- **Testing Features**:
+  - Feature flag `testing` enables mock servers
+  - Feature flag `tls` enables TLS support
+  - Use `--features "tls,testing"` for TLS integration tests
+  - Mock servers use automatic port allocation for parallel test execution
+
+### Phase 4 Complete
+
+This release completes Phase 4 of RS7's enhanced feature roadmap:
+- ✅ Phase 4.1: TLS/mTLS Support (MLLP and HTTP)
+- ✅ Phase 4.2: Testing Infrastructure (Mock Servers)
+- ✅ Phase 4.3: Integration Tests & Certificate Utilities
+- Next: Phase 5 and beyond (TBD)
+
 ## [0.18.0] - 2025-01-20
 
 ### Added - Phase 3.3 Message Routing & Orchestration 🔄
