@@ -1,0 +1,41 @@
+# rs7-transform
+
+Message transformation framework for HL7 v2.x messages.
+
+## Overview
+
+Transform HL7 messages using field mappings, transformation functions, and declarative configuration.
+
+## Features
+
+- Field-to-field mappings
+- 15 built-in transformation functions (uppercase, lowercase, trim, date formatting, etc.)
+- Custom transformation functions
+- YAML/JSON configuration support
+- Context data for parameterized transforms
+
+## Installation
+
+```toml
+[dependencies]
+rs7-transform = "0.19"
+```
+
+## Quick Example
+
+```rust
+use rs7_transform::MessageTransformer;
+
+let transformer = MessageTransformer::new()
+    .add_mapping("PID-5-1", "PID-5-1")  // Copy family name
+    .add_transform("PID-5-2", "PID-5-2", uppercase)  // Uppercase given name
+    .add_transform("PID-7", "PID-7", format_date);  // Reformat date
+
+let transformed = transformer.transform(&message)?;
+```
+
+See [main README](../../README.md) for full documentation.
+
+## License
+
+Licensed under either of Apache License 2.0 or MIT license at your option.
