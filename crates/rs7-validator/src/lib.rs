@@ -34,6 +34,7 @@
 //! - And many more standard HL7 tables
 
 pub mod datatype;
+pub mod rules;
 pub mod schema_loader;
 pub mod vocabulary;
 
@@ -48,6 +49,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 pub use datatype::{validate_data_type, DataTypeValidation};
+pub use rules::{BuiltinRules, CrossFieldValidator, RulesEngine, RulesValidationResult, RuleSeverity, RuleViolation, ValidationRule, RuleConfig, RuleDefinition, ConditionConfig, DeclarativeError};
 pub use schema_loader::{load_schema, list_available_schemas};
 pub use vocabulary::{TableRegistry, Hl7Table, VocabularyValidation};
 
@@ -139,6 +141,7 @@ pub struct Validator {
     version: Version,
     schema: Option<MessageSchema>,
     table_registry: TableRegistry,
+    rules_engine: Option<RulesEngine>,
 }
 
 impl Validator {
@@ -148,6 +151,7 @@ impl Validator {
             version,
             schema: None,
             table_registry: TableRegistry::new(),
+            rules_engine: None,
         }
     }
 
@@ -157,6 +161,7 @@ impl Validator {
             version,
             schema: Some(schema),
             table_registry: TableRegistry::new(),
+            rules_engine: None,
         }
     }
 
@@ -167,6 +172,7 @@ impl Validator {
             version,
             schema: Some(schema),
             table_registry: TableRegistry::new(),
+            rules_engine: None,
         })
     }
 
@@ -180,6 +186,44 @@ impl Validator {
         &mut self.table_registry
     }
 
+    /// Set the rules engine for business rules validation
+    pub fn with_rules_engine(mut self, engine: RulesEngine) -> Self {
+        self.rules_engine = Some(engine);
+        self
+    }
+
+    /// Get a reference to the rules engine
+    pub fn rules_engine(&self) -> Option<&RulesEngine> {
+        self.rules_engine.as_ref()
+    }
+
+    /// Get a mutable reference to the rules engine
+    pub fn rules_engine_mut(&mut self) -> &mut Option<RulesEngine> {
+        &mut self.rules_engine
+    }
+
+    /// Add a validation rule to the rules engine
+    /// If no rules engine exists, one will be created
+    pub fn add_rule(&mut self, rule: ValidationRule) {
+        if self.rules_engine.is_none() {
+            self.rules_engine = Some(RulesEngine::new());
+        }
+        if let Some(engine) = &mut self.rules_engine {
+            engine.add_rule(rule);
+        }
+    }
+
+    /// Add multiple validation rules to the rules engine
+    /// If no rules engine exists, one will be created
+    pub fn add_rules(&mut self, rules: Vec<ValidationRule>) {
+        if self.rules_engine.is_none() {
+            self.rules_engine = Some(RulesEngine::new());
+        }
+        if let Some(engine) = &mut self.rules_engine {
+            engine.add_rules(rules);
+        }
+    }
+
     /// Validate a message
     pub fn validate(&self, message: &Message) -> ValidationResult {
         let mut result = ValidationResult::new();
@@ -190,6 +234,11 @@ impl Validator {
         // Schema-based validation (if schema is available)
         if let Some(schema) = &self.schema {
             self.validate_against_schema(message, schema, &mut result);
+        }
+
+        // Business rules validation (if rules engine is available)
+        if let Some(rules_engine) = &self.rules_engine {
+            self.validate_business_rules(message, rules_engine, &mut result);
         }
 
         result
@@ -351,6 +400,35 @@ impl Validator {
                                 ));
                             }
                     }
+                }
+            }
+        }
+    }
+
+    /// Validate business rules using the rules engine
+    fn validate_business_rules(
+        &self,
+        message: &Message,
+        rules_engine: &RulesEngine,
+        result: &mut ValidationResult,
+    ) {
+        let rules_result = rules_engine.validate(message);
+
+        // Convert rule violations to validation errors/warnings
+        for violation in rules_result.violations {
+            match violation.severity {
+                RuleSeverity::Error => {
+                    result.add_error(ValidationError::new(
+                        violation.location.unwrap_or_else(|| "Message".to_string()),
+                        violation.message,
+                        ValidationErrorType::InvalidValue,
+                    ));
+                }
+                RuleSeverity::Warning | RuleSeverity::Info => {
+                    result.add_warning(ValidationWarning::new(
+                        violation.location.unwrap_or_else(|| "Message".to_string()),
+                        violation.message,
+                    ));
                 }
             }
         }

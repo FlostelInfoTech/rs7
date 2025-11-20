@@ -422,7 +422,7 @@ pub struct CoConstraint {
 
 ---
 
-### 3.2 Advanced Validation Rules (6 days)
+### 3.2 Advanced Validation Rules ✅ (v0.17.0)
 
 **Extensions to rs7-validator:**
 
@@ -470,16 +470,19 @@ rules:
 ```
 
 **Implementation:**
-- ValidationRule structures (~150 LOC)
-- RulesEngine (~200 LOC)
-- Rule DSL parser (~250 LOC)
-- Cross-field validators (~200 LOC)
-- Built-in common rules (~150 LOC)
-- Tests and examples (~400 LOC)
+- RulesEngine and ValidationRule structures in rs7-validator/src/rules.rs (~280 LOC)
+- CrossFieldValidator with 7 common patterns in rs7-validator/src/rules/cross_field.rs (~495 LOC)
+- Declarative YAML/JSON parser in rs7-validator/src/rules/declarative.rs (~415 LOC)
+- BuiltinRules library with 24 pre-built rules in rs7-validator/src/rules/builtin.rs (~410 LOC)
+- Validator integration (~40 LOC)
+- Tests (~900 LOC total, 83 tests passing)
+- Examples: rules_basic.rs, rules_declarative.rs, rules_builtin.rs (~650 LOC)
 
 **HAPI Equivalent**: `ValidationRule` interface, `RuleValidator`
 
-**Deliverable**: rs7-validator v0.10.0
+**Use Cases**: Custom business logic validation, cross-field dependencies, organization-specific rules
+
+**Deliverable**: ✅ rs7-validator v0.17.0 - COMPLETED
 
 ---
 

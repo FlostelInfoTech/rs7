@@ -7,6 +7,127 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2025-01-20
+
+### Added - Phase 3.2 Advanced Validation Rules 📋
+
+- **Rules Engine** - Flexible business validation framework:
+  - **RulesEngine** - Execute custom validation rules against messages
+    - `add_rule(rule)` - Add single validation rule
+    - `add_rules(rules)` - Add multiple rules at once
+    - `validate(message)` - Execute all rules and return violations
+    - `rule_count()` - Get number of loaded rules
+    - `clear()` - Remove all rules
+  - **ValidationRule** - Custom rule definition
+    - Rule name and description
+    - Severity level (Error, Warning, Info)
+    - Closure-based condition evaluation
+    - Thread-safe with Arc<dyn Fn>
+    - `with_condition(closure)` - Set rule condition
+    - `evaluate(message)` - Execute rule against message
+  - **RuleSeverity** - Classification of violations
+    - Error - Validation failure
+    - Warning - Validation concern but not failure
+    - Info - Informational message
+    - Ordering support for severity levels
+    - `from_str()` - Parse from string
+    - `as_str()` - Convert to string
+  - **RulesValidationResult** - Validation outcome
+    - List of rule violations
+    - `passed()` - Check if validation passed (no errors)
+    - `errors()` - Get all error violations
+    - `warnings()` - Get all warning violations
+    - `infos()` - Get all info violations
+  - **RuleViolation** - Individual violation record
+    - Rule name, severity, and message
+    - Optional location field
+    - `with_location()` - Add location context
+
+- **Cross-Field Validation Patterns** - Pre-built validation helpers:
+  - **CrossFieldValidator** - Common validation patterns
+    - `if_then(field, value, then_field)` - Conditional field requirements
+    - `mutually_exclusive(fields)` - Fields cannot both be valued
+    - `at_least_one(fields)` - At least one field must be valued
+    - `all_or_none(fields)` - All fields valued or all empty
+    - `field_valued(field)` - Field presence check
+    - `field_in_set(field, values)` - Value set validation
+    - `dependent_fields(primary, dependent)` - Field dependencies
+  - Integration with rs7-terser for field access
+  - Fluent builder API for all patterns
+
+- **Declarative Rule Configuration** - YAML/JSON rule loading:
+  - **RuleConfig** - Root configuration structure
+    - `from_yaml_file(path)` - Load from YAML file
+    - `from_yaml_str(content)` - Load from YAML string
+    - `from_json_file(path)` - Load from JSON file
+    - `from_json_str(content)` - Load from JSON string
+    - `into_validation_rules()` - Convert to ValidationRule instances
+  - **RuleDefinition** - Single rule configuration
+    - Rule name, description, and severity
+    - Condition configuration
+    - `into_validation_rule()` - Convert to ValidationRule
+  - **ConditionConfig** - Condition type definitions
+    - FieldValued - Field must have value
+    - IfThen - Conditional field requirement
+    - MutuallyExclusive - Exclusive field set
+    - AtLeastOne - Minimum valued fields
+    - AllOrNone - Complete or empty groups
+    - FieldInSet - Value set membership
+    - DependentFields - Field dependencies
+  - Serde-based YAML/JSON parsing
+  - Tagged enum for condition types
+
+- **Built-in Rules Library** - Common HL7 validation rules:
+  - **BuiltinRules** - Pre-built rule collections
+    - `msh_rules()` - MSH segment validation (6 rules)
+    - `pid_rules()` - PID segment validation (4 rules)
+    - `pv1_rules()` - PV1 segment validation (4 rules)
+    - `obr_rules()` - OBR segment validation (4 rules)
+    - `obx_rules()` - OBX segment validation (4 rules)
+    - `orc_rules()` - ORC segment validation (2 rules)
+    - `adt_rules()` - ADT message validation (MSH + PID + PV1)
+    - `oru_rules()` - ORU message validation (MSH + PID + OBR + OBX)
+    - `orm_rules()` - ORM message validation (MSH + PID + ORC)
+    - `all_rules()` - All built-in rules (24 total)
+  - Comprehensive segment-level rules
+  - Message-type specific rule sets
+  - Mixed severity levels (errors and warnings)
+
+- **Validator Integration** - Rules engine integration with existing validator:
+  - Extended `Validator` struct with optional rules engine
+  - `with_rules_engine(engine)` - Builder method to add rules engine
+  - `add_rule(rule)` - Add single rule to validator
+  - `add_rules(rules)` - Add multiple rules to validator
+  - `rules_engine()` - Get reference to rules engine
+  - `rules_engine_mut()` - Get mutable reference to rules engine
+  - Automatic rule execution during validation
+  - Merging of schema validation and business rules results
+  - Conversion of rule violations to validation errors/warnings
+
+### Changed
+
+- **rs7-validator** crate:
+  - Added rs7-terser dependency for cross-field validation
+  - Added serde_yaml dependency for YAML rule loading
+  - Enhanced Validator struct with rules engine support
+  - Extended validation process to include business rules
+
+### Examples
+
+- **rules_basic.rs** - Basic rules engine usage
+  - Simple field validation
+  - Cross-field validation patterns
+  - Custom rules with closures
+  - Mixed severity levels
+- **rules_declarative.rs** - Declarative rule loading
+  - YAML rule configuration
+  - JSON rule configuration
+  - All condition types demonstration
+- **rules_builtin.rs** - Built-in rules library
+  - Segment-specific rules
+  - Message-type rules
+  - ADT and ORU message validation
+
 ## [0.16.0] - 2025-01-20
 
 ### Added - Phase 2 Conformance Profiles (Advanced Validation) 🔒

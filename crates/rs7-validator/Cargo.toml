@@ -13,8 +13,10 @@ description = "Validation for HL7 v2.x messages against various standards"
 
 [dependencies]
 rs7-core.workspace = true
+rs7-terser.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+serde_yaml.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
