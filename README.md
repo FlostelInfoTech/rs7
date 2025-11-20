@@ -11,6 +11,10 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 - **✅ Data Type Validation**: Format checking for all HL7 data types (dates, times, numerics, coded values, etc.)
 - **✅ Vocabulary Validation**: Code set validation against HL7 standard tables (gender, patient class, processing ID, etc.)
 - **✅ Conformance Profile Validation**: Validate messages against HL7 v2 conformance profiles (XML-based)
+- **✅ Advanced Validation Rules Engine**: Flexible business validation with custom rules, cross-field validation, and severity levels
+- **✅ Message Orchestration**: Multi-step async workflows with retry logic and error handling
+- **✅ Content-Based Routing**: Route messages to handlers based on field values and predicates
+- **✅ Message Filtering**: Predicate-based filtering with AND/OR logic
 - **✅ Terser API**: Easy field access using path notation (e.g., `PID-5-1`, `OBX(2)-5`)
 - **✅ Encoding/Escaping**: Proper handling of HL7 escape sequences
 - **✅ Message Builders**: Fluent API for creating messages (ADT A01-A13/A17/A28/A31/A40, ORU, ORM, OUL, OML, RDE, RAS, RDS, RGV, RRA, RRD, SIU, MDM, DFT, QRY, QBP, RSP)
@@ -28,18 +32,19 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 
 ```
 rs7/
-├── rs7-core        - Core data structures (Message, Segment, Field)
-├── rs7-parser      - HL7 message parser using nom
-├── rs7-validator   - Message validation against HL7 standards
-├── rs7-conformance - Conformance profile validation (XML-based)
-├── rs7-terser      - Path-based field access API
-├── rs7-custom      - Type-safe custom Z-segment framework
-├── rs7-mllp        - MLLP protocol for network transmission (intra-organization)
-├── rs7-http        - HTTP transport for inter-organization communication
-├── rs7-fhir        - HL7 v2 to FHIR R4 conversion
-├── rs7-wasm        - WebAssembly bindings for JavaScript/TypeScript
-├── rs7-cli         - Command-line interface for message analysis
-└── rs7-macros      - Derive macros for message types
+├── rs7-core          - Core data structures (Message, Segment, Field)
+├── rs7-parser        - HL7 message parser using nom
+├── rs7-validator     - Message validation against HL7 standards
+├── rs7-conformance   - Conformance profile validation (XML-based)
+├── rs7-orchestration - Message routing, filtering, and workflow orchestration
+├── rs7-terser        - Path-based field access API
+├── rs7-custom        - Type-safe custom Z-segment framework
+├── rs7-mllp          - MLLP protocol for network transmission (intra-organization)
+├── rs7-http          - HTTP transport for inter-organization communication
+├── rs7-fhir          - HL7 v2 to FHIR R4 conversion
+├── rs7-wasm          - WebAssembly bindings for JavaScript/TypeScript
+├── rs7-cli           - Command-line interface for message analysis
+└── rs7-macros        - Derive macros for message types
 ```
 
 ## Quick Start
@@ -48,15 +53,16 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rs7-core = "0.12"
-rs7-parser = "0.12"
-rs7-terser = "0.12"
-rs7-validator = "0.12"
-rs7-conformance = "0.12"  # Optional: for conformance profile validation
-rs7-custom = "0.12"       # Optional: for custom Z-segment support
-rs7-mllp = "0.12"         # Optional: for MLLP network support (intra-organization)
-rs7-http = "0.12"         # Optional: for HTTP transport (inter-organization)
-rs7-fhir = "0.12"         # Optional: for FHIR conversion (12 converters)
+rs7-core = "0.18"
+rs7-parser = "0.18"
+rs7-terser = "0.18"
+rs7-validator = "0.18"
+rs7-conformance = "0.18"   # Optional: for conformance profile validation
+rs7-orchestration = "0.18" # Optional: for routing, filtering, and workflows
+rs7-custom = "0.18"        # Optional: for custom Z-segment support
+rs7-mllp = "0.18"          # Optional: for MLLP network support (intra-organization)
+rs7-http = "0.18"          # Optional: for HTTP transport (inter-organization)
+rs7-fhir = "0.18"          # Optional: for FHIR conversion (12 converters)
 ```
 
 ### Parsing a Message
@@ -182,6 +188,169 @@ if !conformance_result.is_valid() {
     }
 }
 ```
+
+### Advanced Validation Rules
+
+RS7 provides a flexible rules engine for implementing custom business validation:
+
+```rust
+use rs7_validator::{RulesEngine, ValidationRule, RuleSeverity, CrossFieldValidator};
+use rs7_terser::Terser;
+
+let mut engine = RulesEngine::new();
+
+// Add a custom rule
+let rule = ValidationRule::new(
+    "patient_age_check",
+    "Patients under 18 must have a guardian contact",
+)
+.with_severity(RuleSeverity::Error)
+.with_condition(|msg| {
+    let terser = Terser::new(msg);
+
+    // Check if patient is under 18
+    if let Some(dob) = terser.get("PID-7").ok().flatten() {
+        // Calculate age logic here...
+        // If under 18, check for guardian
+        if let Some(guardian) = terser.get("NK1-2").ok().flatten() {
+            return guardian.is_empty(); // Return true if violation
+        }
+        return true; // No guardian found
+    }
+    false // No DOB, skip rule
+});
+
+engine.add_rule(rule);
+
+// Use pre-built cross-field validators
+engine.add_rule(
+    CrossFieldValidator::if_then(
+        "PID-16", "M", "PID-17" // If married, religion code required
+    )
+    .with_name("marital_status_religion")
+    .with_severity(RuleSeverity::Warning)
+);
+
+// Validate message
+let result = engine.validate(&message);
+
+if !result.passed() {
+    for violation in result.errors() {
+        println!("Error: {} - {}", violation.rule_name, violation.message);
+    }
+    for violation in result.warnings() {
+        println!("Warning: {} - {}", violation.rule_name, violation.message);
+    }
+}
+```
+
+**Features:**
+- Custom validation rules with closures
+- Severity levels (Error, Warning, Info)
+- Cross-field validation patterns
+- Pre-built validators for common patterns
+- Location tracking for violations
+
+### Message Orchestration and Routing
+
+RS7 provides a comprehensive orchestration framework for building message processing workflows:
+
+```rust
+use rs7_orchestration::{
+    MessageOrchestrator, RetryConfig,
+    ContentRouter, MessageFilter,
+    OrchestrationError,
+};
+use rs7_terser::Terser;
+
+// Create a filter for production messages
+let mut filter = MessageFilter::new();
+filter.add_rule("production_only", |msg| {
+    let terser = Terser::new(msg);
+    terser.get("MSH-11").ok().flatten().as_deref() == Some("P")
+});
+
+// Create a multi-step orchestration workflow
+let mut orchestrator = MessageOrchestrator::new();
+
+orchestrator
+    .add_step("validate", |msg| {
+        Box::pin(async move {
+            // Validation logic
+            Ok(msg)
+        })
+    })
+    .add_step_with_retry(
+        "enrich",
+        |msg| {
+            Box::pin(async move {
+                // Enrichment logic with external service call
+                Ok(msg)
+            })
+        },
+        RetryConfig::standard(), // 3 attempts, 100ms delay
+    )
+    .add_step("transform", |msg| {
+        Box::pin(async move {
+            // Transformation logic
+            Ok(msg)
+        })
+    });
+
+// Set error handler
+orchestrator.set_error_handler(|step_name, error, _msg| {
+    Box::pin(async move {
+        eprintln!("Error in {}: {}", step_name, error);
+    })
+});
+
+// Create a content-based router
+let mut router = ContentRouter::new();
+
+router.add_route(
+    "adt_handler",
+    |msg| {
+        let terser = Terser::new(msg);
+        terser.get("MSH-9-1").ok().flatten().as_deref() == Some("ADT")
+    },
+    |msg| {
+        Box::pin(async move {
+            println!("Routing to ADT handler");
+            Ok(msg)
+        })
+    },
+);
+
+router.set_default_handler(|msg| {
+    Box::pin(async move {
+        println!("Routing to default handler");
+        Ok(msg)
+    })
+});
+
+// Execute complete workflow
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // 1. Filter
+    filter.filter(&message)?;
+
+    // 2. Orchestrate
+    let processed = orchestrator.execute(message).await?;
+
+    // 3. Route
+    router.route(processed).await?;
+
+    Ok(())
+}
+```
+
+**Features:**
+- Multi-step async workflows with tokio
+- Configurable retry logic with exponential backoff
+- Content-based routing with predicates
+- Message filtering (AND/OR logic)
+- Error handling and recovery
+- Fail-fast or continue-on-error execution modes
 
 ### MLLP Server
 
@@ -527,6 +696,9 @@ The `examples/` directory contains complete working examples:
 - `http_client.rs` (rs7-http) - HTTP client that sends HL7 messages over HTTP
 - `convert_adt.rs` (rs7-fhir) - Convert ADT^A01 to FHIR Patient/Encounter
 - `convert_oru.rs` (rs7-fhir) - Convert ORU^R01 to FHIR Observation/DiagnosticReport
+- `routing_example.rs` (rs7-orchestration) - Content-based message routing demonstration
+- `filtering_example.rs` (rs7-orchestration) - Message filtering with ALL/ANY modes
+- `workflow_example.rs` (rs7-orchestration) - Complete workflow with filtering, orchestration, and routing
 
 Run examples:
 
@@ -550,6 +722,11 @@ cargo run --example http_client -p rs7-http  # In another terminal
 # FHIR conversion examples
 cargo run --example convert_adt -p rs7-fhir
 cargo run --example convert_oru -p rs7-fhir
+
+# Orchestration examples
+cargo run --example routing_example -p rs7-orchestration
+cargo run --example filtering_example -p rs7-orchestration
+cargo run --example workflow_example -p rs7-orchestration
 ```
 
 ## Terser Path Notation
@@ -734,6 +911,8 @@ Contributions are welcome! Please:
 - [x] HTTP transport support ✅ (HL7-over-HTTP for inter-organization communication - see rs7-http/README.md)
 - [x] Custom Z-segment framework ✅ (Type-safe custom segment support with validation - see rs7-custom/README.md)
 - [x] Conformance profile validation ✅ (XML-based conformance profiles with usage, cardinality, and length validation - see rs7-conformance crate)
+- [x] Advanced validation rules engine ✅ (Flexible business validation with custom rules, cross-field validation, and severity levels - see rs7-validator crate)
+- [x] Message orchestration ✅ (Multi-step async workflows with retry logic, content-based routing, and message filtering - see rs7-orchestration crate)
 
 ## License
 
@@ -757,8 +936,19 @@ at your option.
 | Conformance Profiles | ✅ | ✅ |
 | MLLP | ✅ | ✅ |
 | HTTP Transport | ✅ | ✅ |
-| Message Types | In progress | Comprehensive |
-| HL7 FHIR | ✅ (9 converters) | ✅ |
+| Message Types | ✅ | ✅ |
+| HL7 FHIR | ✅ (12 converters) | ✅ |
+| Rules Engine | ✅ | ❌ |
+| Orchestration | ✅ | Via Camel |
+| Performance | High (Rust) | Good (Java) |
+
+**RS7 Advantages:**
+- 🚀 **Native async/await** with Tokio for high-performance concurrent processing
+- 🛡️ **Memory safety** guaranteed at compile-time
+- ⚡ **Zero-copy parsing** with minimal allocations
+- 🔧 **Advanced orchestration** built-in (routing, filtering, workflows)
+- 📋 **Flexible rules engine** for business validation
+- 🎯 **Type safety** throughout the API
 
 ## Acknowledgments
 
