@@ -6,6 +6,10 @@
 //! - FS (File Separator): 0x1C - End of block
 //! - CR (Carriage Return): 0x0D - End of message
 
+// TLS/mTLS support (optional)
+#[cfg(feature = "tls")]
+pub mod tls;
+
 use rs7_core::{
     error::{Error, Result},
     message::Message,
@@ -16,6 +20,61 @@ use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
 };
+
+#[cfg(feature = "tls")]
+use tokio_rustls::{TlsConnector, TlsAcceptor};
+#[cfg(feature = "tls")]
+use rustls::pki_types::ServerName;
+
+// Stream wrapper to support both plain TCP and TLS
+enum MllpStream {
+    Plain(TcpStream),
+    #[cfg(feature = "tls")]
+    TlsClient(tokio_rustls::client::TlsStream<TcpStream>),
+    #[cfg(feature = "tls")]
+    TlsServer(tokio_rustls::server::TlsStream<TcpStream>),
+}
+
+impl MllpStream {
+    async fn read_exact(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        match self {
+            MllpStream::Plain(stream) => {
+                stream.read_exact(buf).await?;
+                Ok(buf.len())
+            }
+            #[cfg(feature = "tls")]
+            MllpStream::TlsClient(stream) => {
+                stream.read_exact(buf).await?;
+                Ok(buf.len())
+            }
+            #[cfg(feature = "tls")]
+            MllpStream::TlsServer(stream) => {
+                stream.read_exact(buf).await?;
+                Ok(buf.len())
+            }
+        }
+    }
+
+    async fn write_all(&mut self, buf: &[u8]) -> std::io::Result<()> {
+        match self {
+            MllpStream::Plain(stream) => stream.write_all(buf).await,
+            #[cfg(feature = "tls")]
+            MllpStream::TlsClient(stream) => stream.write_all(buf).await,
+            #[cfg(feature = "tls")]
+            MllpStream::TlsServer(stream) => stream.write_all(buf).await,
+        }
+    }
+
+    async fn shutdown(&mut self) -> std::io::Result<()> {
+        match self {
+            MllpStream::Plain(stream) => stream.shutdown().await,
+            #[cfg(feature = "tls")]
+            MllpStream::TlsClient(stream) => stream.shutdown().await,
+            #[cfg(feature = "tls")]
+            MllpStream::TlsServer(stream) => stream.shutdown().await,
+        }
+    }
+}
 
 /// MLLP frame markers
 pub const START_OF_BLOCK: u8 = 0x0B; // Vertical Tab (VT)
@@ -131,7 +190,7 @@ impl MllpFrame {
 
 /// MLLP client for sending messages
 pub struct MllpClient {
-    stream: TcpStream,
+    stream: MllpStream,
     max_message_size: usize,
     read_timeout: Duration,
     write_timeout: Duration,
@@ -145,7 +204,7 @@ impl MllpClient {
 
     /// Connect to an MLLP server with custom configuration
     pub async fn connect_with_config(addr: &str, config: MllpConfig) -> Result<Self> {
-        let stream = tokio::time::timeout(
+        let tcp_stream = tokio::time::timeout(
             config.connect_timeout,
             TcpStream::connect(addr)
         )
@@ -154,7 +213,118 @@ impl MllpClient {
         .map_err(|e| Error::Network(format!("Failed to connect: {}", e)))?;
 
         Ok(Self {
-            stream,
+            stream: MllpStream::Plain(tcp_stream),
+            max_message_size: config.max_message_size,
+            read_timeout: config.read_timeout,
+            write_timeout: config.write_timeout,
+        })
+    }
+
+    /// Connect to an MLLP server with TLS encryption
+    ///
+    /// # Arguments
+    ///
+    /// * `addr` - Server address (e.g., "localhost:2575")
+    /// * `server_name` - Server name for SNI (e.g., "localhost" or "example.com")
+    /// * `tls_config` - TLS configuration (basic TLS or mTLS)
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # #[cfg(feature = "tls")]
+    /// # async fn example() -> rs7_core::error::Result<()> {
+    /// use rs7_mllp::{MllpClient, tls::TlsClientConfig};
+    ///
+    /// // Basic TLS
+    /// let tls_config = TlsClientConfig::new()?;
+    /// let mut client = MllpClient::connect_tls(
+    ///     "localhost:2575",
+    ///     "localhost",
+    ///     tls_config
+    /// ).await?;
+    ///
+    /// // Or with mTLS
+    /// let mtls_config = TlsClientConfig::with_mtls(
+    ///     "ca-cert.pem",
+    ///     "client-cert.pem",
+    ///     "client-key.pem"
+    /// )?;
+    /// let mut client = MllpClient::connect_tls(
+    ///     "localhost:2575",
+    ///     "localhost",
+    ///     mtls_config
+    /// ).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "tls")]
+    pub async fn connect_tls(
+        addr: &str,
+        server_name: &str,
+        tls_config: crate::tls::TlsClientConfig,
+    ) -> Result<Self> {
+        Self::connect_tls_with_config(addr, server_name, tls_config, MllpConfig::default()).await
+    }
+
+    /// Connect to an MLLP server with TLS encryption and custom configuration
+    ///
+    /// # Arguments
+    ///
+    /// * `addr` - Server address (e.g., "localhost:2575")
+    /// * `server_name` - Server name for SNI (e.g., "localhost" or "example.com")
+    /// * `tls_config` - TLS configuration (basic TLS or mTLS)
+    /// * `config` - MLLP configuration (timeouts, buffer sizes)
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # #[cfg(feature = "tls")]
+    /// # async fn example() -> rs7_core::error::Result<()> {
+    /// use rs7_mllp::{MllpClient, MllpConfig, tls::TlsClientConfig};
+    /// use std::time::Duration;
+    ///
+    /// let tls_config = TlsClientConfig::new()?;
+    /// let mllp_config = MllpConfig::new()
+    ///     .with_read_timeout(Duration::from_secs(60))
+    ///     .with_write_timeout(Duration::from_secs(60));
+    ///
+    /// let mut client = MllpClient::connect_tls_with_config(
+    ///     "localhost:2575",
+    ///     "localhost",
+    ///     tls_config,
+    ///     mllp_config
+    /// ).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "tls")]
+    pub async fn connect_tls_with_config(
+        addr: &str,
+        server_name: &str,
+        tls_config: crate::tls::TlsClientConfig,
+        config: MllpConfig,
+    ) -> Result<Self> {
+        // Establish TCP connection first
+        let tcp_stream = tokio::time::timeout(
+            config.connect_timeout,
+            TcpStream::connect(addr)
+        )
+        .await
+        .map_err(|_| Error::Network(format!("Connection timeout after {:?}", config.connect_timeout)))?
+        .map_err(|e| Error::Network(format!("Failed to connect: {}", e)))?;
+
+        // Perform TLS handshake
+        let connector = TlsConnector::from(tls_config.config.clone());
+        let server_name = ServerName::try_from(server_name.to_string())
+            .map_err(|e| Error::Network(format!("Invalid server name: {}", e)))?;
+
+        let tls_stream = connector
+            .connect(server_name, tcp_stream)
+            .await
+            .map_err(|e| Error::Network(format!("TLS handshake failed: {}", e)))?;
+
+        Ok(Self {
+            stream: MllpStream::TlsClient(tls_stream),
             max_message_size: config.max_message_size,
             read_timeout: config.read_timeout,
             write_timeout: config.write_timeout,
@@ -272,6 +442,8 @@ impl MllpClient {
 pub struct MllpServer {
     listener: TcpListener,
     config: MllpConfig,
+    #[cfg(feature = "tls")]
+    tls_acceptor: Option<TlsAcceptor>,
 }
 
 impl MllpServer {
@@ -286,16 +458,123 @@ impl MllpServer {
             .await
             .map_err(|e| Error::Network(format!("Failed to bind: {}", e)))?;
 
-        Ok(Self { listener, config })
+        Ok(Self {
+            listener,
+            config,
+            #[cfg(feature = "tls")]
+            tls_acceptor: None,
+        })
+    }
+
+    /// Bind to an address with TLS encryption
+    ///
+    /// # Arguments
+    ///
+    /// * `addr` - Server address (e.g., "0.0.0.0:2575")
+    /// * `tls_config` - TLS configuration (basic TLS or mTLS)
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # #[cfg(feature = "tls")]
+    /// # async fn example() -> rs7_core::error::Result<()> {
+    /// use rs7_mllp::{MllpServer, tls::TlsServerConfig};
+    ///
+    /// // Basic TLS
+    /// let tls_config = TlsServerConfig::new("server-cert.pem", "server-key.pem")?;
+    /// let server = MllpServer::bind_tls("0.0.0.0:2575", tls_config).await?;
+    ///
+    /// // Or with mTLS (client certificate verification)
+    /// let mtls_config = TlsServerConfig::with_mtls(
+    ///     "server-cert.pem",
+    ///     "server-key.pem",
+    ///     "ca-cert.pem"
+    /// )?;
+    /// let server = MllpServer::bind_tls("0.0.0.0:2575", mtls_config).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "tls")]
+    pub async fn bind_tls(
+        addr: &str,
+        tls_config: crate::tls::TlsServerConfig,
+    ) -> Result<Self> {
+        Self::bind_tls_with_config(addr, tls_config, MllpConfig::default()).await
+    }
+
+    /// Bind to an address with TLS encryption and custom configuration
+    ///
+    /// # Arguments
+    ///
+    /// * `addr` - Server address (e.g., "0.0.0.0:2575")
+    /// * `tls_config` - TLS configuration (basic TLS or mTLS)
+    /// * `config` - MLLP configuration (timeouts, buffer sizes)
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # #[cfg(feature = "tls")]
+    /// # async fn example() -> rs7_core::error::Result<()> {
+    /// use rs7_mllp::{MllpServer, MllpConfig, tls::TlsServerConfig};
+    /// use std::time::Duration;
+    ///
+    /// let tls_config = TlsServerConfig::new("server-cert.pem", "server-key.pem")?;
+    /// let mllp_config = MllpConfig::new()
+    ///     .with_read_timeout(Duration::from_secs(60))
+    ///     .with_write_timeout(Duration::from_secs(60));
+    ///
+    /// let server = MllpServer::bind_tls_with_config(
+    ///     "0.0.0.0:2575",
+    ///     tls_config,
+    ///     mllp_config
+    /// ).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "tls")]
+    pub async fn bind_tls_with_config(
+        addr: &str,
+        tls_config: crate::tls::TlsServerConfig,
+        config: MllpConfig,
+    ) -> Result<Self> {
+        let listener = TcpListener::bind(addr)
+            .await
+            .map_err(|e| Error::Network(format!("Failed to bind: {}", e)))?;
+
+        let tls_acceptor = TlsAcceptor::from(tls_config.config.clone());
+
+        Ok(Self {
+            listener,
+            config,
+            tls_acceptor: Some(tls_acceptor),
+        })
     }
 
     /// Accept a connection and return an MllpConnection with the server's configuration
+    ///
+    /// If the server was created with `bind_tls()` or `bind_tls_with_config()`, this will
+    /// perform TLS handshake on the accepted connection.
     pub async fn accept(&self) -> Result<MllpConnection> {
-        let (stream, _addr) = self
+        let (tcp_stream, _addr) = self
             .listener
             .accept()
             .await
             .map_err(|e| Error::Network(format!("Failed to accept: {}", e)))?;
+
+        #[cfg(feature = "tls")]
+        let stream = if let Some(ref acceptor) = self.tls_acceptor {
+            // Perform TLS handshake
+            let tls_stream = acceptor
+                .accept(tcp_stream)
+                .await
+                .map_err(|e| Error::Network(format!("TLS handshake failed: {}", e)))?;
+            MllpStream::TlsServer(tls_stream)
+        } else {
+            MllpStream::Plain(tcp_stream)
+        };
+
+        #[cfg(not(feature = "tls"))]
+        let stream = MllpStream::Plain(tcp_stream);
 
         Ok(MllpConnection {
             stream,
@@ -315,7 +594,7 @@ impl MllpServer {
 
 /// An MLLP connection
 pub struct MllpConnection {
-    stream: TcpStream,
+    stream: MllpStream,
     max_message_size: usize,
     read_timeout: Duration,
     write_timeout: Duration,
