@@ -667,6 +667,290 @@ impl XcnBuilder {
     }
 }
 
+/// Builder for QPD (Query Parameter Definition) segment
+///
+/// QPD structure:
+/// 1. Message Query Name (CE)
+/// 2. Query Tag (ST)
+/// 3+ User Parameters (varies by query type)
+///
+/// # Example
+/// ```
+/// use rs7_core::builders::fields::QpdBuilder;
+///
+/// let qpd = QpdBuilder::new()
+///     .message_query_name("Z44^Request Evaluated History and Forecast^CDCPHINVS")
+///     .query_tag("Q123456789")
+///     .parameter("234567^^^MYEHR^MR")  // Patient ID
+///     .parameter("DOE^JANE^MARIE")     // Patient Name
+///     .build();
+/// ```
+#[derive(Debug, Clone, Default)]
+pub struct QpdBuilder {
+    message_query_name: Option<String>,
+    query_tag: Option<String>,
+    parameters: Vec<String>,
+}
+
+impl QpdBuilder {
+    /// Create a new QPD builder
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set message query name (QPD-1)
+    pub fn message_query_name(mut self, name: &str) -> Self {
+        self.message_query_name = Some(name.to_string());
+        self
+    }
+
+    /// Set query tag (QPD-2)
+    pub fn query_tag(mut self, tag: &str) -> Self {
+        self.query_tag = Some(tag.to_string());
+        self
+    }
+
+    /// Add a query parameter (QPD-3+)
+    pub fn parameter(mut self, param: &str) -> Self {
+        self.parameters.push(param.to_string());
+        self
+    }
+
+    /// Build the QPD segment
+    pub fn build(self) -> crate::segment::Segment {
+        let mut qpd = crate::segment::Segment::new("QPD");
+
+        // QPD-1: Message Query Name
+        qpd.add_field(Field::from_value(self.message_query_name.as_deref().unwrap_or("")));
+
+        // QPD-2: Query Tag
+        qpd.add_field(Field::from_value(self.query_tag.as_deref().unwrap_or("")));
+
+        // QPD-3+: User Parameters
+        for param in &self.parameters {
+            qpd.add_field(Field::from_value(param));
+        }
+
+        qpd
+    }
+}
+
+/// Builder for RCP (Response Control Parameter) segment
+///
+/// RCP structure:
+/// 1. Query Priority (ID)
+/// 2. Quantity Limited Request (CQ)
+/// 3. Response Modality (CE)
+/// 4. Execution and Delivery Time (TS)
+/// 5. Modify Indicator (ID)
+/// 6. Sort-by Field (SRT)
+/// 7. Segment Group Inclusion (ID)
+///
+/// # Example
+/// ```
+/// use rs7_core::builders::fields::RcpBuilder;
+///
+/// let rcp = RcpBuilder::new()
+///     .query_priority("I")         // Immediate
+///     .quantity_limit("100^RD")    // 100 records
+///     .response_modality("R")      // Real-time
+///     .build();
+/// ```
+#[derive(Debug, Clone, Default)]
+pub struct RcpBuilder {
+    query_priority: Option<String>,
+    quantity_limit: Option<String>,
+    response_modality: Option<String>,
+    execution_time: Option<String>,
+    modify_indicator: Option<String>,
+    sort_by_field: Option<String>,
+    segment_group_inclusion: Option<String>,
+}
+
+impl RcpBuilder {
+    /// Create a new RCP builder
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set query priority (RCP-1): I=Immediate, D=Deferred
+    pub fn query_priority(mut self, priority: &str) -> Self {
+        self.query_priority = Some(priority.to_string());
+        self
+    }
+
+    /// Set quantity limit (RCP-2): e.g., "100^RD" for 100 records
+    pub fn quantity_limit(mut self, limit: &str) -> Self {
+        self.quantity_limit = Some(limit.to_string());
+        self
+    }
+
+    /// Set response modality (RCP-3): R=Real-time, B=Batch, T=Both
+    pub fn response_modality(mut self, modality: &str) -> Self {
+        self.response_modality = Some(modality.to_string());
+        self
+    }
+
+    /// Set execution and delivery time (RCP-4)
+    pub fn execution_time(mut self, time: &str) -> Self {
+        self.execution_time = Some(time.to_string());
+        self
+    }
+
+    /// Set modify indicator (RCP-5)
+    pub fn modify_indicator(mut self, indicator: &str) -> Self {
+        self.modify_indicator = Some(indicator.to_string());
+        self
+    }
+
+    /// Set sort-by field (RCP-6)
+    pub fn sort_by_field(mut self, field: &str) -> Self {
+        self.sort_by_field = Some(field.to_string());
+        self
+    }
+
+    /// Set segment group inclusion (RCP-7)
+    pub fn segment_group_inclusion(mut self, inclusion: &str) -> Self {
+        self.segment_group_inclusion = Some(inclusion.to_string());
+        self
+    }
+
+    /// Build the RCP segment
+    pub fn build(self) -> crate::segment::Segment {
+        let mut rcp = crate::segment::Segment::new("RCP");
+
+        // RCP-1: Query Priority
+        rcp.add_field(Field::from_value(self.query_priority.as_deref().unwrap_or("")));
+
+        // RCP-2: Quantity Limited Request
+        rcp.add_field(Field::from_value(self.quantity_limit.as_deref().unwrap_or("")));
+
+        // RCP-3: Response Modality
+        rcp.add_field(Field::from_value(self.response_modality.as_deref().unwrap_or("")));
+
+        // RCP-4: Execution and Delivery Time
+        rcp.add_field(Field::from_value(self.execution_time.as_deref().unwrap_or("")));
+
+        // RCP-5: Modify Indicator
+        rcp.add_field(Field::from_value(self.modify_indicator.as_deref().unwrap_or("")));
+
+        // RCP-6: Sort-by Field
+        rcp.add_field(Field::from_value(self.sort_by_field.as_deref().unwrap_or("")));
+
+        // RCP-7: Segment Group Inclusion
+        rcp.add_field(Field::from_value(self.segment_group_inclusion.as_deref().unwrap_or("")));
+
+        rcp
+    }
+}
+
+/// Builder for QAK (Query Acknowledgment) segment
+///
+/// QAK structure:
+/// 1. Query Tag (ST)
+/// 2. Query Response Status (ID)
+/// 3. Message Query Name (CE)
+/// 4. Hit Count Total (NM)
+/// 5. This Payload (NM)
+/// 6. Hits Remaining (NM)
+///
+/// # Example
+/// ```
+/// use rs7_core::builders::fields::QakBuilder;
+///
+/// let qak = QakBuilder::new()
+///     .query_tag("Q123456789")
+///     .query_response_status("OK")
+///     .message_query_name("Z44^Request Evaluated History^CDCPHINVS")
+///     .hit_count_total(3)
+///     .this_payload(3)
+///     .hits_remaining(0)
+///     .build();
+/// ```
+#[derive(Debug, Clone, Default)]
+pub struct QakBuilder {
+    query_tag: Option<String>,
+    query_response_status: Option<String>,
+    message_query_name: Option<String>,
+    hit_count_total: Option<u32>,
+    this_payload: Option<u32>,
+    hits_remaining: Option<u32>,
+}
+
+impl QakBuilder {
+    /// Create a new QAK builder
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set query tag (QAK-1) - should match QPD-2
+    pub fn query_tag(mut self, tag: &str) -> Self {
+        self.query_tag = Some(tag.to_string());
+        self
+    }
+
+    /// Set query response status (QAK-2): OK, NF, AE, AR, TM, PD
+    pub fn query_response_status(mut self, status: &str) -> Self {
+        self.query_response_status = Some(status.to_string());
+        self
+    }
+
+    /// Set message query name (QAK-3) - should match QPD-1
+    pub fn message_query_name(mut self, name: &str) -> Self {
+        self.message_query_name = Some(name.to_string());
+        self
+    }
+
+    /// Set hit count total (QAK-4) - total number of matching records
+    pub fn hit_count_total(mut self, count: u32) -> Self {
+        self.hit_count_total = Some(count);
+        self
+    }
+
+    /// Set this payload (QAK-5) - number of records in this response
+    pub fn this_payload(mut self, count: u32) -> Self {
+        self.this_payload = Some(count);
+        self
+    }
+
+    /// Set hits remaining (QAK-6) - records not yet sent
+    pub fn hits_remaining(mut self, count: u32) -> Self {
+        self.hits_remaining = Some(count);
+        self
+    }
+
+    /// Build the QAK segment
+    pub fn build(self) -> crate::segment::Segment {
+        let mut qak = crate::segment::Segment::new("QAK");
+
+        // QAK-1: Query Tag
+        qak.add_field(Field::from_value(self.query_tag.as_deref().unwrap_or("")));
+
+        // QAK-2: Query Response Status
+        qak.add_field(Field::from_value(self.query_response_status.as_deref().unwrap_or("OK")));
+
+        // QAK-3: Message Query Name
+        qak.add_field(Field::from_value(self.message_query_name.as_deref().unwrap_or("")));
+
+        // QAK-4: Hit Count Total
+        qak.add_field(Field::from_value(
+            &self.hit_count_total.map_or(String::new(), |c| c.to_string())
+        ));
+
+        // QAK-5: This Payload
+        qak.add_field(Field::from_value(
+            &self.this_payload.map_or(String::new(), |c| c.to_string())
+        ));
+
+        // QAK-6: Hits Remaining
+        qak.add_field(Field::from_value(
+            &self.hits_remaining.map_or(String::new(), |c| c.to_string())
+        ));
+
+        qak
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

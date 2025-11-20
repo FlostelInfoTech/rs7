@@ -14,6 +14,7 @@ pub mod cache;
 pub mod bulk;
 pub mod iterator;
 pub mod query;
+pub mod query_result;
 
 use rs7_core::{
     error::{Error, Result},
@@ -25,6 +26,7 @@ use rs7_core::{
 pub use bulk::BulkTerser;
 pub use cache::CachedTerser;
 pub use query::TerserQuery;
+pub use query_result::{QueryAcknowledgment, QueryResponseStatus, QueryResultParser};
 use path::TerserPath;
 
 /// Terser for accessing HL7 message fields using path notation

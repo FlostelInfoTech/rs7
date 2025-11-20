@@ -13,9 +13,9 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 - **✅ Conformance Profile Validation**: Validate messages against HL7 v2 conformance profiles (XML-based)
 - **✅ Terser API**: Easy field access using path notation (e.g., `PID-5-1`, `OBX(2)-5`)
 - **✅ Encoding/Escaping**: Proper handling of HL7 escape sequences
-- **✅ Message Builders**: Fluent API for creating messages (ADT A01-A13/A17/A28/A31/A40, ORU, ORM, OUL, OML, RDE, RAS, RDS, RGV, RRA, RRD, SIU, MDM, DFT, QRY)
+- **✅ Message Builders**: Fluent API for creating messages (ADT A01-A13/A17/A28/A31/A40, ORU, ORM, OUL, OML, RDE, RAS, RDS, RGV, RRA, RRD, SIU, MDM, DFT, QRY, QBP, RSP)
 - **✅ Complex Field Builders**: Builder patterns for composite data types (XPN, XAD, XTN, CX, XCN)
-- **✅ Message Types**: Support for ADT (A01-A40), SIU (S12-S15), MDM (T01-T04), DFT (P03, P11), QRY (A19, Q01-Q02), BAR (P01-P02), Pharmacy (RDE, RAS, RDS, RGV, RRD, RRA), Laboratory (OUL, OML), MFN, ORM, ORU, ACK, and other message types
+- **✅ Message Types**: Support for ADT (A01-A40), SIU (S12-S15), MDM (T01-T04), DFT (P03, P11), QRY (A19, Q01-Q02), QBP (Q11/Q15/Q21/Q22), RSP (K11/K21/K22), BAR (P01-P02), Pharmacy (RDE, RAS, RDS, RGV, RRD, RRA), Laboratory (OUL, OML), MFN, ORM, ORU, ACK, and other message types
 - **✅ ACK Generation**: Automatic acknowledgment message creation
 - **✅ MLLP Support**: Network transmission using Minimal Lower Layer Protocol (intra-organization)
 - **✅ HTTP Transport**: HL7-over-HTTP support for inter-organization communication
@@ -48,15 +48,15 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rs7-core = "0.11"
-rs7-parser = "0.11"
-rs7-terser = "0.11"
-rs7-validator = "0.11"
-rs7-conformance = "0.11"  # Optional: for conformance profile validation
-rs7-custom = "0.11"       # Optional: for custom Z-segment support
-rs7-mllp = "0.11"         # Optional: for MLLP network support (intra-organization)
-rs7-http = "0.11"         # Optional: for HTTP transport (inter-organization)
-rs7-fhir = "0.11"         # Optional: for FHIR conversion (12 converters)
+rs7-core = "0.12"
+rs7-parser = "0.12"
+rs7-terser = "0.12"
+rs7-validator = "0.12"
+rs7-conformance = "0.12"  # Optional: for conformance profile validation
+rs7-custom = "0.12"       # Optional: for custom Z-segment support
+rs7-mllp = "0.12"         # Optional: for MLLP network support (intra-organization)
+rs7-http = "0.12"         # Optional: for HTTP transport (inter-organization)
+rs7-fhir = "0.12"         # Optional: for FHIR conversion (12 converters)
 ```
 
 ### Parsing a Message
@@ -359,6 +359,85 @@ message.add_custom_segment(new_zpv);
 - Zero overhead for standard HL7 segments
 
 See [rs7-custom/README.md](crates/rs7-custom/README.md) for complete documentation and examples.
+
+### Query/Response Messages (QBP/RSP)
+
+RS7 provides comprehensive support for HL7 v2.5+ query/response protocols using QBP (Query by Parameter) and RSP (Response) messages:
+
+```rust
+use rs7_core::builders::{qbp::QbpQ22Builder, rsp::RspK22Builder};
+use rs7_core::{Version, Segment, Field};
+use rs7_terser::QueryResultParser;
+
+// Create a patient search query (QBP^Q22)
+let query = QbpQ22Builder::new(Version::V2_5_1)
+    .sending_application("CLINREG")
+    .sending_facility("WESTCLIN")
+    .receiving_application("HOSPMPI")
+    .receiving_facility("HOSP")
+    .query_tag("987654321")
+    .parameter("@PID.5.1^SMITH")   // Family name
+    .parameter("@PID.5.2^JOHN")    // Given name
+    .parameter("@PID.7^19850610")  // Date of birth
+    .parameter("@PID.8^M")         // Sex
+    .quantity_limit("50^RD")
+    .build()?;
+
+// Create a response with matching patients (RSP^K22)
+let mut pid1 = Segment::new("PID");
+pid1.add_field(Field::from_value("1"));
+pid1.add_field(Field::from_value(""));
+pid1.add_field(Field::from_value("1001^^^MPI^MR"));
+pid1.add_field(Field::from_value(""));
+pid1.add_field(Field::from_value("SMITH^JOHN^A"));
+pid1.add_field(Field::from_value(""));
+pid1.add_field(Field::from_value("19850610"));
+pid1.add_field(Field::from_value("M"));
+
+let response = RspK22Builder::new(Version::V2_5_1)
+    .sending_application("HOSPMPI")
+    .sending_facility("HOSP")
+    .receiving_application("CLINREG")
+    .receiving_facility("WESTCLIN")
+    .in_response_to("Q-20231115-045")
+    .query_tag("987654321")
+    .query_name("Q22^Find Candidates^HL7")
+    .query_response_status("OK")
+    .hit_counts(247, 1, 246)  // 247 total, 1 in response, 246 remaining
+    .add_segment(pid1)
+    .build()?;
+
+// Parse query results
+let parser = QueryResultParser::new(&response);
+let ack = parser.parse_acknowledgment()?;
+
+println!("Status: {:?}", ack.status);  // OK
+println!("Total matches: {}", ack.total_records());  // 247
+println!("Has more data: {}", ack.has_more_data());  // true
+
+// Extract patient data
+for segment in parser.get_data_segments() {
+    if segment.id == "PID" {
+        // Process patient record
+    }
+}
+```
+
+**Supported Query Types:**
+- **QBP^Q11/RSP^K11** - Immunization history queries (supports CDC Z44/Z34 profiles)
+- **QBP^Q15/RSP^K15** - Display-oriented queries
+- **QBP^Q21/RSP^K21** - Demographic queries
+- **QBP^Q22/RSP^K22** - Find candidates (patient search)
+
+**Features:**
+- Type-safe query parameter construction with @ notation for field references
+- Pagination support with hit counts and continuation pointers
+- Query acknowledgment parsing with status codes (OK, NF, AE, AR, TM, PD)
+- Automatic query tag correlation between requests and responses
+- Response control for priority, quantity limits, and delivery modality
+- CDC immunization query profile support (Z44, Z34)
+
+See the `query_response.rs` example for complete demonstrations.
 
 ### WebAssembly (JavaScript/TypeScript)
 

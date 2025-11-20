@@ -11,7 +11,9 @@ pub mod mdm;
 pub mod orm;
 pub mod oru;
 pub mod pharmacy;
+pub mod qbp;
 pub mod qry;
+pub mod rsp;
 pub mod siu;
 
 use crate::{

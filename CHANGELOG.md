@@ -7,6 +7,133 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2025-11-20
+
+### Added - Query/Response Support 🔍
+
+- **QBP (Query by Parameter) Message Builders** - Create structured HL7 v2.5+ queries:
+  - **QbpQ11Builder** - Immunization history queries (Z44 CDC profile support)
+    - Patient demographics with mother's maiden name
+    - Address and contact information
+    - Quantity limits and response control
+    - Default Z44 (Request Evaluated History and Forecast) query name
+  - **QbpQ15Builder** - Display-oriented queries
+    - Flexible parameter support for custom query types
+    - Response control with priority and modality settings
+  - **QbpQ21Builder** - Demographic queries
+    - Patient-centric search parameters
+    - Support for various query formats
+  - **QbpQ22Builder** - Find candidates (patient search)
+    - Query-by-example parameter format (@PID.5.1^SMITH)
+    - Multiple search criteria support
+    - Pagination control via quantity limits
+
+- **RSP (Response) Message Builders** - Generate query responses:
+  - **RspK11Builder** - Immunization history responses
+    - MSA (Message Acknowledgment) segment
+    - QAK (Query Acknowledgment) with hit counts
+    - QPD (Query Parameter Definition) echo
+    - Support for adding data segments (PID, ORC, RXA, etc.)
+  - **RspK21Builder** - Demographic query responses
+    - Patient demographics in response payload
+    - Multiple patient records support
+  - **RspK22Builder** - Find candidates responses
+    - Pagination support (total hits, current payload, remaining)
+    - Multiple matching patient records
+    - Continuation pointer support via DSC segment
+
+- **Segment Builders** - Low-level query segment construction:
+  - **QpdBuilder** - Query Parameter Definition segments
+    - Message query name (QPD-1)
+    - Query tag for request/response matching (QPD-2)
+    - Variable parameter support (QPD-3+)
+  - **RcpBuilder** - Response Control Parameter segments
+    - Query priority (I=Immediate, D=Deferred)
+    - Quantity limits with units (e.g., "100^RD")
+    - Response modality control
+    - Execution and modification timestamps
+  - **QakBuilder** - Query Acknowledgment segments
+    - Query tag matching (QAK-1)
+    - Response status codes from HL7 Table 0208 (QAK-2)
+    - Hit count tracking: total, current payload, remaining (QAK-4/5/6)
+    - Pagination support
+
+- **QueryResultParser** - Extract and parse RSP message results:
+  - **QueryResponseStatus** enum - Type-safe status code handling
+    - OK - Data found, no errors
+    - NF - No data found, no errors
+    - AE - Application error
+    - AR - Application reject
+    - TM - Too much data found
+    - PD - Protected data
+    - Unknown - Graceful handling of non-standard codes
+  - **QueryAcknowledgment** struct - Parsed QAK segment data
+    - Query tag for request/response correlation
+    - Response status with success/error helpers
+    - Hit count analysis (total, in response, remaining)
+    - Pagination helpers (has_more_data, is_complete)
+  - **QueryResultParser** API methods:
+    - `parse_acknowledgment()` - Extract QAK segment data
+    - `get_acknowledgment_code()` - MSA-1 acknowledgment code
+    - `get_message_control_id()` - MSA-2 control ID
+    - `get_data_segments()` - All data segments (PID, OBX, etc.)
+    - `get_continuation_pointer()` - DSC-1 for pagination
+    - `is_successful()` - Combined MSA/QAK success check
+    - `get_error_text()` - MSA-3 error messages
+
+- **Examples**:
+  - `query_response.rs` - Comprehensive QBP/RSP demonstration
+    - Example 1: QBP^Q11 immunization query with Z44 profile
+    - Example 2: RSP^K11 immunization response with PID, ORC, RXA segments
+    - Example 3: QBP^Q22 patient search with query-by-example parameters
+    - Example 4: RSP^K22 paginated response (247 total, 2 in payload, 245 remaining)
+
+- **Testing**:
+  - 71 tests in rs7-core all passing ✅
+  - 69 tests in rs7-terser all passing (including QueryResultParser) ✅
+  - Comprehensive coverage of query/response workflows
+  - Status code parsing and validation
+  - Pagination and hit count tracking
+  - Data segment extraction
+
+### Technical Details
+
+- **Query/Response Protocol**:
+  - Replaces legacy QRD-based queries with modern QPD parameter approach
+  - Structured query parameters with @ notation for field references
+  - Query tag correlation between requests and responses
+  - Response control for pagination, priority, and delivery options
+
+- **HL7 Segments**:
+  - QPD (Query Parameter Definition) - Query parameters
+  - RCP (Response Control Parameter) - Response delivery control
+  - QAK (Query Acknowledgment) - Query-specific acknowledgment
+  - MSA (Message Acknowledgment) - Standard message acknowledgment
+  - DSC (Continuation Pointer) - Pagination support
+
+- **HL7 Tables**:
+  - Table 0208 - Query Response Status (OK, NF, AE, AR, TM, PD)
+  - Table 0091 - Query Priority (I, D)
+  - Table 0394 - Response Modality (R, T, B)
+
+- **Message Types**:
+  - QBP^Q11/RSP^K11 - Immunization history query/response
+  - QBP^Q15/RSP^K15 - Display-oriented query/response
+  - QBP^Q21/RSP^K21 - Demographic query/response
+  - QBP^Q22/RSP^K22 - Find candidates query/response
+
+- **CDC Immunization Profiles**:
+  - Z44 - Request Evaluated History and Forecast
+  - Z34 - Request Immunization History
+
+### Phase 1, Sprint 3 Complete
+
+This release completes the third sprint of RS7's enhanced feature roadmap:
+- ✅ Enhanced Terser Capabilities (Sprint 1 - v0.10.0)
+- ✅ FHIR Converters Expansion (Sprint 2 - v0.11.0)
+- ✅ Query/Response Support (Sprint 3 - v0.12.0)
+- Next: Enhanced Validation (Sprint 4)
+
 ## [0.11.0] - 2025-11-20
 
 ### Added - FHIR Converters Expansion 🏥
