@@ -7,6 +7,150 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2025-01-20
+
+### Added - Phase 2 Conformance Profiles (Advanced Validation) 🔒
+
+- **Component-Level Validation** - Granular validation at the component level:
+  - **ComponentProfile** - Component-level constraints and rules
+    - Position-based component identification (1-based)
+    - Usage codes: R (Required), RE (Required if Known), O (Optional), X (Not Used), C (Conditional)
+    - Data type specification
+    - Maximum length constraints
+    - HL7 table ID references
+    - Optional name and description fields
+  - Validation of individual components within composite fields
+  - Component presence and absence checking
+  - Component-level cardinality support
+
+- **Conditional Usage with Predicates** - Dynamic field requirements based on message content:
+  - **ConditionalUsage** enum - Extended usage codes with predicate support
+    - All basic usage codes (R, RE, O, X)
+    - New `Conditional(Predicate)` variant for dynamic requirements
+    - Backward compatible with existing Usage enum
+    - `from_usage()` - Convert from basic Usage
+    - `as_usage()` - Convert to basic Usage (if possible)
+    - `as_str()` - String representation ("R", "RE", "O", "X", "C")
+    - `is_conditional()` - Check if usage is conditional
+  - **Predicate** structure - Condition-based usage evaluation
+    - Condition expression string (e.g., "PID-8 IS VALUED")
+    - True usage - usage when condition evaluates to true
+    - False usage - usage when condition evaluates to false
+    - Optional description for documentation
+  - **PredicateParser** - Parse condition expression strings
+    - `parse(expression)` - Parse condition string into Condition enum
+    - Support for field path notation (e.g., "PID-8", "OBX(1)-5")
+    - IS VALUED / IS NOT VALUED checks
+    - Equality operators: =, !=, <>
+    - Numeric comparisons: >, <, >=, <=
+    - Boolean logic: AND, OR, NOT
+    - Proper operator precedence (NOT > AND > OR)
+    - Quoted string literal support
+    - Case-insensitive keywords
+  - **Condition** enum - Evaluatable condition types
+    - IsValued(path) - Check if field has non-empty value
+    - IsNotValued(path) - Check if field is empty or missing
+    - Equals(path, value) - String equality check
+    - NotEquals(path, value) - String inequality check
+    - GreaterThan(path, threshold) - Numeric comparison (>)
+    - LessThan(path, threshold) - Numeric comparison (<)
+    - GreaterThanOrEqual(path, threshold) - Numeric comparison (>=)
+    - LessThanOrEqual(path, threshold) - Numeric comparison (<=)
+    - And(left, right) - Logical AND of two conditions
+    - Or(left, right) - Logical OR of two conditions
+    - Not(condition) - Logical NOT of condition
+  - **PredicateEvaluator** - Evaluate predicates against messages
+    - `evaluate(predicate, message)` - Determine actual usage based on message content
+    - Uses rs7-terser for field access
+    - Returns appropriate Usage based on condition result
+    - Integrated with ConformanceValidator for automatic evaluation
+
+- **Value Set Bindings** - Terminology validation and code set constraints:
+  - **ValueSetBinding** - Link fields to value sets
+    - Value set ID (e.g., "HL70001" for Administrative Sex)
+    - Binding strength specification
+    - Builder pattern support
+  - **BindingStrength** enum - Control terminology enforcement
+    - Required - Must use value from set
+    - Extensible - Should use value from set, but may extend
+    - Preferred - Preferred to use value from set
+    - Example - Example values only
+    - `from_str()` - Parse from string ("REQUIRED", "R", etc.)
+    - Case-insensitive parsing
+
+- **Co-Constraints** - Cross-field validation rules:
+  - **CoConstraint** structure - Message-level constraints
+    - Unique constraint ID
+    - Human-readable description
+    - Condition expression (same syntax as predicates)
+    - Fluent builder API
+  - Message-level co-constraint collection
+  - Cross-segment field dependency validation
+  - Support for complex business rules
+
+- **Enhanced Field Profiles**:
+  - Updated `FieldProfile` to support Phase 2 features
+  - Changed `usage` field from `Usage` to `ConditionalUsage` (breaking change)
+  - Added `components: Option<Vec<ComponentProfile>>` - Component-level validation
+  - Added `value_set: Option<ValueSetBinding>` - Terminology binding
+  - `with_components()` - Add component profiles
+  - `with_value_set()` - Add value set binding
+  - `with_conditional_usage()` - Create with conditional usage
+  - Backward compatibility through `from_usage()` conversion
+
+- **Enhanced Message Profiles**:
+  - Added `co_constraints: Option<Vec<CoConstraint>>` to MessageProfile
+  - `with_co_constraints()` - Add cross-field constraints
+  - Support for message-level validation rules
+
+- **Validator Integration**:
+  - ConformanceValidator updated to handle ConditionalUsage
+  - Automatic predicate evaluation during validation
+  - Recursive validation for conditional fields
+  - Error messages indicate when conditional logic applies
+
+- **Testing**:
+  - 16 new tests for predicate parsing and evaluation
+  - Tests for all condition types (IS VALUED, =, >, <, AND, OR, NOT)
+  - Tests for complex boolean expressions
+  - Tests for invalid expressions and error handling
+  - Integration tests with ConformanceValidator
+  - All existing tests passing (backward compatible)
+
+- **Examples**:
+  - `predicate_validation.rs` - Comprehensive Phase 2 feature demonstration
+    - Conditional usage with predicates
+    - Component-level validation
+    - Value set bindings
+    - Predicate parsing and evaluation
+    - Multiple test cases showing validation scenarios
+
+- **Error Handling**:
+  - New `InvalidPredicate` error variant for predicate parsing errors
+  - New `InvalidBindingStrength` error variant for invalid binding strengths
+  - Detailed error messages for malformed conditions
+  - Path validation for field references
+
+### Technical Details
+
+- **Dependencies**: Added rs7-terser for field access in predicate evaluation
+- **Breaking Changes**:
+  - `FieldProfile.usage` changed from `Usage` to `ConditionalUsage`
+  - Existing code using `FieldProfile::new()` continues to work (automatic conversion)
+  - Pattern matching on `FieldProfile.usage` must use `ConditionalUsage` variants
+- **Performance**: Predicate evaluation uses zero-copy Terser for efficient field access
+- **LOC**: ~300 LOC for predicate engine, ~500 LOC total for Phase 2 structures
+- **Test Coverage**: 16 new tests for predicates, all existing conformance tests passing
+
+### Future Enhancements (deferred to later sprints)
+
+- XML parser support for Phase 2 elements (components, predicates, value sets, co-constraints)
+- Predicate expression functions (e.g., AGE(PID-7), LENGTH(field))
+- Value set validation against actual code tables
+- Co-constraint evaluation engine
+- Data type flavors and profiles
+- Enhanced error messages with predicate evaluation details
+
 ## [0.15.0] - 2025-01-20
 
 ### Added - Message Template System 📋

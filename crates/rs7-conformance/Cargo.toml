@@ -15,6 +15,7 @@ description = "HL7 v2.x conformance profile validation for RS7"
 # Internal crates
 rs7-core.workspace = true
 rs7-validator.workspace = true
+rs7-terser.workspace = true
 
 # XML parsing
 quick-xml = "0.36"

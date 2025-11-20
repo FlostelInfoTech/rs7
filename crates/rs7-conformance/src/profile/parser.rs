@@ -2,8 +2,8 @@
 
 use crate::error::{ConformanceError, Result};
 use crate::profile::{
-    Cardinality, ConformanceProfile, FieldProfile, MessageProfile, ProfileMetadata,
-    SegmentProfile, Usage,
+    Cardinality, ConditionalUsage, ConformanceProfile, FieldProfile, MessageProfile,
+    ProfileMetadata, SegmentProfile, Usage,
 };
 use quick_xml::events::Event;
 use quick_xml::Reader;
@@ -387,7 +387,7 @@ mod tests {
         let field1 = &msh.fields[0];
         assert_eq!(field1.position, 1);
         assert_eq!(field1.name, Some("Field Separator".to_string()));
-        assert_eq!(field1.usage, Usage::Required);
+        assert_eq!(field1.usage, ConditionalUsage::Required);
         assert_eq!(field1.datatype, Some("ST".to_string()));
         assert_eq!(field1.length, Some(1));
 

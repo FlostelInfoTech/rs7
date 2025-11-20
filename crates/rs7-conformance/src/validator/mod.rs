@@ -7,7 +7,7 @@ pub use result::{
     ConformanceValidationResult, ConformanceValidationWarning, Severity, ValidationLocation,
 };
 
-use crate::profile::{ConformanceProfile, FieldProfile, SegmentProfile, Usage};
+use crate::profile::{ConditionalUsage, ConformanceProfile, FieldProfile, SegmentProfile, Usage};
 use rs7_core::{Message, Segment};
 
 /// Conformance profile validator
@@ -87,7 +87,7 @@ impl ConformanceValidator {
 
         // Validate each occurrence of the segment
         for (index, segment) in segments.iter().enumerate() {
-            self.validate_segment_fields(segment, index, segment_profile, result);
+            self.validate_segment_fields(segment, index, segment_profile, message, result);
         }
     }
 
@@ -190,10 +190,11 @@ impl ConformanceValidator {
         segment: &Segment,
         segment_index: usize,
         segment_profile: &SegmentProfile,
+        message: &Message,
         result: &mut ConformanceValidationResult,
     ) {
         for field_profile in &segment_profile.fields {
-            self.validate_field(segment, segment_index, field_profile, result);
+            self.validate_field(segment, segment_index, field_profile, message, result);
         }
     }
 
@@ -203,6 +204,7 @@ impl ConformanceValidator {
         segment: &Segment,
         segment_index: usize,
         field_profile: &FieldProfile,
+        message: &Message,
         result: &mut ConformanceValidationResult,
     ) {
         let field_position = field_profile.position;
@@ -218,6 +220,7 @@ impl ConformanceValidator {
             field_position,
             occurrence_count,
             field_profile,
+            message,
             result,
         );
 
@@ -252,6 +255,7 @@ impl ConformanceValidator {
         field_position: usize,
         occurrence_count: usize,
         field_profile: &FieldProfile,
+        message: &Message,
         result: &mut ConformanceValidationResult,
     ) {
         let location = if segment_index > 0 {
@@ -265,8 +269,8 @@ impl ConformanceValidator {
             ValidationLocation::field(segment_id.to_string(), field_position)
         };
 
-        match field_profile.usage {
-            Usage::Required => {
+        match &field_profile.usage {
+            ConditionalUsage::Required => {
                 if occurrence_count == 0 {
                     let field_name = field_profile
                         .name
@@ -282,7 +286,7 @@ impl ConformanceValidator {
                     );
                 }
             }
-            Usage::RequiredIfKnown => {
+            ConditionalUsage::RequiredIfKnown => {
                 if occurrence_count == 0 {
                     let field_name = field_profile
                         .name
@@ -295,7 +299,7 @@ impl ConformanceValidator {
                     });
                 }
             }
-            Usage::NotUsed => {
+            ConditionalUsage::NotUsed => {
                 if occurrence_count > 0 {
                     let field_name = field_profile
                         .name
@@ -311,8 +315,34 @@ impl ConformanceValidator {
                     );
                 }
             }
-            Usage::Optional => {
+            ConditionalUsage::Optional => {
                 // No validation needed
+            }
+            ConditionalUsage::Conditional(predicate) => {
+                // Evaluate predicate to determine actual usage
+                if let Ok(actual_usage) = crate::predicate::PredicateEvaluator::evaluate(predicate, message) {
+                    // Recursively validate with the evaluated usage
+                    let temp_profile = FieldProfile {
+                        position: field_profile.position,
+                        name: field_profile.name.clone(),
+                        usage: ConditionalUsage::from_usage(actual_usage),
+                        cardinality: field_profile.cardinality,
+                        datatype: field_profile.datatype.clone(),
+                        length: field_profile.length,
+                        table_id: field_profile.table_id.clone(),
+                        components: field_profile.components.clone(),
+                        value_set: field_profile.value_set.clone(),
+                    };
+                    self.validate_field_usage(
+                        segment_id,
+                        segment_index,
+                        field_position,
+                        occurrence_count,
+                        &temp_profile,
+                        message,
+                        result,
+                    );
+                }
             }
         }
     }

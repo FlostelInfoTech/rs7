@@ -39,4 +39,12 @@ pub enum ConformanceError {
     /// Validation error
     #[error("Validation error: {0}")]
     ValidationError(String),
+
+    /// Invalid predicate expression
+    #[error("Invalid predicate: {0}")]
+    InvalidPredicate(String),
+
+    /// Invalid binding strength
+    #[error("Invalid binding strength: {0}")]
+    InvalidBindingStrength(String),
 }

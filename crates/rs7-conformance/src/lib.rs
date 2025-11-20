@@ -56,14 +56,17 @@
 //! - Co-constraints
 
 pub mod error;
+pub mod predicate;
 pub mod profile;
 pub mod validator;
 
 // Re-export main types
 pub use error::{ConformanceError, Result};
+pub use predicate::{Condition, PredicateEvaluator, PredicateParser};
 pub use profile::{
-    parser::ProfileParser, Cardinality, ConformanceProfile, FieldProfile, MessageProfile,
-    ProfileMetadata, SegmentProfile, Usage,
+    parser::ProfileParser, BindingStrength, Cardinality, CoConstraint, ComponentProfile,
+    ConditionalUsage, ConformanceProfile, FieldProfile, MessageProfile, Predicate,
+    ProfileMetadata, SegmentProfile, Usage, ValueSetBinding,
 };
 pub use validator::{
     ConformanceErrorType, ConformanceValidationResult, ConformanceValidator, Severity,

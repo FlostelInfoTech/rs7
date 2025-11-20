@@ -67,6 +67,8 @@ pub struct MessageProfile {
     pub trigger_event: String,
     /// Segment profiles in order
     pub segments: Vec<SegmentProfile>,
+    /// Co-constraints (Phase 2)
+    pub co_constraints: Option<Vec<CoConstraint>>,
 }
 
 impl MessageProfile {
@@ -76,12 +78,19 @@ impl MessageProfile {
             message_type,
             trigger_event,
             segments: Vec::new(),
+            co_constraints: None,
         }
     }
 
     /// Add a segment profile
     pub fn add_segment(&mut self, segment: SegmentProfile) {
         self.segments.push(segment);
+    }
+
+    /// Add co-constraints
+    pub fn with_co_constraints(mut self, co_constraints: Vec<CoConstraint>) -> Self {
+        self.co_constraints = Some(co_constraints);
+        self
     }
 }
 
@@ -123,6 +132,191 @@ impl SegmentProfile {
     }
 }
 
+/// Component profile for composite fields (Phase 2)
+#[derive(Debug, Clone)]
+pub struct ComponentProfile {
+    /// Component position (1-based)
+    pub position: usize,
+    /// Component name
+    pub name: Option<String>,
+    /// Usage code (R, RE, O, X, C)
+    pub usage: ConditionalUsage,
+    /// Data type
+    pub datatype: Option<String>,
+    /// Maximum length
+    pub length: Option<usize>,
+    /// HL7 table ID
+    pub table_id: Option<String>,
+}
+
+impl ComponentProfile {
+    /// Create new component profile
+    pub fn new(position: usize, usage: ConditionalUsage) -> Self {
+        Self {
+            position,
+            name: None,
+            usage,
+            datatype: None,
+            length: None,
+            table_id: None,
+        }
+    }
+}
+
+/// Conditional usage with predicate support (Phase 2)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ConditionalUsage {
+    /// R - Required
+    Required,
+    /// RE - Required if Known
+    RequiredIfKnown,
+    /// O - Optional
+    Optional,
+    /// X - Not Used
+    NotUsed,
+    /// C - Conditional based on predicate
+    Conditional(Predicate),
+}
+
+impl ConditionalUsage {
+    /// Convert from basic Usage
+    pub fn from_usage(usage: Usage) -> Self {
+        match usage {
+            Usage::Required => ConditionalUsage::Required,
+            Usage::RequiredIfKnown => ConditionalUsage::RequiredIfKnown,
+            Usage::Optional => ConditionalUsage::Optional,
+            Usage::NotUsed => ConditionalUsage::NotUsed,
+        }
+    }
+
+    /// Get the basic usage (for backwards compatibility)
+    pub fn as_usage(&self) -> Option<Usage> {
+        match self {
+            ConditionalUsage::Required => Some(Usage::Required),
+            ConditionalUsage::RequiredIfKnown => Some(Usage::RequiredIfKnown),
+            ConditionalUsage::Optional => Some(Usage::Optional),
+            ConditionalUsage::NotUsed => Some(Usage::NotUsed),
+            ConditionalUsage::Conditional(_) => None,
+        }
+    }
+
+    /// Check if this is a conditional usage
+    pub fn is_conditional(&self) -> bool {
+        matches!(self, ConditionalUsage::Conditional(_))
+    }
+
+    /// Convert to string representation
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ConditionalUsage::Required => "R",
+            ConditionalUsage::RequiredIfKnown => "RE",
+            ConditionalUsage::Optional => "O",
+            ConditionalUsage::NotUsed => "X",
+            ConditionalUsage::Conditional(_) => "C",
+        }
+    }
+}
+
+/// Predicate for conditional usage evaluation (Phase 2)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Predicate {
+    /// Condition expression (e.g., "PID-8 IS VALUED")
+    pub condition: String,
+    /// Usage when condition is true
+    pub true_usage: Usage,
+    /// Usage when condition is false
+    pub false_usage: Usage,
+    /// Optional description
+    pub description: Option<String>,
+}
+
+impl Predicate {
+    /// Create new predicate
+    pub fn new(condition: String, true_usage: Usage, false_usage: Usage) -> Self {
+        Self {
+            condition,
+            true_usage,
+            false_usage,
+            description: None,
+        }
+    }
+
+    /// Add description
+    pub fn with_description(mut self, description: String) -> Self {
+        self.description = Some(description);
+        self
+    }
+}
+
+/// Value set binding (Phase 2)
+#[derive(Debug, Clone)]
+pub struct ValueSetBinding {
+    /// Value set ID
+    pub value_set_id: String,
+    /// Binding strength
+    pub strength: BindingStrength,
+}
+
+impl ValueSetBinding {
+    /// Create new value set binding
+    pub fn new(value_set_id: String, strength: BindingStrength) -> Self {
+        Self {
+            value_set_id,
+            strength,
+        }
+    }
+}
+
+/// Binding strength for value sets (Phase 2)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BindingStrength {
+    /// Required - Must use value from set
+    Required,
+    /// Extensible - Should use value from set, but may extend
+    Extensible,
+    /// Preferred - Preferred to use value from set
+    Preferred,
+    /// Example - Example values only
+    Example,
+}
+
+impl BindingStrength {
+    /// Parse from string
+    pub fn from_str(s: &str) -> Result<Self> {
+        match s.to_uppercase().as_str() {
+            "REQUIRED" | "R" => Ok(BindingStrength::Required),
+            "EXTENSIBLE" | "E" => Ok(BindingStrength::Extensible),
+            "PREFERRED" | "P" => Ok(BindingStrength::Preferred),
+            "EXAMPLE" | "X" => Ok(BindingStrength::Example),
+            _ => Err(crate::error::ConformanceError::InvalidBindingStrength(
+                s.to_string(),
+            )),
+        }
+    }
+}
+
+/// Co-constraint for cross-field validation (Phase 2)
+#[derive(Debug, Clone)]
+pub struct CoConstraint {
+    /// Constraint ID
+    pub id: String,
+    /// Description
+    pub description: String,
+    /// Condition expression
+    pub condition: String,
+}
+
+impl CoConstraint {
+    /// Create new co-constraint
+    pub fn new(id: String, description: String, condition: String) -> Self {
+        Self {
+            id,
+            description,
+            condition,
+        }
+    }
+}
+
 /// Field profile with constraints
 #[derive(Debug, Clone)]
 pub struct FieldProfile {
@@ -130,8 +324,8 @@ pub struct FieldProfile {
     pub position: usize,
     /// Field name
     pub name: Option<String>,
-    /// Usage code (R, RE, O, X)
-    pub usage: Usage,
+    /// Usage code (R, RE, O, X, C)
+    pub usage: ConditionalUsage,
     /// Cardinality (min/max occurrences for repeating fields)
     pub cardinality: Cardinality,
     /// Data type (e.g., "ST", "CX", "TS")
@@ -140,6 +334,10 @@ pub struct FieldProfile {
     pub length: Option<usize>,
     /// HL7 table ID (e.g., "0001")
     pub table_id: Option<String>,
+    /// Component profiles (for composite fields)
+    pub components: Option<Vec<ComponentProfile>>,
+    /// Value set binding
+    pub value_set: Option<ValueSetBinding>,
 }
 
 impl FieldProfile {
@@ -148,12 +346,45 @@ impl FieldProfile {
         Self {
             position,
             name: None,
+            usage: ConditionalUsage::from_usage(usage),
+            cardinality,
+            datatype: None,
+            length: None,
+            table_id: None,
+            components: None,
+            value_set: None,
+        }
+    }
+
+    /// Create with conditional usage
+    pub fn with_conditional_usage(
+        position: usize,
+        usage: ConditionalUsage,
+        cardinality: Cardinality,
+    ) -> Self {
+        Self {
+            position,
+            name: None,
             usage,
             cardinality,
             datatype: None,
             length: None,
             table_id: None,
+            components: None,
+            value_set: None,
         }
+    }
+
+    /// Add component profiles
+    pub fn with_components(mut self, components: Vec<ComponentProfile>) -> Self {
+        self.components = Some(components);
+        self
+    }
+
+    /// Add value set binding
+    pub fn with_value_set(mut self, value_set: ValueSetBinding) -> Self {
+        self.value_set = Some(value_set);
+        self
     }
 }
 
