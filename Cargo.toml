@@ -21,6 +21,7 @@ rs7-mllp.workspace = true
 [dev-dependencies]
 chrono.workspace = true
 tokio.workspace = true
+rs7-transform = { workspace = true, features = ["serde"] }
 
 [workspace]
 members = [
@@ -28,6 +29,7 @@ members = [
     "crates/rs7-parser",
     "crates/rs7-validator",
     "crates/rs7-terser",
+    "crates/rs7-transform",
     "crates/rs7-mllp",
     "crates/rs7-http",
     "crates/rs7-macros",
@@ -65,6 +67,10 @@ anyhow = "1.0"
 # Serialization for specs
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_yaml = "0.9"
+
+# Regex
+regex = "1.11"
 
 # Date/Time handling
 chrono = "0.4"
@@ -91,6 +97,7 @@ rs7-core = { version = "0.11.0", path = "crates/rs7-core" }
 rs7-parser = { version = "0.11.0", path = "crates/rs7-parser" }
 rs7-validator = { version = "0.11.0", path = "crates/rs7-validator" }
 rs7-terser = { version = "0.11.0", path = "crates/rs7-terser" }
+rs7-transform = { version = "0.11.0", path = "crates/rs7-transform" }
 rs7-mllp = { version = "0.11.0", path = "crates/rs7-mllp" }
 rs7-http = { version = "0.11.0", path = "crates/rs7-http" }
 rs7-fhir = { version = "0.11.0", path = "crates/rs7-fhir" }

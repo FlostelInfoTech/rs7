@@ -4,6 +4,7 @@
 //! Builders help ensure messages are created with required fields and proper structure.
 
 pub mod adt;
+pub mod batch;
 pub mod dft;
 pub mod fields;
 pub mod laboratory;

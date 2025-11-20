@@ -12,7 +12,7 @@ Transform RS7 into the most comprehensive, performant, and feature-rich HL7 libr
 
 ---
 
-## Current Status (v0.12.0)
+## Current Status (v0.14.0)
 
 ### Completed Features ✅
 
@@ -22,6 +22,8 @@ Transform RS7 into the most comprehensive, performant, and feature-rich HL7 libr
 - **Enhanced Terser**: Bulk extraction, pattern matching, field iteration, conditional queries ✨ v0.10.0
 - **Message Builders**: ADT (13 variants), ORU, ORM, SIU, MDM, DFT, QRY, QBP, RSP
 - **Complex Field Builders**: XPN, XAD, XTN, CX, XCN, QPD, RCP, QAK ✨ v0.12.0
+- **Batch/File Support**: BatchBuilder, FileBuilder, parse_batch(), parse_file() ✨ v0.13.0
+- **Message Transformation**: Field mapping, 15 built-in transforms, YAML/JSON config ✨ v0.14.0
 - **Schema Validation**: 32 message types across 5 HL7 versions
 - **Data Type Validation**: All HL7 data types (dates, times, numerics, coded values)
 - **Vocabulary Validation**: HL7 standard tables (13 tables)
@@ -33,7 +35,7 @@ Transform RS7 into the most comprehensive, performant, and feature-rich HL7 libr
 - **HTTP Transport**: HL7-over-HTTP support
 - **WebAssembly**: JavaScript/TypeScript bindings
 - **CLI Tool**: Parse, validate, extract, convert, info commands
-- **Test Coverage**: 485+ tests across all crates
+- **Test Coverage**: 576+ tests across all crates
 
 ### Phase 1 Complete ✅
 
@@ -51,6 +53,7 @@ rs7/
 ├── rs7-validator   - Message validation against HL7 standards
 ├── rs7-conformance - Conformance profile validation (XML-based)
 ├── rs7-terser      - Path-based field access API
+├── rs7-transform   - Message transformation framework ✨ v0.14.0
 ├── rs7-custom      - Type-safe custom Z-segment framework
 ├── rs7-mllp        - MLLP protocol for network transmission
 ├── rs7-http        - HTTP transport for inter-organization communication
@@ -174,39 +177,40 @@ rs7/
 
 ---
 
-## PHASE 2: Structural Enhancements (v0.11.0)
+## PHASE 2: Structural Enhancements (v0.14.0)
 
 **Timeline**: 3-4 weeks
 **Goal**: Add infrastructure for enterprise-scale processing
+**Status**: Sprints 1 & 2 complete ✅
 
-### 2.1 Batch/File Support (5 days)
+### 2.1 Batch/File Support ✅ (v0.13.0)
 
 **New Features:**
 - **FHS/BHS Segments**: File Header Segment, Batch Header Segment
 - **FTS/BTS Segments**: File Trailer Segment, Batch Trailer Segment
-- **Batch Structures**: `BatchMessage` with header, messages, trailer
-- **File Structures**: `FileMessage` with header, batches, trailer
-- **Batch Parser**: Parse batch/file HL7 messages
-- **Batch Builders**: Fluent API for creating batches/files
+- **Batch Structures**: `Batch` with header, messages, trailer
+- **File Structures**: `File` with header, batches, trailer
+- **Batch Parser**: Parse batch/file HL7 messages (`parse_batch()`, `parse_file()`)
+- **Batch Builders**: Fluent API for creating batches/files (`BatchBuilder`, `FileBuilder`)
 - **Batch Validation**: Validate batch/file structure and counts
 
 **Implementation:**
-- FHS/BHS/FTS/BTS segment definitions in rs7-core (~100 LOC)
-- `BatchMessage` and `FileMessage` structures (~150 LOC)
-- Batch/file parser in rs7-parser (~300 LOC)
-- Batch/file builders (~200 LOC)
-- Batch validation (~150 LOC)
-- Tests and examples (~400 LOC)
+- FHS/BHS/FTS/BTS segment definitions in rs7-core/src/batch.rs (~590 LOC)
+- `Batch` and `File` structures with validation (~250 LOC)
+- Batch/file parser in rs7-parser (~350 LOC)
+- Batch/file builders in rs7-core/src/builders/batch.rs (~446 LOC)
+- Segment encoding enhancements for FHS/BHS (~20 LOC)
+- Tests (~250 LOC) and examples (~451 LOC)
 
 **HAPI Equivalent**: `Parser.parse()` with batch detection, `BatchParser`
 
 **Use Cases**: High-volume message processing, EDI file handling
 
-**Deliverable**: rs7-core v0.11.0, rs7-parser v0.11.0
+**Deliverable**: ✅ rs7-core v0.13.0, rs7-parser v0.13.0 - COMPLETED
 
 ---
 
-### 2.2 Message Transformation Framework (6 days)
+### 2.2 Message Transformation Framework ✅ (v0.14.0)
 
 **New Crate**: rs7-transform
 
@@ -243,16 +247,19 @@ rules:
 ```
 
 **Implementation:**
-- Core transformation structures (~200 LOC)
-- `MessageTransformer` engine (~300 LOC)
-- Built-in transform functions (~200 LOC)
-- YAML/JSON parser (~200 LOC)
-- Fluent builder API (~150 LOC)
-- Tests and examples (~400 LOC)
+- Error types and result handling (~68 LOC)
+- Transformation rules with context support (~220 LOC)
+- Built-in transform functions (15 functions, ~410 LOC)
+- `MessageTransformer` engine with fluent API (~380 LOC)
+- YAML/JSON configuration support (~290 LOC, serde feature)
+- Integration with rs7-terser for field access
+- Tests (~350 LOC) and examples (~227 LOC)
 
-**Use Cases**: Version migration, message normalization, field mapping
+**Built-in Transforms:** uppercase, lowercase, trim, remove_whitespace, substring, format_date, format_datetime, replace, regex_replace, prefix, suffix, pad, default_if_empty
 
-**Deliverable**: rs7-transform v0.1.0
+**Use Cases**: Version migration, message normalization, field mapping, data anonymization, format conversion
+
+**Deliverable**: ✅ rs7-transform v0.11.0 - COMPLETED
 
 ---
 
@@ -659,5 +666,5 @@ This roadmap is a living document and will be updated as:
 - Performance targets are achieved
 
 **Last Updated**: 2025-11-20
-**Current Version**: v0.12.0
-**Next Milestone**: Phase 2 - Batch/File Support (v0.13.0)
+**Current Version**: v0.13.0
+**Next Milestone**: Phase 2 - Message Transformation Framework (v0.14.0)

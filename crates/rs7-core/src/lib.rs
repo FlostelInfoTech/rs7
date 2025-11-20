@@ -2,11 +2,13 @@
 //!
 //! This crate provides the foundational types used throughout the rs7 library:
 //! - Message structure hierarchy (Message, Segment, Field, Component, Subcomponent)
+//! - Batch and file structures for high-volume processing
 //! - Message builders for creating HL7 messages programmatically
 //! - Encoding characters and delimiters
 //! - Error types
 //! - Common traits
 
+pub mod batch;
 pub mod builders;
 pub mod delimiters;
 pub mod encoding;
@@ -16,6 +18,7 @@ pub mod message;
 pub mod segment;
 pub mod types;
 
+pub use batch::{Batch, BatchHeader, BatchTrailer, File, FileHeader, FileTrailer};
 pub use delimiters::Delimiters;
 pub use encoding::Encoding;
 pub use error::{Error, Result};

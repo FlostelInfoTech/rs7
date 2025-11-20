@@ -95,13 +95,15 @@ impl Segment {
     pub fn encode(&self, delimiters: &Delimiters) -> String {
         let mut result = self.id.clone();
 
-        // Special handling for MSH segment
-        if self.id == "MSH" {
+        // Special handling for MSH, FHS, and BHS segments
+        // These segments have the same structure: field 1 is field separator, field 2 is encoding characters
+        if self.id == "MSH" || self.id == "FHS" || self.id == "BHS" {
             result.push(delimiters.field_separator);
             result.push_str(&delimiters.encoding_characters());
 
-            // MSH fields start from field 3 (after separator and encoding chars)
-            for field in self.fields.iter().skip(1) {
+            // Fields start from field 3 (after separator and encoding chars)
+            // Skip first 2 fields which are the delimiter definitions
+            for field in self.fields.iter().skip(2) {
                 result.push(delimiters.field_separator);
                 result.push_str(&field.encode(delimiters));
             }

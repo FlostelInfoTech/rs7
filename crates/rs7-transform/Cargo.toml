@@ -1,0 +1,29 @@
+[package]
+name = "rs7-transform"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Message transformation framework for HL7 v2.x messages"
+
+[dependencies]
+rs7-core.workspace = true
+rs7-terser.workspace = true
+thiserror.workspace = true
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+serde_yaml = { version = "0.9", optional = true }
+chrono.workspace = true
+regex = "1.11"
+
+[features]
+default = []
+serde = ["dep:serde", "dep:serde_json", "dep:serde_yaml"]
+
+[dev-dependencies]
+rs7-parser.workspace = true

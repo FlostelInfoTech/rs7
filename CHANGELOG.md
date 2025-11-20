@@ -7,6 +7,256 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2025-11-20
+
+### Added - Message Transformation Framework 🔄
+
+- **Message Transformation Framework** - Comprehensive framework for transforming HL7 v2.x messages:
+  - **TransformationRule** - Type-safe transformation rule definition
+    - Source and target field paths using terser notation (e.g., "PID-5-1", "OBX(1)-5")
+    - Optional transformation functions with flexible signature
+    - Default value support for empty source fields
+    - Skip-if-empty configuration
+    - Automatic path validation ensuring proper terser format
+  - **TransformFn** - Function type for custom transformations
+    - Accepts value and context parameters
+    - Returns transformed value or error
+    - Supports both built-in and user-defined functions
+  - **TransformContext** - Contextual data for transformations
+    - Source message access
+    - Key-value data storage for parameterized transforms
+    - Fluent builder API for context construction
+
+- **MessageTransformer** - Fluent API for message transformation:
+  - `add_mapping()` - Simple field-to-field copy
+  - `add_transform()` - Field mapping with transformation function
+  - `add_rule()` - Add pre-configured transformation rule
+  - `transform()` - Create transformed copy of message
+  - `transform_in_place()` - Transform message in-place for efficiency
+  - Context data management via `set_context_data()`
+  - Rule validation with `validate_rules()`
+  - Rule count and clearing methods
+
+- **Built-in Transformation Functions** (15 functions):
+  - **String Case**: `uppercase`, `lowercase`
+  - **Whitespace**: `trim`, `trim_start`, `trim_end`, `remove_whitespace`
+  - **Substring**: `substring` (with start/length params)
+  - **Date/Time**: `format_date`, `format_datetime` (YYYYMMDD → various formats)
+  - **String Replacement**: `replace`, `regex_replace`
+  - **Concatenation**: `prefix`, `suffix`
+  - **Padding**: `pad` (left/right with specified character)
+  - **Defaults**: `default_if_empty`
+
+- **Declarative Configuration Support** (optional `serde` feature):
+  - **TransformConfig** - YAML/JSON configuration structure
+    - List of transformation rules
+    - Global context data
+    - Builder pattern for programmatic construction
+  - **RuleConfig** - Individual rule configuration
+    - Source and target field paths
+    - Transform function name (string-based lookup)
+    - Default values and skip-if-empty settings
+    - Per-rule parameters as key-value pairs
+  - **YAML/JSON Loading**:
+    - `from_yaml()` / `from_yaml_file()` - Load from YAML
+    - `from_json()` / `from_json_file()` - Load from JSON
+    - `to_yaml()` / `to_yaml_file()` - Save to YAML
+    - `to_json()` / `to_json_file()` - Save to JSON
+  - **Transform Function Registry**:
+    - String-based function lookup ("uppercase", "format_date", etc.)
+    - Automatic validation of function names
+    - Clear error messages for unknown functions
+
+### Implementation Details
+
+- **Error Handling**:
+  - `Error::FieldAccess` - Terser path access errors
+  - `Error::TransformFn` - Transformation function errors
+  - `Error::InvalidRule` - Rule validation errors
+  - `Error::Config` - Configuration loading errors (serde feature)
+  - `Error::Yaml` / `Error::Json` - Serialization errors (serde feature)
+  - Integration with rs7-core and rs7-terser error types
+
+- **Integration with Existing Crates**:
+  - Uses `rs7-terser::Terser` for reading field values
+  - Uses `rs7-terser::TerserMut` for setting field values
+  - Compatible with all message types supported by rs7-core
+  - Works with both builder-created and parser-generated messages
+
+### Testing
+
+- **49 Unit Tests** covering:
+  - Transformation rule creation and validation (8 tests)
+  - Context management (3 tests)
+  - Built-in transformation functions (14 tests)
+  - MessageTransformer operations (11 tests)
+  - Configuration loading and serialization (13 tests)
+- **19 Documentation Tests** embedded in API documentation
+- **3 Working Examples**:
+  - `transform_basic.rs` - Basic field mappings and transformations (51 LOC)
+  - `transform_config.rs` - YAML-based configuration (79 LOC)
+  - `transform_advanced.rs` - Advanced features and custom functions (97 LOC)
+
+### Dependencies
+
+- New workspace dependencies:
+  - `regex = "1.11"` - Regular expression support for transforms
+  - `serde_yaml = "0.9"` - YAML configuration support (optional)
+- Existing dependencies leveraged:
+  - `rs7-core` - Message structures
+  - `rs7-terser` - Field access API
+  - `chrono` - Date/time transformation
+  - `serde` / `serde_json` - JSON configuration (optional)
+
+### Documentation
+
+- Comprehensive module-level documentation in `rs7-transform/src/lib.rs`
+- Detailed API documentation for all public types and methods
+- Example-driven documentation for common use cases
+- README section explaining transformation framework
+- ROADMAP updated to reflect Phase 2, Sprint 2 completion
+
+### Code Statistics
+
+- **Module**: `rs7-transform` (new crate)
+- **Source Lines**: ~900 LOC across 5 modules
+  - `error.rs` - 68 LOC
+  - `rule.rs` - 220 LOC (including 18 tests)
+  - `transforms.rs` - 410 LOC (including 14 tests)
+  - `transformer.rs` - 380 LOC (including 11 tests)
+  - `config.rs` - 290 LOC (including 13 tests, serde feature)
+- **Test Coverage**: 62 total tests (49 unit + 13 config + 19 doc)
+- **Examples**: 227 LOC across 3 examples
+
+## [0.13.0] - 2025-11-20
+
+### Added - Batch/File Message Support 📦
+
+- **Batch Message Support** - Complete implementation for high-volume message processing:
+  - **BatchHeader (BHS)** - Batch Header Segment with full HL7 v2.x compliance
+    - Sender/receiver application and facility fields (BHS-3 through BHS-6)
+    - Creation datetime with automatic timestamp generation (BHS-7)
+    - Batch identification fields: name/ID/type, control ID, reference control ID (BHS-9, BHS-11, BHS-12)
+    - Security and comment fields (BHS-8, BHS-10)
+    - Network address fields for v2.6+ (BHS-13, BHS-14)
+  - **BatchTrailer (BTS)** - Batch Trailer Segment with validation
+    - Automatic message count tracking (BTS-1)
+    - Optional comment field (BTS-2)
+    - Repeating batch totals field support (BTS-3)
+  - **Batch Structure** - Container for batched messages
+    - Automatic message count validation against BTS-1
+    - Support for multiple HL7 messages within batch envelope
+    - Encoding with configurable separators (\r for transmission, \n for display)
+
+- **File Message Support** - Multi-batch file transmission capability:
+  - **FileHeader (FHS)** - File Header Segment
+    - File-level sender/receiver information (FHS-3 through FHS-6)
+    - File identification: name/ID, control ID, reference control ID (FHS-9, FHS-11, FHS-12)
+    - Creation datetime, security, and comment fields (FHS-7, FHS-8, FHS-10)
+    - Network address support for v2.6+ (FHS-13, FHS-14)
+  - **FileTrailer (FTS)** - File Trailer Segment
+    - Automatic batch count tracking (FTS-1)
+    - Optional comment field (FTS-2)
+  - **File Structure** - Container for multiple batches
+    - Hierarchical organization: File → Batches → Messages
+    - Automatic batch count validation against FTS-1
+    - Total message count calculation across all batches
+
+- **Fluent Builder APIs** - Ergonomic batch/file construction:
+  - **BatchBuilder** - Chainable batch message creation
+    - Sender/receiver configuration methods
+    - Automatic datetime defaults (uses current time if not set)
+    - Automatic message count management in trailer
+    - Pre-build validation to catch errors early
+    - `add_message()` and `add_messages()` for message insertion
+    - `trailer_comment()` and `add_total()` for metadata
+  - **FileBuilder** - Chainable file message creation
+    - File-level configuration methods
+    - Automatic datetime and batch count management
+    - Pre-build validation for file structure
+    - `add_batch()` and `add_batches()` for batch insertion
+    - Support for file-level and batch-level comments
+
+- **Parser Extensions** - Full batch/file parsing support:
+  - **parse_batch()** - Parse complete batch messages (BHS...messages...BTS)
+    - Automatic delimiter extraction from BHS segment
+    - Multi-message parsing with MSH detection
+    - Integrated validation during parsing
+  - **parse_file()** - Parse complete file messages (FHS...batches...FTS)
+    - Hierarchical parsing: FHS → BHS → MSH → BTS → FTS
+    - Automatic delimiter extraction from FHS segment
+    - Batch boundary detection and nested parsing
+    - Integrated validation for batch and file counts
+  - **Delimiter Extraction** - Specialized extractors for batch/file headers
+    - `extract_delimiters_from_bhs()` - BHS delimiter parsing
+    - `extract_delimiters_from_fhs()` - FHS delimiter parsing
+  - **Datetime Parsing** - HL7 timestamp format support
+    - Support for TS format (v2.3-v2.5): YYYYMMDDHHMMSS
+    - Support for DTM format (v2.6+): Partial datetime precision
+    - Timezone offset handling
+  - **Special Segment Parsing** - FHS/BHS/FTS/BTS segment parsers
+    - MSH-like structure handling for FHS/BHS (field 1 = separator, field 2 = encoding chars)
+    - Proper field indexing for trailer segments
+
+- **Segment Encoding Enhancements**:
+  - Updated `Segment::encode()` to handle FHS/BHS special structure
+    - Proper encoding for segments with field separator and encoding characters
+    - Consistent handling with MSH segment encoding
+    - Prevents delimiter escaping in FHS/BHS field 1 and 2
+
+- **Validation Features**:
+  - **Message Count Validation** - BTS-1 must match actual message count in batch
+  - **Batch Count Validation** - FTS-1 must match actual batch count in file
+  - **Automatic Count Management** - Builders set counts automatically to prevent mismatches
+  - **Pre-build Validation** - Catch structural errors before encoding
+  - **Parse-time Validation** - Validate counts during parsing for early error detection
+
+- **Examples**:
+  - `batch_messages.rs` - Comprehensive batch message demonstration (183 LOC)
+    - Example 1: Creating batches with BatchBuilder
+    - Example 2: Parsing batch messages from text
+    - Example 3: Batch validation (valid and invalid cases)
+    - Example 4: Encoding batches for transmission and round-trip verification
+  - `file_messages.rs` - Complete file message workflows (268 LOC)
+    - Example 1: Building multi-batch files with FileBuilder
+    - Example 2: Parsing file messages from text
+    - Example 3: File validation with count mismatches
+    - Example 4: Hierarchical navigation through file → batch → message structure
+
+- **Testing**:
+  - **rs7-core**: 18 tests total (6 for batch module, 6 for batch builders, 6 for file builders) ✅
+  - **rs7-parser**: 24 tests total (13 new tests for batch/file parsing) ✅
+  - Comprehensive coverage:
+    - Batch/file structure creation and validation
+    - Builder auto-count management
+    - Segment conversion (headers and trailers to segments)
+    - Encoding with different separators
+    - Parsing with validation
+    - Round-trip encoding and parsing
+    - Error cases (count mismatches, missing segments)
+    - Datetime field parsing (full timestamps, date-only, timezone handling)
+    - Delimiter extraction from FHS/BHS segments
+
+### Technical Details
+
+- **Batch/File Architecture**:
+  - Hierarchical structure: `File` contains `Vec<Batch>`, `Batch` contains `Vec<Message>`
+  - Datetime fields use `chrono::NaiveDateTime` for timezone-independent storage
+  - Encoding uses configurable separators (default: `\r` for HL7 standard)
+  - Automatic field management prevents manual count errors
+
+- **Parser Enhancements**:
+  - New parsing functions: `parse_batch()`, `parse_file()`
+  - Segment-specific parsers: `parse_bhs_segment()`, `parse_fhs_segment()`, `parse_bts_segment()`, `parse_fts_segment()`
+  - Helper function `parse_segment_like_msh()` for FHS/BHS parsing
+  - Datetime parser `parse_datetime_field()` supports TS and DTM formats
+
+- **Version Compatibility**:
+  - FHS/BHS fields 1-12 supported across all HL7 versions (v2.3 - v2.7.1)
+  - FHS-13/BHS-13 (Sending Network Address) - v2.6+
+  - FHS-14/BHS-14 (Receiving Network Address) - v2.6+
+  - Field types evolved from ST→HD (v2.5), TS→DTM (v2.6)
+
 ## [0.12.0] - 2025-11-20
 
 ### Added - Query/Response Support 🔍
