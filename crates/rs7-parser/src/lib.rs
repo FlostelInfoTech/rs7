@@ -1,8 +1,22 @@
 //! HL7 message parser using nom
 //!
 //! This crate provides parsing functionality for HL7 v2.x messages.
+//!
+//! # Parsing Modes
+//!
+//! The parser supports both strict and lenient parsing modes:
+//!
+//! - **Strict mode** (default): Enforces HL7 specification compliance
+//! - **Lenient mode**: Tolerates common real-world deviations
+//!
+//! See [`ParserConfig`] for configuration options.
 
+mod config;
 mod optimized;
+pub mod streaming;
+
+pub use config::{ParserConfig, ParseResult, ParseWarning, WarningCode};
+pub use streaming::{StreamingParser, StreamingMessageBuilder, SegmentEvent, SegmentHandler, parse_streaming, process_with_handler};
 
 // nom parser combinators (for future enhancements)
 use rs7_core::{
@@ -16,36 +30,308 @@ use rs7_core::{
 };
 use chrono::NaiveDateTime;
 
-/// Parse a complete HL7 message
+/// Parse a complete HL7 message with default strict configuration
 pub fn parse_message(input: &str) -> Result<Message> {
-    let input = input.trim();
+    parse_message_with_config(input, &ParserConfig::strict()).map(|r| r.value)
+}
+
+/// Parse a complete HL7 message with custom configuration
+///
+/// This function allows specifying parsing options for handling non-compliant
+/// messages. Use [`ParserConfig::lenient()`] for tolerant parsing.
+///
+/// # Example
+///
+/// ```rust
+/// use rs7_parser::{parse_message_with_config, ParserConfig};
+///
+/// // Parse with lenient configuration
+/// let config = ParserConfig::lenient();
+/// let result = parse_message_with_config(
+///     "MSH|^~\\&|App|Fac|||20240315||ADT^A01|123|P|2.5|",
+///     &config
+/// );
+///
+/// if let Ok(parsed) = result {
+///     println!("Parsed message with {} warnings", parsed.warning_count());
+/// }
+/// ```
+pub fn parse_message_with_config(input: &str, config: &ParserConfig) -> Result<ParseResult<Message>> {
+    use config::{ParseWarning, WarningCode};
+
+    let mut warnings = Vec::new();
+
+    // Handle whitespace based on config
+    let input = if config.strip_trailing_whitespace {
+        input.trim_end()
+    } else {
+        input
+    };
+
+    let input = if config.strip_leading_whitespace {
+        input.trim_start()
+    } else {
+        input
+    };
+
+    let input = input.trim_matches(|c| c == '\r' || c == '\n');
 
     // Extract delimiters from MSH segment
-    let delimiters = extract_delimiters(input)?;
+    let delimiters = extract_delimiters_with_config(input, config)?;
 
     // Split message into segments (by \r or \n)
-    let segment_strings: Vec<&str> = input
+    let mut segment_strings: Vec<&str> = input
         .split('\r')
         .flat_map(|s| s.split('\n'))
-        .filter(|s| !s.is_empty())
+        .collect();
+
+    // Apply config-based filtering
+    segment_strings = segment_strings
+        .into_iter()
+        .enumerate()
+        .filter_map(|(idx, s)| {
+            let s = if config.strip_trailing_whitespace {
+                s.trim_end()
+            } else {
+                s
+            };
+            let s = if config.strip_leading_whitespace {
+                s.trim_start()
+            } else {
+                s
+            };
+
+            if s.is_empty() {
+                if config.skip_blank_lines {
+                    None
+                } else {
+                    Some(s)
+                }
+            } else {
+                Some(s)
+            }
+        })
         .collect();
 
     if segment_strings.is_empty() {
         return Err(Error::parse("Empty message"));
     }
 
-    let mut message = Message::with_delimiters(delimiters);
-
-    for (idx, seg_str) in segment_strings.iter().enumerate() {
-        let segment = if idx == 0 {
-            parse_msh_segment(seg_str, &delimiters)?
-        } else {
-            parse_segment(seg_str, &delimiters)?
-        };
-        message.add_segment(segment);
+    // Check segment limit
+    if config.max_segments > 0 && segment_strings.len() > config.max_segments {
+        if !config.continue_on_error {
+            return Err(Error::parse(format!(
+                "Message exceeds maximum segment count: {} > {}",
+                segment_strings.len(),
+                config.max_segments
+            )));
+        }
+        segment_strings.truncate(config.max_segments);
     }
 
-    Ok(message)
+    let mut message = Message::with_delimiters(delimiters);
+    let mut errors = Vec::new();
+
+    for (idx, seg_str) in segment_strings.iter().enumerate() {
+        // Handle trailing delimiters
+        let seg_str = if config.allow_trailing_delimiters {
+            seg_str.trim_end_matches(delimiters.field_separator)
+        } else {
+            seg_str
+        };
+
+        let segment_result = if idx == 0 {
+            parse_msh_segment_with_config(seg_str, &delimiters, config)
+        } else {
+            parse_segment_with_config(seg_str, &delimiters, config)
+        };
+
+        match segment_result {
+            Ok((segment, seg_warnings)) => {
+                message.add_segment(segment);
+                warnings.extend(seg_warnings);
+            }
+            Err(e) => {
+                if config.continue_on_error {
+                    errors.push((idx, e));
+                } else {
+                    return Err(e);
+                }
+            }
+        }
+    }
+
+    Ok(ParseResult {
+        value: message,
+        warnings,
+    })
+}
+
+/// Extract delimiters with configuration options
+fn extract_delimiters_with_config(input: &str, config: &ParserConfig) -> Result<Delimiters> {
+    if !input.starts_with("MSH") {
+        return Err(Error::parse("Message must start with MSH segment"));
+    }
+
+    if input.len() < 8 {
+        return Err(Error::parse("MSH segment too short"));
+    }
+
+    let field_sep = input.chars().nth(3).ok_or_else(|| {
+        Error::parse("Cannot extract field separator")
+    })?;
+
+    let encoding_chars: String = input.chars().skip(4).take(4).collect();
+
+    // In lenient mode, allow non-standard encoding characters
+    if encoding_chars.len() < 4 && !config.allow_non_standard_encoding_chars {
+        return Err(Error::parse(format!(
+            "Invalid encoding characters (expected 4, got {})",
+            encoding_chars.len()
+        )));
+    }
+
+    Delimiters::from_encoding_characters(field_sep, &encoding_chars)
+}
+
+/// Parse MSH segment with configuration
+fn parse_msh_segment_with_config(
+    input: &str,
+    delimiters: &Delimiters,
+    config: &ParserConfig,
+) -> Result<(Segment, Vec<ParseWarning>)> {
+    let warnings = Vec::new();
+
+    if !input.starts_with("MSH") {
+        return Err(Error::parse("MSH segment must start with 'MSH'"));
+    }
+
+    let mut segment = Segment::new("MSH");
+
+    // Add MSH-1 (field separator)
+    segment.add_field(Field::from_value(delimiters.field_separator.to_string()));
+
+    // Add MSH-2 (encoding characters)
+    segment.add_field(Field::from_value(delimiters.encoding_characters()));
+
+    // Parse the rest of the fields
+    let field_start = 9;
+    if input.len() <= field_start {
+        return Ok((segment, warnings));
+    }
+
+    let rest = &input[field_start..];
+    let field_strings: Vec<&str> = rest.split(delimiters.field_separator).collect();
+
+    for field_str in field_strings {
+        let field = parse_field_with_config(field_str, delimiters, config)?;
+        segment.add_field(field);
+    }
+
+    Ok((segment, warnings))
+}
+
+/// Parse a regular segment with configuration
+fn parse_segment_with_config(
+    input: &str,
+    delimiters: &Delimiters,
+    config: &ParserConfig,
+) -> Result<(Segment, Vec<ParseWarning>)> {
+    let mut warnings = Vec::new();
+
+    // Handle segment ID length
+    let id_len = input.chars().take_while(|c| c.is_ascii_alphanumeric()).count();
+
+    if id_len == 0 {
+        if config.allow_empty_segment_id {
+            warnings.push(ParseWarning {
+                location: 0,
+                message: "Empty segment ID".to_string(),
+                code: WarningCode::EmptySegment,
+            });
+            // Return empty segment
+            return Ok((Segment::new(""), warnings));
+        } else {
+            return Err(Error::parse("Empty segment ID"));
+        }
+    }
+
+    if id_len != 3 && !config.allow_non_standard_segment_ids {
+        return Err(Error::parse(format!(
+            "Segment ID must be 3 characters, got {} ('{}')",
+            id_len,
+            &input[..id_len]
+        )));
+    }
+
+    if id_len != 3 && config.allow_non_standard_segment_ids {
+        warnings.push(ParseWarning {
+            location: 0,
+            message: format!("Non-standard segment ID length: {}", id_len),
+            code: WarningCode::NonStandardSegmentId,
+        });
+    }
+
+    let segment_id = &input[0..id_len];
+    let mut segment = Segment::new(segment_id);
+
+    // Check for field separator
+    if input.len() <= id_len {
+        return Ok((segment, warnings));
+    }
+
+    let next_char = input.chars().nth(id_len);
+    if next_char != Some(delimiters.field_separator) {
+        if config.continue_on_error {
+            return Ok((segment, warnings));
+        }
+        return Err(Error::parse(format!(
+            "Expected field separator after segment ID, got '{}'",
+            next_char.unwrap_or(' ')
+        )));
+    }
+
+    let rest = &input[id_len + 1..];
+    let field_strings: Vec<&str> = rest.split(delimiters.field_separator).collect();
+
+    for field_str in field_strings {
+        let field = parse_field_with_config(field_str, delimiters, config)?;
+        segment.add_field(field);
+    }
+
+    Ok((segment, warnings))
+}
+
+/// Parse a field with configuration
+fn parse_field_with_config(input: &str, delimiters: &Delimiters, config: &ParserConfig) -> Result<Field> {
+    let mut field = Field::new();
+
+    let repetition_strings: Vec<&str> = if input.is_empty() {
+        vec![""]
+    } else {
+        input.split(delimiters.repetition_separator).collect()
+    };
+
+    // Apply max repetitions limit
+    let repetition_strings = if config.max_repetitions > 0 && repetition_strings.len() > config.max_repetitions {
+        &repetition_strings[..config.max_repetitions]
+    } else {
+        &repetition_strings[..]
+    };
+
+    for rep_str in repetition_strings {
+        // Apply max field length
+        let rep_str = if config.max_field_length > 0 && rep_str.len() > config.max_field_length {
+            &rep_str[..config.max_field_length]
+        } else {
+            rep_str
+        };
+
+        let repetition = parse_repetition(rep_str, delimiters)?;
+        field.add_repetition(repetition);
+    }
+
+    Ok(field)
 }
 
 /// Extract delimiters from MSH segment

@@ -6,6 +6,12 @@
 //! - FS (File Separator): 0x1C - End of block
 //! - CR (Carriage Return): 0x0D - End of message
 
+// Message routing
+pub mod router;
+
+// Connection pooling
+pub mod pool;
+
 // TLS/mTLS support (optional)
 #[cfg(feature = "tls")]
 pub mod tls;
@@ -79,6 +85,9 @@ impl MllpStream {
         }
     }
 }
+
+// Re-export pool types
+pub use pool::{MllpPool, PoolConfig, PoolStats};
 
 /// MLLP frame markers
 pub const START_OF_BLOCK: u8 = 0x0B; // Vertical Tab (VT)

@@ -9,11 +9,15 @@ use rs7_core::{error::Result, Version};
 /// Load a schema for a specific message type and version
 pub fn load_schema(version: Version, message_type: &str, trigger_event: &str) -> Result<MessageSchema> {
     let version_str = match version {
+        // Legacy versions fall back to v2.3 schemas
+        Version::V2_1 | Version::V2_2 => "v2_3",
         Version::V2_3 | Version::V2_3_1 => "v2_3",
         Version::V2_4 => "v2_4",
         Version::V2_5 | Version::V2_5_1 => "v2_5",
         Version::V2_6 => "v2_6",
         Version::V2_7 | Version::V2_7_1 => "v2_7",
+        // v2.8.x uses v2.7 schemas as a base (until v2.8 schemas are added)
+        Version::V2_8 | Version::V2_8_1 | Version::V2_8_2 => "v2_7",
     };
 
     // Construct the schema key
@@ -311,12 +315,15 @@ pub fn list_available_schemas(version: Version) -> Vec<String> {
     ];
 
     // All versions currently have the same set of schemas
+    // Legacy versions (2.1, 2.2) use v2.3 schemas, v2.8.x uses v2.7 schemas
     match version {
+        Version::V2_1 | Version::V2_2 => schemas,
         Version::V2_3 | Version::V2_3_1 => schemas,
         Version::V2_4 => schemas,
         Version::V2_5 | Version::V2_5_1 => schemas,
         Version::V2_6 => schemas,
         Version::V2_7 | Version::V2_7_1 => schemas,
+        Version::V2_8 | Version::V2_8_1 | Version::V2_8_2 => schemas,
     }
 }
 

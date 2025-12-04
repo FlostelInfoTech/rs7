@@ -3,6 +3,7 @@
 //! This module provides builder patterns for creating HL7 messages of various types.
 //! Builders help ensure messages are created with required fields and proper structure.
 
+pub mod ack;
 pub mod adt;
 pub mod batch;
 pub mod dft;

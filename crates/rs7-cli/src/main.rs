@@ -193,6 +193,8 @@ fn validate_command(input: &str, version: Option<&str>, format: &str) -> Result<
     // Get version from parameter or message
     let hl7_version = if let Some(v) = version {
         match v {
+            "2.1" => Version::V2_1,
+            "2.2" => Version::V2_2,
             "2.3" => Version::V2_3,
             "2.3.1" => Version::V2_3_1,
             "2.4" => Version::V2_4,
@@ -201,6 +203,9 @@ fn validate_command(input: &str, version: Option<&str>, format: &str) -> Result<
             "2.6" => Version::V2_6,
             "2.7" => Version::V2_7,
             "2.7.1" => Version::V2_7_1,
+            "2.8" => Version::V2_8,
+            "2.8.1" => Version::V2_8_1,
+            "2.8.2" => Version::V2_8_2,
             _ => message.get_version().unwrap_or(Version::V2_5),
         }
     } else {

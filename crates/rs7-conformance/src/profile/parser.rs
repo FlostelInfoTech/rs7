@@ -105,6 +105,8 @@ impl ProfileParser {
     /// Parse version string to Version enum
     fn parse_version(version_str: &str) -> Result<Version> {
         match version_str {
+            "2.1" => Ok(Version::V2_1),
+            "2.2" => Ok(Version::V2_2),
             "2.3" => Ok(Version::V2_3),
             "2.3.1" => Ok(Version::V2_3_1),
             "2.4" => Ok(Version::V2_4),
@@ -113,8 +115,11 @@ impl ProfileParser {
             "2.6" => Ok(Version::V2_6),
             "2.7" => Ok(Version::V2_7),
             "2.7.1" => Ok(Version::V2_7_1),
+            "2.8" => Ok(Version::V2_8),
+            "2.8.1" => Ok(Version::V2_8_1),
+            "2.8.2" => Ok(Version::V2_8_2),
             _ => Err(ConformanceError::ParseError(format!(
-                "Unsupported HL7 version: {} (supported: 2.3 through 2.7.1)",
+                "Unsupported HL7 version: {} (supported: 2.1 through 2.8.2)",
                 version_str
             ))),
         }
@@ -326,8 +331,15 @@ mod tests {
             Version::V2_3
         );
         assert!(ProfileParser::parse_version("9.9").is_err());
-        assert!(ProfileParser::parse_version("2.1").is_err()); // Not supported
-        assert!(ProfileParser::parse_version("2.8").is_err()); // Not supported
+        // v2.1 and v2.8 are now supported
+        assert_eq!(
+            ProfileParser::parse_version("2.1").unwrap(),
+            Version::V2_1
+        );
+        assert_eq!(
+            ProfileParser::parse_version("2.8").unwrap(),
+            Version::V2_8
+        );
     }
 
     #[test]

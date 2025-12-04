@@ -54,6 +54,24 @@ impl Message {
         self.segments.iter().filter(|s| s.id == id).collect()
     }
 
+    /// Get the first segment with a specific ID
+    ///
+    /// Alias for `get_segment_by_id` for convenience
+    pub fn get_segment_by_id(&self, id: &str) -> Option<&Segment> {
+        self.segments.iter().find(|s| s.id == id)
+    }
+
+    /// Get a mutable reference to the first segment with a specific ID
+    pub fn get_segment_by_id_mut(&mut self, id: &str) -> Option<&mut Segment> {
+        self.segments.iter_mut().find(|s| s.id == id)
+    }
+
+    /// Convenience alias for get_segment_by_id
+    #[inline]
+    pub fn segment(&self, id: &str) -> Option<&Segment> {
+        self.get_segment_by_id(id)
+    }
+
     /// Get the MSH segment (should be the first segment)
     pub fn get_msh(&self) -> Option<&Segment> {
         self.segments.first().filter(|s| s.id == "MSH")
