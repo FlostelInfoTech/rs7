@@ -4,6 +4,7 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 
 ## Features
 
+- **🖥️ GUI Test Panel**: Interactive workbench for parsing, building, validating, and testing HL7 messages
 - **✅ Parsing and Serialization**: Parse HL7 pipe-delimited messages into structured data and serialize back
 - **✅ Multiple HL7 Versions**: Support for HL7 v2.3, v2.4, v2.5, v2.6, v2.7, and v2.7.1
 - **✅ Message Validation**: Validate messages against HL7 standards with detailed error reporting
@@ -49,6 +50,44 @@ rs7/
 ├── rs7-testpanel     - GUI test panel for interactive message testing
 └── rs7-macros        - Derive macros for message types
 ```
+
+## RS7 Test Panel - Interactive HL7 Workbench
+
+**The RS7 Test Panel is a powerful GUI application** for working with HL7 v2.x messages. It provides an all-in-one environment for healthcare integration developers and analysts.
+
+### Features
+
+| Tab | Description |
+|-----|-------------|
+| **Parser** | Parse HL7 messages with syntax highlighting and structured tree view |
+| **Builder** | Create HL7 messages using intuitive form-based builders (ADT, ORU, ORM, SIU, etc.) |
+| **Terser** | Extract and modify fields using path notation (e.g., `PID-5-1`, `OBX(2)-5`) |
+| **Validator** | Validate messages against HL7 schemas with detailed error reporting |
+| **MLLP** | Send/receive messages via MLLP protocol with built-in server and client |
+| **FHIR** | Convert HL7 v2 messages to FHIR R4 resources with live preview |
+| **XML** | Convert between HL7 pipe-delimited (ER7) and XML formats |
+
+### Quick Start
+
+```bash
+# Run directly from source
+cargo run -p rs7-testpanel --release
+
+# Or install globally
+cargo install --path crates/rs7-testpanel
+rs7-testpanel
+```
+
+### Sample Messages
+
+The Test Panel includes built-in sample messages for quick testing:
+- ADT A01 (Admit), A02 (Transfer), A03 (Discharge), A08 (Update)
+- ORU R01 (Lab Results with multiple OBX segments)
+- ORM O01 (Orders)
+- SIU S12 (Scheduling)
+- And more...
+
+---
 
 ## Quick Start
 
