@@ -3,6 +3,7 @@
 use egui::{self, RichText, Color32};
 use egui_extras::{StripBuilder, Size};
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
 use crate::samples;
 
 /// State shared between UI and async tasks
@@ -12,6 +13,7 @@ struct MllpState {
     server_messages: Vec<LogEntry>,
     client_response: Option<String>,
     client_error: Option<String>,
+    client_sending: bool,
     connection_count: usize,
 }
 
@@ -23,7 +25,6 @@ struct LogEntry {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-#[allow(dead_code)]
 enum Direction {
     Received,
     Sent,
@@ -47,6 +48,9 @@ pub struct MllpTab {
 
     // Runtime handle for async operations
     runtime: Option<tokio::runtime::Runtime>,
+
+    // Server shutdown signal
+    server_shutdown: Arc<AtomicBool>,
 }
 
 impl Default for MllpTab {
@@ -60,6 +64,7 @@ impl Default for MllpTab {
             server_auto_ack: true,
             state: Arc::new(Mutex::new(MllpState::default())),
             runtime: tokio::runtime::Runtime::new().ok(),
+            server_shutdown: Arc::new(AtomicBool::new(false)),
         }
     }
 }
@@ -106,17 +111,31 @@ impl MllpTab {
         ui.label("Send messages to an MLLP server.");
         ui.add_space(10.0);
 
+        let is_sending = {
+            let state = self.state.lock().unwrap();
+            state.client_sending
+        };
+
         // Connection settings
         ui.horizontal(|ui| {
             ui.label("Host:");
-            ui.add_sized([150.0, 20.0], egui::TextEdit::singleline(&mut self.client_host));
+            ui.add_enabled(
+                !is_sending,
+                egui::TextEdit::singleline(&mut self.client_host).desired_width(150.0)
+            );
             ui.label("Port:");
-            ui.add_sized([60.0, 20.0], egui::TextEdit::singleline(&mut self.client_port));
+            ui.add_enabled(
+                !is_sending,
+                egui::TextEdit::singleline(&mut self.client_port).desired_width(60.0)
+            );
         });
 
         ui.horizontal(|ui| {
             ui.label("Timeout (sec):");
-            ui.add(egui::DragValue::new(&mut self.client_timeout).range(1..=120));
+            ui.add_enabled(
+                !is_sending,
+                egui::DragValue::new(&mut self.client_timeout).range(1..=120)
+            );
         });
 
         ui.add_space(10.0);
@@ -143,7 +162,8 @@ impl MllpTab {
             .auto_shrink([false, false])
             .max_height(250.0)
             .show(ui, |ui| {
-                ui.add(
+                ui.add_enabled(
+                    !is_sending,
                     egui::TextEdit::multiline(&mut self.client_message)
                         .font(egui::TextStyle::Monospace)
                         .desired_width(f32::INFINITY)
@@ -155,9 +175,16 @@ impl MllpTab {
         ui.add_space(10.0);
 
         // Send button
-        if ui.button(RichText::new("Send Message").strong()).clicked() {
-            self.send_message(ctx.clone());
-        }
+        ui.horizontal(|ui| {
+            if is_sending {
+                ui.spinner();
+                ui.label("Sending...");
+            } else {
+                if ui.button(RichText::new("Send Message").strong()).clicked() {
+                    self.send_message(ctx.clone());
+                }
+            }
+        });
 
         ui.add_space(10.0);
 
@@ -248,10 +275,10 @@ impl MllpTab {
                 let state = self.state.lock().unwrap();
                 for entry in &state.server_messages {
                     let (prefix, color) = match entry.direction {
-                        Direction::Received => ("", Color32::GREEN),
-                        Direction::Sent => ("", Color32::LIGHT_BLUE),
-                        Direction::Info => ("", Color32::YELLOW),
-                        Direction::Error => ("", Color32::RED),
+                        Direction::Received => ("IN  ", Color32::GREEN),
+                        Direction::Sent => ("OUT ", Color32::LIGHT_BLUE),
+                        Direction::Info => ("INFO", Color32::YELLOW),
+                        Direction::Error => ("ERR ", Color32::RED),
                     };
 
                     ui.horizontal(|ui| {
@@ -275,31 +302,35 @@ impl MllpTab {
         let host = self.client_host.clone();
         let port = self.client_port.clone();
         let message = self.client_message.clone();
-        let _timeout = self.client_timeout;
+        let timeout_secs = self.client_timeout;
         let state = self.state.clone();
 
-        // Clear previous results
+        // Clear previous results and set sending state
         {
             let mut s = state.lock().unwrap();
             s.client_response = None;
             s.client_error = None;
+            s.client_sending = true;
         }
 
         if let Some(ref runtime) = self.runtime {
             runtime.spawn(async move {
                 let addr = format!("{}:{}", host, port);
 
-                // For now, show a simulated response since we can't easily
-                // do async networking in the immediate mode GUI
-                {
-                    let mut s = state.lock().unwrap();
-                    s.client_error = Some(format!(
-                        "MLLP client functionality requires running against an actual MLLP server.\n\
-                        Would connect to: {}\n\
-                        Message size: {} bytes\n\n\
-                        To test, start the MLLP server tab first, then send.",
-                        addr, message.len()
-                    ));
+                // Use actual MLLP client
+                match send_mllp_message(&addr, &message, timeout_secs).await {
+                    Ok(response) => {
+                        let mut s = state.lock().unwrap();
+                        s.client_response = Some(response);
+                        s.client_error = None;
+                        s.client_sending = false;
+                    }
+                    Err(e) => {
+                        let mut s = state.lock().unwrap();
+                        s.client_error = Some(e);
+                        s.client_response = None;
+                        s.client_sending = false;
+                    }
                 }
 
                 ctx.request_repaint();
@@ -308,9 +339,25 @@ impl MllpTab {
     }
 
     fn start_server(&mut self, ctx: egui::Context) {
-        let port = self.server_port.clone();
+        let port: u16 = match self.server_port.parse() {
+            Ok(p) => p,
+            Err(_) => {
+                let mut state = self.state.lock().unwrap();
+                state.server_messages.push(LogEntry {
+                    timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+                    direction: Direction::Error,
+                    message: "Invalid port number".to_string(),
+                });
+                return;
+            }
+        };
+
         let state = self.state.clone();
         let auto_ack = self.server_auto_ack;
+        let shutdown = self.server_shutdown.clone();
+
+        // Reset shutdown flag
+        shutdown.store(false, Ordering::SeqCst);
 
         {
             let mut s = state.lock().unwrap();
@@ -318,40 +365,345 @@ impl MllpTab {
             s.server_messages.push(LogEntry {
                 timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
                 direction: Direction::Info,
-                message: format!("Server starting on port {}...", port),
+                message: format!("Starting server on port {}...", port),
             });
         }
 
         if let Some(ref runtime) = self.runtime {
             runtime.spawn(async move {
-                // Note: In a real implementation, we would start the actual MLLP server here
-                // For the demo, we show a message about how to use it
-                {
-                    let mut s = state.lock().unwrap();
-                    s.server_messages.push(LogEntry {
-                        timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
-                        direction: Direction::Info,
-                        message: format!(
-                            "Server simulation active on port {}.\n\
-                            In production, use rs7_mllp::MllpServer for real networking.\n\
-                            Auto-ACK: {}",
-                            port,
-                            if auto_ack { "enabled" } else { "disabled" }
-                        ),
-                    });
-                }
-                ctx.request_repaint();
+                run_mllp_server(port, auto_ack, state, shutdown, ctx).await;
             });
         }
     }
 
     fn stop_server(&mut self) {
+        // Signal shutdown
+        self.server_shutdown.store(true, Ordering::SeqCst);
+
         let mut state = self.state.lock().unwrap();
         state.server_running = false;
         state.server_messages.push(LogEntry {
             timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
             direction: Direction::Info,
-            message: "Server stopped.".to_string(),
+            message: "Server stopping...".to_string(),
         });
     }
+}
+
+/// Send a message via MLLP to the specified address
+async fn send_mllp_message(addr: &str, message: &str, timeout_secs: u32) -> Result<String, String> {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::TcpStream;
+    use tokio::time::{timeout, Duration};
+
+    // MLLP frame bytes
+    const VT: u8 = 0x0B;  // Start byte
+    const FS: u8 = 0x1C;  // End byte 1
+    const CR: u8 = 0x0D;  // End byte 2
+
+    // Normalize line endings to CR
+    let normalized_message = message.replace("\r\n", "\r").replace('\n', "\r");
+
+    // Frame the message with MLLP envelope
+    let mut framed = Vec::with_capacity(normalized_message.len() + 3);
+    framed.push(VT);
+    framed.extend_from_slice(normalized_message.as_bytes());
+    framed.push(FS);
+    framed.push(CR);
+
+    // Connect with timeout
+    let connect_timeout = Duration::from_secs(timeout_secs as u64);
+    let stream = timeout(connect_timeout, TcpStream::connect(addr))
+        .await
+        .map_err(|_| format!("Connection timeout after {} seconds", timeout_secs))?
+        .map_err(|e| format!("Connection failed: {}", e))?;
+
+    let (mut reader, mut writer) = stream.into_split();
+
+    // Send the framed message
+    writer.write_all(&framed).await
+        .map_err(|e| format!("Failed to send message: {}", e))?;
+    writer.flush().await
+        .map_err(|e| format!("Failed to flush: {}", e))?;
+
+    // Read response with timeout
+    let read_timeout = Duration::from_secs(timeout_secs as u64);
+    let mut response_buf = Vec::new();
+    let mut buf = [0u8; 4096];
+
+    let response = timeout(read_timeout, async {
+        loop {
+            let n = reader.read(&mut buf).await?;
+            if n == 0 {
+                break;
+            }
+            response_buf.extend_from_slice(&buf[..n]);
+
+            // Check for end of MLLP frame
+            if response_buf.len() >= 2
+                && response_buf[response_buf.len() - 2] == FS
+                && response_buf[response_buf.len() - 1] == CR
+            {
+                break;
+            }
+        }
+        Ok::<_, std::io::Error>(())
+    }).await
+        .map_err(|_| format!("Read timeout after {} seconds", timeout_secs))?
+        .map_err(|e| format!("Failed to read response: {}", e));
+
+    if let Err(e) = response {
+        return Err(e);
+    }
+
+    // Extract message from MLLP frame
+    if response_buf.is_empty() {
+        return Err("Empty response from server".to_string());
+    }
+
+    // Remove MLLP framing
+    let start = if response_buf.first() == Some(&VT) { 1 } else { 0 };
+    let end = if response_buf.len() >= 2
+        && response_buf[response_buf.len() - 2] == FS
+        && response_buf[response_buf.len() - 1] == CR
+    {
+        response_buf.len() - 2
+    } else {
+        response_buf.len()
+    };
+
+    String::from_utf8(response_buf[start..end].to_vec())
+        .map_err(|_| "Invalid UTF-8 in response".to_string())
+}
+
+/// Run the MLLP server
+async fn run_mllp_server(
+    port: u16,
+    auto_ack: bool,
+    state: Arc<Mutex<MllpState>>,
+    shutdown: Arc<AtomicBool>,
+    ctx: egui::Context,
+) {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::TcpListener;
+    use tokio::time::{timeout, Duration};
+
+    // MLLP frame bytes
+    const VT: u8 = 0x0B;
+    const FS: u8 = 0x1C;
+    const CR: u8 = 0x0D;
+
+    let addr = format!("0.0.0.0:{}", port);
+
+    let listener = match TcpListener::bind(&addr).await {
+        Ok(l) => l,
+        Err(e) => {
+            let mut s = state.lock().unwrap();
+            s.server_running = false;
+            s.server_messages.push(LogEntry {
+                timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+                direction: Direction::Error,
+                message: format!("Failed to bind to port {}: {}", port, e),
+            });
+            ctx.request_repaint();
+            return;
+        }
+    };
+
+    {
+        let mut s = state.lock().unwrap();
+        s.server_messages.push(LogEntry {
+            timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+            direction: Direction::Info,
+            message: format!("Server listening on port {}", port),
+        });
+    }
+    ctx.request_repaint();
+
+    // Accept connections until shutdown
+    loop {
+        if shutdown.load(Ordering::SeqCst) {
+            let mut s = state.lock().unwrap();
+            s.server_messages.push(LogEntry {
+                timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+                direction: Direction::Info,
+                message: "Server stopped".to_string(),
+            });
+            s.server_running = false;
+            ctx.request_repaint();
+            break;
+        }
+
+        // Accept with short timeout to allow checking shutdown flag
+        let accept_result = timeout(Duration::from_millis(100), listener.accept()).await;
+
+        match accept_result {
+            Ok(Ok((mut stream, peer_addr))) => {
+                {
+                    let mut s = state.lock().unwrap();
+                    s.connection_count += 1;
+                    s.server_messages.push(LogEntry {
+                        timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+                        direction: Direction::Info,
+                        message: format!("Connection from {}", peer_addr),
+                    });
+                }
+                ctx.request_repaint();
+
+                // Handle this connection
+                let state_clone = state.clone();
+                let ctx_clone = ctx.clone();
+                let shutdown_clone = shutdown.clone();
+
+                tokio::spawn(async move {
+                    let mut buf = [0u8; 8192];
+                    let mut message_buf = Vec::new();
+
+                    loop {
+                        if shutdown_clone.load(Ordering::SeqCst) {
+                            break;
+                        }
+
+                        // Read with timeout
+                        let read_result = timeout(Duration::from_secs(30), stream.read(&mut buf)).await;
+
+                        match read_result {
+                            Ok(Ok(0)) => {
+                                // Connection closed
+                                {
+                                    let mut s = state_clone.lock().unwrap();
+                                    s.server_messages.push(LogEntry {
+                                        timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+                                        direction: Direction::Info,
+                                        message: format!("Connection from {} closed", peer_addr),
+                                    });
+                                }
+                                ctx_clone.request_repaint();
+                                break;
+                            }
+                            Ok(Ok(n)) => {
+                                message_buf.extend_from_slice(&buf[..n]);
+
+                                // Check for complete MLLP frame
+                                if message_buf.len() >= 2
+                                    && message_buf[message_buf.len() - 2] == FS
+                                    && message_buf[message_buf.len() - 1] == CR
+                                {
+                                    // Extract message
+                                    let start = if message_buf.first() == Some(&VT) { 1 } else { 0 };
+                                    let end = message_buf.len() - 2;
+
+                                    if let Ok(hl7_message) = String::from_utf8(message_buf[start..end].to_vec()) {
+                                        // Log received message
+                                        {
+                                            let mut s = state_clone.lock().unwrap();
+                                            s.server_messages.push(LogEntry {
+                                                timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+                                                direction: Direction::Received,
+                                                message: hl7_message.clone(),
+                                            });
+                                        }
+                                        ctx_clone.request_repaint();
+
+                                        // Send ACK if auto_ack is enabled
+                                        if auto_ack {
+                                            let ack = generate_ack(&hl7_message);
+                                            let mut ack_frame = Vec::new();
+                                            ack_frame.push(VT);
+                                            ack_frame.extend_from_slice(ack.as_bytes());
+                                            ack_frame.push(FS);
+                                            ack_frame.push(CR);
+
+                                            if let Err(e) = stream.write_all(&ack_frame).await {
+                                                let mut s = state_clone.lock().unwrap();
+                                                s.server_messages.push(LogEntry {
+                                                    timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+                                                    direction: Direction::Error,
+                                                    message: format!("Failed to send ACK: {}", e),
+                                                });
+                                            } else {
+                                                let mut s = state_clone.lock().unwrap();
+                                                s.server_messages.push(LogEntry {
+                                                    timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+                                                    direction: Direction::Sent,
+                                                    message: ack,
+                                                });
+                                            }
+                                            ctx_clone.request_repaint();
+                                        }
+                                    }
+
+                                    // Clear buffer for next message
+                                    message_buf.clear();
+                                }
+                            }
+                            Ok(Err(e)) => {
+                                let mut s = state_clone.lock().unwrap();
+                                s.server_messages.push(LogEntry {
+                                    timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+                                    direction: Direction::Error,
+                                    message: format!("Read error from {}: {}", peer_addr, e),
+                                });
+                                ctx_clone.request_repaint();
+                                break;
+                            }
+                            Err(_) => {
+                                // Timeout, just continue to check shutdown flag
+                            }
+                        }
+                    }
+                });
+            }
+            Ok(Err(e)) => {
+                let mut s = state.lock().unwrap();
+                s.server_messages.push(LogEntry {
+                    timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+                    direction: Direction::Error,
+                    message: format!("Accept error: {}", e),
+                });
+                ctx.request_repaint();
+            }
+            Err(_) => {
+                // Timeout, continue to check shutdown flag
+            }
+        }
+    }
+}
+
+/// Generate an ACK response for an HL7 message
+fn generate_ack(message: &str) -> String {
+    // Parse the message to extract MSH fields
+    let lines: Vec<&str> = message.split('\r').collect();
+    let msh = lines.first().unwrap_or(&"");
+
+    // Default values
+    let mut control_id = "UNKNOWN";
+    let mut version = "2.5";
+    let mut sending_app = "";
+    let mut sending_fac = "";
+    let mut receiving_app = "";
+    let mut receiving_fac = "";
+
+    // Parse MSH fields (assuming | delimiter)
+    if msh.starts_with("MSH|") {
+        let fields: Vec<&str> = msh.split('|').collect();
+        if fields.len() > 9 {
+            sending_app = fields.get(2).unwrap_or(&"");
+            sending_fac = fields.get(3).unwrap_or(&"");
+            receiving_app = fields.get(4).unwrap_or(&"");
+            receiving_fac = fields.get(5).unwrap_or(&"");
+            control_id = fields.get(9).unwrap_or(&"UNKNOWN");
+        }
+        if fields.len() > 11 {
+            version = fields.get(11).unwrap_or(&"2.5");
+        }
+    }
+
+    let timestamp = chrono::Utc::now().format("%Y%m%d%H%M%S");
+
+    format!(
+        "MSH|^~\\&|{}|{}|{}|{}|{}||ACK|ACK{}|P|{}\rMSA|AA|{}|Message accepted\r",
+        receiving_app, receiving_fac, sending_app, sending_fac,
+        timestamp, timestamp, version, control_id
+    )
 }
