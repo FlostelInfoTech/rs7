@@ -2,7 +2,7 @@
 
 use crate::delimiters::Delimiters;
 use crate::error::{Error, Result};
-use crate::field::Field;
+use crate::field::{Component, Field, Repetition};
 
 /// An HL7 segment
 ///
@@ -84,6 +84,51 @@ impl Segment {
     /// Set a field from a simple string value
     pub fn set_field_value<S: Into<String>>(&mut self, index: usize, value: S) -> Result<()> {
         self.set_field(index, Field::from_value(value))
+    }
+
+    /// Set a component value within a field
+    ///
+    /// # Arguments
+    /// * `field_index` - 1-based field index
+    /// * `rep_index` - 0-based repetition index
+    /// * `comp_index` - 0-based component index
+    /// * `value` - The value to set
+    pub fn set_component<S: Into<String>>(
+        &mut self,
+        field_index: usize,
+        rep_index: usize,
+        comp_index: usize,
+        value: S,
+    ) -> Result<()> {
+        if field_index == 0 {
+            return Err(Error::InvalidFieldAccess(
+                "Cannot set field 0 (segment ID)".to_string(),
+            ));
+        }
+
+        let field_idx = field_index - 1;
+
+        // Extend fields if necessary
+        while self.fields.len() <= field_idx {
+            self.fields.push(Field::new());
+        }
+
+        let field = &mut self.fields[field_idx];
+
+        // Extend repetitions if necessary
+        while field.repetitions.len() <= rep_index {
+            field.repetitions.push(Repetition::new());
+        }
+
+        let repetition = &mut field.repetitions[rep_index];
+
+        // Extend components if necessary
+        while repetition.components.len() <= comp_index {
+            repetition.components.push(Component::new());
+        }
+
+        repetition.components[comp_index] = Component::from_value(value);
+        Ok(())
     }
 
     /// Get the number of fields (excluding segment ID)
