@@ -1,0 +1,43 @@
+[package]
+name = "rs7-testpanel"
+version = "0.20.1"
+edition = "2021"
+authors = ["RS7 Contributors"]
+description = "GUI Test Panel for RS7 HL7 Library - demonstrates parsing, building, validation, MLLP, and FHIR conversion"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/your-org/rs7"
+keywords = ["hl7", "healthcare", "gui", "test-panel"]
+categories = ["gui", "development-tools::testing"]
+
+[dependencies]
+# GUI framework
+eframe = "0.30"
+egui = "0.30"
+egui_extras = { version = "0.30", features = ["syntect"] }
+
+# RS7 crates
+rs7-core = { path = "../rs7-core" }
+rs7-parser = { path = "../rs7-parser" }
+rs7-terser = { path = "../rs7-terser" }
+rs7-validator = { path = "../rs7-validator" }
+rs7-fhir = { path = "../rs7-fhir" }
+rs7-mllp = { path = "../rs7-mllp" }
+rs7-xml = { path = "../rs7-xml" }
+
+# Async runtime for MLLP
+tokio = { version = "1.0", features = ["rt-multi-thread", "sync", "time", "macros"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Utilities
+chrono = "0.4"
+uuid = { version = "1.0", features = ["v4"] }
+
+[features]
+default = []
+
+[[bin]]
+name = "rs7-testpanel"
+path = "src/main.rs"

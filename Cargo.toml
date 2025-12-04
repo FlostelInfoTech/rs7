@@ -11,12 +11,24 @@ keywords.workspace = true
 categories.workspace = true
 description = "Comprehensive HL7 v2.x library for Rust - parsing, validation, and MLLP support"
 
+[features]
+default = []
+tls = ["rs7-mllp/tls"]
+
 [dependencies]
 rs7-core.workspace = true
 rs7-parser.workspace = true
 rs7-validator.workspace = true
 rs7-terser.workspace = true
 rs7-mllp.workspace = true
+
+[[example]]
+name = "mllp_tls_server"
+required-features = ["tls"]
+
+[[example]]
+name = "mllp_tls_client"
+required-features = ["tls"]
 
 [dev-dependencies]
 chrono.workspace = true
@@ -42,6 +54,7 @@ members = [
     "crates/rs7-wasm",
     "crates/rs7-cli",
     "crates/rs7-xml",
+    "crates/rs7-testpanel",
 ]
 resolver = "2"
 
