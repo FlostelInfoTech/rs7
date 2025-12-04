@@ -1,6 +1,7 @@
 //! XML Tab - Convert between ER7 and XML formats
 
 use egui::{self, RichText, Color32};
+use egui_extras::{StripBuilder, Size};
 use rs7_parser::parse_message;
 use rs7_xml::{XmlEncoder, XmlDecoder, XmlEncoderConfig};
 use crate::samples;
@@ -129,56 +130,76 @@ impl XmlTab {
 
         ui.add_space(10.0);
 
-        ui.columns(2, |columns| {
-            // Left: ER7 Input
-            columns[0].group(|ui| {
-                ui.heading("ER7 Input (Pipe-delimited)");
+        // Get available height for full-height panels
+        let available_height = ui.available_height();
 
-                egui::ScrollArea::vertical()
-                    .id_salt("er7_input")
-                    .max_height(520.0)
-                    .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::multiline(&mut self.er7_input)
-                                .font(egui::TextStyle::Monospace)
-                                .desired_width(f32::INFINITY)
-                                .desired_rows(30)
-                                .code_editor()
-                        );
-                    });
+        StripBuilder::new(ui)
+            .size(Size::relative(0.5).at_least(350.0))
+            .size(Size::remainder().at_least(350.0))
+            .horizontal(|mut strip| {
+                // Left: ER7 Input
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+
+                            ui.heading("ER7 Input (Pipe-delimited)");
+
+                            egui::ScrollArea::vertical()
+                                .id_salt("er7_input")
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    ui.add(
+                                        egui::TextEdit::multiline(&mut self.er7_input)
+                                            .font(egui::TextStyle::Monospace)
+                                            .desired_width(f32::INFINITY)
+                                            .desired_rows(30)
+                                            .code_editor()
+                                    );
+                                });
+                        });
+                });
+
+                // Right: XML Output
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+
+                            ui.heading("XML Output");
+
+                            if let Some(ref error) = self.er7_to_xml_error {
+                                ui.colored_label(Color32::RED, format!("Error: {}", error));
+                            }
+
+                            if !self.xml_output.is_empty() {
+                                ui.horizontal(|ui| {
+                                    if ui.button("Copy to Clipboard").clicked() {
+                                        ui.ctx().copy_text(self.xml_output.clone());
+                                    }
+                                    ui.label(format!("Size: {} bytes", self.xml_output.len()));
+                                });
+                            }
+
+                            egui::ScrollArea::vertical()
+                                .id_salt("xml_output")
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    ui.add(
+                                        egui::TextEdit::multiline(&mut self.xml_output.as_str())
+                                            .font(egui::TextStyle::Monospace)
+                                            .desired_width(f32::INFINITY)
+                                            .desired_rows(30)
+                                            .interactive(false)
+                                    );
+                                });
+                        });
+                });
             });
-
-            // Right: XML Output
-            columns[1].group(|ui| {
-                ui.heading("XML Output");
-
-                if let Some(ref error) = self.er7_to_xml_error {
-                    ui.colored_label(Color32::RED, format!("Error: {}", error));
-                }
-
-                if !self.xml_output.is_empty() {
-                    ui.horizontal(|ui| {
-                        if ui.button("Copy to Clipboard").clicked() {
-                            ui.output_mut(|o| o.copied_text = self.xml_output.clone());
-                        }
-                        ui.label(format!("Size: {} bytes", self.xml_output.len()));
-                    });
-                }
-
-                egui::ScrollArea::vertical()
-                    .id_salt("xml_output")
-                    .max_height(480.0)
-                    .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::multiline(&mut self.xml_output.as_str())
-                                .font(egui::TextStyle::Monospace)
-                                .desired_width(f32::INFINITY)
-                                .desired_rows(30)
-                                .interactive(false)
-                        );
-                    });
-            });
-        });
     }
 
     fn xml_to_er7_ui(&mut self, ui: &mut egui::Ui) {
@@ -195,56 +216,76 @@ impl XmlTab {
 
         ui.add_space(10.0);
 
-        ui.columns(2, |columns| {
-            // Left: XML Input
-            columns[0].group(|ui| {
-                ui.heading("XML Input");
+        // Get available height for full-height panels
+        let available_height = ui.available_height();
 
-                egui::ScrollArea::vertical()
-                    .id_salt("xml_input")
-                    .max_height(520.0)
-                    .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::multiline(&mut self.xml_input)
-                                .font(egui::TextStyle::Monospace)
-                                .desired_width(f32::INFINITY)
-                                .desired_rows(30)
-                                .code_editor()
-                        );
-                    });
+        StripBuilder::new(ui)
+            .size(Size::relative(0.5).at_least(350.0))
+            .size(Size::remainder().at_least(350.0))
+            .horizontal(|mut strip| {
+                // Left: XML Input
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+
+                            ui.heading("XML Input");
+
+                            egui::ScrollArea::vertical()
+                                .id_salt("xml_input")
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    ui.add(
+                                        egui::TextEdit::multiline(&mut self.xml_input)
+                                            .font(egui::TextStyle::Monospace)
+                                            .desired_width(f32::INFINITY)
+                                            .desired_rows(30)
+                                            .code_editor()
+                                    );
+                                });
+                        });
+                });
+
+                // Right: ER7 Output
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+
+                            ui.heading("ER7 Output (Pipe-delimited)");
+
+                            if let Some(ref error) = self.xml_to_er7_error {
+                                ui.colored_label(Color32::RED, format!("Error: {}", error));
+                            }
+
+                            if !self.er7_output.is_empty() {
+                                ui.horizontal(|ui| {
+                                    if ui.button("Copy to Clipboard").clicked() {
+                                        ui.ctx().copy_text(self.er7_output.clone());
+                                    }
+                                    ui.label(format!("Size: {} bytes", self.er7_output.len()));
+                                });
+                            }
+
+                            egui::ScrollArea::vertical()
+                                .id_salt("er7_output")
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    ui.add(
+                                        egui::TextEdit::multiline(&mut self.er7_output.as_str())
+                                            .font(egui::TextStyle::Monospace)
+                                            .desired_width(f32::INFINITY)
+                                            .desired_rows(30)
+                                            .interactive(false)
+                                    );
+                                });
+                        });
+                });
             });
-
-            // Right: ER7 Output
-            columns[1].group(|ui| {
-                ui.heading("ER7 Output (Pipe-delimited)");
-
-                if let Some(ref error) = self.xml_to_er7_error {
-                    ui.colored_label(Color32::RED, format!("Error: {}", error));
-                }
-
-                if !self.er7_output.is_empty() {
-                    ui.horizontal(|ui| {
-                        if ui.button("Copy to Clipboard").clicked() {
-                            ui.output_mut(|o| o.copied_text = self.er7_output.clone());
-                        }
-                        ui.label(format!("Size: {} bytes", self.er7_output.len()));
-                    });
-                }
-
-                egui::ScrollArea::vertical()
-                    .id_salt("er7_output")
-                    .max_height(480.0)
-                    .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::multiline(&mut self.er7_output.as_str())
-                                .font(egui::TextStyle::Monospace)
-                                .desired_width(f32::INFINITY)
-                                .desired_rows(30)
-                                .interactive(false)
-                        );
-                    });
-            });
-        });
     }
 
     fn convert_to_xml(&mut self) {

@@ -1,6 +1,7 @@
 //! FHIR Tab - Convert between HL7 v2.x and FHIR R4
 
 use egui::{self, RichText, Color32};
+use egui_extras::{StripBuilder, Size};
 use rs7_parser::parse_message;
 #[allow(unused_imports)]
 use rs7_core::Message;
@@ -207,53 +208,73 @@ impl FhirTab {
 
         ui.add_space(10.0);
 
-        ui.columns(2, |columns| {
-            // Left: HL7 Input
-            columns[0].group(|ui| {
-                ui.heading("HL7 v2.x Input");
+        // Get available height for full-height panels
+        let available_height = ui.available_height();
 
-                egui::ScrollArea::vertical()
-                    .id_salt("fhir_hl7_input")
-                    .max_height(500.0)
-                    .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::multiline(&mut self.hl7_input)
-                                .font(egui::TextStyle::Monospace)
-                                .desired_width(f32::INFINITY)
-                                .desired_rows(28)
-                                .code_editor()
-                        );
-                    });
+        StripBuilder::new(ui)
+            .size(Size::relative(0.5).at_least(350.0))
+            .size(Size::remainder().at_least(350.0))
+            .horizontal(|mut strip| {
+                // Left: HL7 Input
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+
+                            ui.heading("HL7 v2.x Input");
+
+                            egui::ScrollArea::vertical()
+                                .id_salt("fhir_hl7_input")
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    ui.add(
+                                        egui::TextEdit::multiline(&mut self.hl7_input)
+                                            .font(egui::TextStyle::Monospace)
+                                            .desired_width(f32::INFINITY)
+                                            .desired_rows(28)
+                                            .code_editor()
+                                    );
+                                });
+                        });
+                });
+
+                // Right: FHIR Output
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+
+                            ui.heading("FHIR R4 Output (JSON)");
+
+                            if let Some(ref error) = self.hl7_to_fhir_error {
+                                ui.colored_label(Color32::RED, format!("Error: {}", error));
+                            }
+
+                            if !self.fhir_output.is_empty() {
+                                if ui.button("Copy to Clipboard").clicked() {
+                                    ui.ctx().copy_text(self.fhir_output.clone());
+                                }
+                            }
+
+                            egui::ScrollArea::vertical()
+                                .id_salt("fhir_output")
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    ui.add(
+                                        egui::TextEdit::multiline(&mut self.fhir_output.as_str())
+                                            .font(egui::TextStyle::Monospace)
+                                            .desired_width(f32::INFINITY)
+                                            .desired_rows(28)
+                                            .interactive(false)
+                                    );
+                                });
+                        });
+                });
             });
-
-            // Right: FHIR Output
-            columns[1].group(|ui| {
-                ui.heading("FHIR R4 Output (JSON)");
-
-                if let Some(ref error) = self.hl7_to_fhir_error {
-                    ui.colored_label(Color32::RED, format!("Error: {}", error));
-                }
-
-                if !self.fhir_output.is_empty() {
-                    if ui.button("Copy to Clipboard").clicked() {
-                        ui.output_mut(|o| o.copied_text = self.fhir_output.clone());
-                    }
-                }
-
-                egui::ScrollArea::vertical()
-                    .id_salt("fhir_output")
-                    .max_height(480.0)
-                    .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::multiline(&mut self.fhir_output.as_str())
-                                .font(egui::TextStyle::Monospace)
-                                .desired_width(f32::INFINITY)
-                                .desired_rows(28)
-                                .interactive(false)
-                        );
-                    });
-            });
-        });
     }
 
     fn fhir_to_hl7_ui(&mut self, ui: &mut egui::Ui) {
@@ -281,53 +302,73 @@ impl FhirTab {
 
         ui.add_space(10.0);
 
-        ui.columns(2, |columns| {
-            // Left: FHIR Input
-            columns[0].group(|ui| {
-                ui.heading("FHIR R4 Input (JSON)");
+        // Get available height for full-height panels
+        let available_height = ui.available_height();
 
-                egui::ScrollArea::vertical()
-                    .id_salt("fhir_input")
-                    .max_height(500.0)
-                    .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::multiline(&mut self.fhir_input)
-                                .font(egui::TextStyle::Monospace)
-                                .desired_width(f32::INFINITY)
-                                .desired_rows(28)
-                                .code_editor()
-                        );
-                    });
+        StripBuilder::new(ui)
+            .size(Size::relative(0.5).at_least(350.0))
+            .size(Size::remainder().at_least(350.0))
+            .horizontal(|mut strip| {
+                // Left: FHIR Input
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+
+                            ui.heading("FHIR R4 Input (JSON)");
+
+                            egui::ScrollArea::vertical()
+                                .id_salt("fhir_input")
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    ui.add(
+                                        egui::TextEdit::multiline(&mut self.fhir_input)
+                                            .font(egui::TextStyle::Monospace)
+                                            .desired_width(f32::INFINITY)
+                                            .desired_rows(28)
+                                            .code_editor()
+                                    );
+                                });
+                        });
+                });
+
+                // Right: HL7 Output
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+
+                            ui.heading("HL7 v2.x Output");
+
+                            if let Some(ref error) = self.fhir_to_hl7_error {
+                                ui.colored_label(Color32::RED, format!("Error: {}", error));
+                            }
+
+                            if !self.hl7_output.is_empty() {
+                                if ui.button("Copy to Clipboard").clicked() {
+                                    ui.ctx().copy_text(self.hl7_output.clone());
+                                }
+                            }
+
+                            egui::ScrollArea::vertical()
+                                .id_salt("hl7_output")
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    ui.add(
+                                        egui::TextEdit::multiline(&mut self.hl7_output.as_str())
+                                            .font(egui::TextStyle::Monospace)
+                                            .desired_width(f32::INFINITY)
+                                            .desired_rows(28)
+                                            .interactive(false)
+                                    );
+                                });
+                        });
+                });
             });
-
-            // Right: HL7 Output
-            columns[1].group(|ui| {
-                ui.heading("HL7 v2.x Output");
-
-                if let Some(ref error) = self.fhir_to_hl7_error {
-                    ui.colored_label(Color32::RED, format!("Error: {}", error));
-                }
-
-                if !self.hl7_output.is_empty() {
-                    if ui.button("Copy to Clipboard").clicked() {
-                        ui.output_mut(|o| o.copied_text = self.hl7_output.clone());
-                    }
-                }
-
-                egui::ScrollArea::vertical()
-                    .id_salt("hl7_output")
-                    .max_height(480.0)
-                    .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::multiline(&mut self.hl7_output.as_str())
-                                .font(egui::TextStyle::Monospace)
-                                .desired_width(f32::INFINITY)
-                                .desired_rows(28)
-                                .interactive(false)
-                        );
-                    });
-            });
-        });
     }
 
     fn convert_to_fhir(&mut self) {

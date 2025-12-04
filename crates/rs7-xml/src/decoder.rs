@@ -3,6 +3,7 @@
 //! Decodes HL7 XML format into rs7_core::Message structures.
 
 use crate::error::{XmlError, XmlResult};
+use quick_xml::escape::unescape;
 use quick_xml::events::Event;
 use quick_xml::Reader;
 use rs7_core::field::{Component, Field, Repetition};
@@ -169,7 +170,8 @@ impl XmlDecoder {
                     depth -= 1;
                 }
                 Ok(Event::Text(e)) => {
-                    let text = e.unescape().map_err(|e| XmlError::XmlParse(e.to_string()))?;
+                    let raw = String::from_utf8_lossy(&e);
+                    let text = unescape(&raw).map_err(|e| XmlError::XmlParse(e.to_string()))?;
                     let trimmed = if self.config.strip_whitespace {
                         text.trim()
                     } else {

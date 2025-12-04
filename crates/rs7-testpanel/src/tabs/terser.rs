@@ -1,10 +1,12 @@
 //! Terser Tab - Field access using path notation
 
 use egui::{self, RichText, Color32};
+use egui_extras::{StripBuilder, Size};
 use rs7_parser::parse_message;
 use rs7_core::Message;
 use rs7_terser::{Terser, TerserMut};
 use crate::samples;
+use crate::utils::{format_message_tree, TreeNode};
 
 pub struct TerserTab {
     input_message: String,
@@ -16,6 +18,8 @@ pub struct TerserTab {
     path_history: Vec<(String, String)>,
     new_value: String,
     show_help: bool,
+    tree_nodes: Vec<TreeNode>,
+    show_tree_view: bool,
 }
 
 impl Default for TerserTab {
@@ -30,6 +34,8 @@ impl Default for TerserTab {
             path_history: Vec::new(),
             new_value: String::new(),
             show_help: true,
+            tree_nodes: Vec::new(),
+            show_tree_view: false,
         }
     }
 }
@@ -97,104 +103,143 @@ impl TerserTab {
 
         ui.add_space(10.0);
 
-        ui.columns(2, |columns| {
-            // Left: Message input
-            columns[0].group(|ui| {
-                ui.heading("Message");
+        // Get available height for full-height panels
+        let available_height = ui.available_height();
 
-                if let Some(ref error) = self.parse_error {
-                    ui.colored_label(Color32::RED, error);
-                } else if self.parsed_message.is_some() {
-                    ui.colored_label(Color32::GREEN, "Message parsed successfully");
-                }
-
-                egui::ScrollArea::vertical()
-                    .id_salt("terser_input")
-                    .max_height(500.0)
-                    .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::multiline(&mut self.input_message)
-                                .font(egui::TextStyle::Monospace)
-                                .desired_width(f32::INFINITY)
-                                .desired_rows(25)
-                                .code_editor()
-                        );
-                    });
-            });
-
-            // Right: Results and help
-            columns[1].group(|ui| {
-                // Result display
-                ui.heading("Result");
-
-                if let Some(ref error) = self.terser_error {
-                    ui.colored_label(Color32::RED, format!("Error: {}", error));
-                } else if let Some(ref result) = self.terser_result {
-                    ui.horizontal(|ui| {
-                        ui.label(RichText::new("Path:").strong());
-                        ui.label(&self.terser_path);
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label(RichText::new("Value:").strong());
-                        if result.is_empty() {
-                            ui.colored_label(Color32::GRAY, "(empty)");
-                        } else {
-                            ui.code(result);
-                        }
-                    });
-                }
-
-                ui.add_space(10.0);
-                ui.separator();
-
-                // History
-                ui.heading("Query History");
-                egui::ScrollArea::vertical()
-                    .id_salt("terser_history")
-                    .max_height(150.0)
-                    .show(ui, |ui| {
-                        for (path, value) in self.path_history.iter().rev().take(10) {
-                            ui.horizontal(|ui| {
-                                if ui.small_button("").clicked() {
-                                    self.terser_path = path.clone();
-                                }
-                                ui.label(format!("{} = {}", path, if value.is_empty() { "(empty)" } else { value }));
-                            });
-                        }
-                    });
-
-                if self.show_help {
-                    ui.add_space(10.0);
-                    ui.separator();
-
-                    // Help section
-                    ui.heading("Path Notation Help");
-                    egui::ScrollArea::vertical()
-                        .id_salt("terser_help")
-                        .max_height(200.0)
+        StripBuilder::new(ui)
+            .size(Size::relative(0.5).at_least(350.0))
+            .size(Size::remainder().at_least(350.0))
+            .horizontal(|mut strip| {
+                // Left: Message input
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
                         .show(ui, |ui| {
-                            ui.label(RichText::new("Basic Syntax:").strong());
-                            ui.label("SEGMENT-FIELD[-COMPONENT[-SUBCOMPONENT]]");
-                            ui.add_space(5.0);
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
 
-                            ui.label(RichText::new("Examples:").strong());
-                            ui.code("PID-5       # Field 5 of PID");
-                            ui.code("PID-5-1     # Component 1 of field 5");
-                            ui.code("PID-5-1-2   # Subcomponent 2");
-                            ui.code("OBX(1)-5    # Field 5 of first OBX");
-                            ui.code("OBX(2)-5    # Field 5 of second OBX");
-                            ui.code("PID-11(0)-1 # First repetition, component 1");
-                            ui.add_space(5.0);
+                            ui.horizontal(|ui| {
+                                ui.heading("Message");
+                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                    ui.checkbox(&mut self.show_tree_view, "Tree View");
+                                });
+                            });
 
-                            ui.label(RichText::new("Notes:").strong());
-                            ui.label("- Segment indexing is 1-based: OBX(1), OBX(2)");
-                            ui.label("- Field indexing follows HL7 spec");
-                            ui.label("- MSH-1 is the field separator");
-                            ui.label("- Repetition indexing is 0-based");
+                            if let Some(ref error) = self.parse_error {
+                                ui.colored_label(Color32::RED, error);
+                            } else if self.parsed_message.is_some() {
+                                ui.colored_label(Color32::GREEN, "Message parsed successfully");
+                            }
+
+                            if self.show_tree_view && !self.tree_nodes.is_empty() {
+                                // Show tree view
+                                egui::ScrollArea::vertical()
+                                    .id_salt("terser_tree")
+                                    .auto_shrink([false, false])
+                                    .show(ui, |ui| {
+                                        for node in &mut self.tree_nodes {
+                                            node.ui(ui);
+                                        }
+                                    });
+                            } else {
+                                // Show raw input
+                                egui::ScrollArea::vertical()
+                                    .id_salt("terser_input")
+                                    .auto_shrink([false, false])
+                                    .show(ui, |ui| {
+                                        ui.add(
+                                            egui::TextEdit::multiline(&mut self.input_message)
+                                                .font(egui::TextStyle::Monospace)
+                                                .desired_width(f32::INFINITY)
+                                                .desired_rows(25)
+                                                .code_editor()
+                                        );
+                                    });
+                            }
                         });
-                }
+                });
+
+                // Right: Results and help
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+
+                            // Result display
+                            ui.heading("Result");
+
+                            if let Some(ref error) = self.terser_error {
+                                ui.colored_label(Color32::RED, format!("Error: {}", error));
+                            } else if let Some(ref result) = self.terser_result {
+                                ui.horizontal(|ui| {
+                                    ui.label(RichText::new("Path:").strong());
+                                    ui.label(&self.terser_path);
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.label(RichText::new("Value:").strong());
+                                    if result.is_empty() {
+                                        ui.colored_label(Color32::GRAY, "(empty)");
+                                    } else {
+                                        ui.code(result);
+                                    }
+                                });
+                            }
+
+                            ui.add_space(10.0);
+                            ui.separator();
+
+                            // History
+                            ui.heading("Query History");
+                            egui::ScrollArea::vertical()
+                                .id_salt("terser_history")
+                                .auto_shrink([false, false])
+                                .max_height(150.0)
+                                .show(ui, |ui| {
+                                    for (path, value) in self.path_history.iter().rev().take(10) {
+                                        ui.horizontal(|ui| {
+                                            if ui.small_button("").clicked() {
+                                                self.terser_path = path.clone();
+                                            }
+                                            ui.label(format!("{} = {}", path, if value.is_empty() { "(empty)" } else { value }));
+                                        });
+                                    }
+                                });
+
+                            if self.show_help {
+                                ui.add_space(10.0);
+                                ui.separator();
+
+                                // Help section
+                                ui.heading("Path Notation Help");
+                                egui::ScrollArea::vertical()
+                                    .id_salt("terser_help")
+                                    .auto_shrink([false, false])
+                                    .show(ui, |ui| {
+                                        ui.label(RichText::new("Basic Syntax:").strong());
+                                        ui.label("SEGMENT-FIELD[-COMPONENT[-SUBCOMPONENT]]");
+                                        ui.add_space(5.0);
+
+                                        ui.label(RichText::new("Examples:").strong());
+                                        ui.code("PID-5       # Field 5 of PID");
+                                        ui.code("PID-5-1     # Component 1 of field 5");
+                                        ui.code("PID-5-1-2   # Subcomponent 2");
+                                        ui.code("OBX(1)-5    # Field 5 of first OBX");
+                                        ui.code("OBX(2)-5    # Field 5 of second OBX");
+                                        ui.code("PID-11(0)-1 # First repetition, component 1");
+                                        ui.add_space(5.0);
+
+                                        ui.label(RichText::new("Notes:").strong());
+                                        ui.label("- Segment indexing is 1-based: OBX(1), OBX(2)");
+                                        ui.label("- Field indexing follows HL7 spec");
+                                        ui.label("- MSH-1 is the field separator");
+                                        ui.label("- Repetition indexing is 0-based");
+                                    });
+                            }
+                        });
+                });
             });
-        });
     }
 
     fn parse_message(&mut self) {
@@ -204,12 +249,14 @@ impl TerserTab {
 
         match parse_message(&normalized) {
             Ok(message) => {
+                self.tree_nodes = format_message_tree(&message);
                 self.parsed_message = Some(message);
                 self.parse_error = None;
             }
             Err(e) => {
                 self.parse_error = Some(format!("{}", e));
                 self.parsed_message = None;
+                self.tree_nodes.clear();
             }
         }
     }

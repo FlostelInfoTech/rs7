@@ -3,7 +3,7 @@
 use super::{generate_control_id, MessageBuilder};
 use crate::{
     error::Result,
-    field::Field,
+    field::{Component, Field, Repetition},
     message::Message,
     segment::Segment,
     Version,
@@ -270,10 +270,14 @@ impl AdtA01Builder {
         // PID-4: Alternate Patient ID - empty
         pid.add_field(Field::from_value(""));
 
-        // PID-5: Patient Name
+        // PID-5: Patient Name (XPN data type - proper component structure)
         if let Some((family, given)) = &self.patient_name {
-            let name = format!("{}^{}", family, given);
-            pid.add_field(Field::from_value(&name));
+            let mut field = Field::new();
+            let mut rep = Repetition::new();
+            rep.add_component(Component::from_value(family));
+            rep.add_component(Component::from_value(given));
+            field.add_repetition(rep);
+            pid.add_field(field);
         } else {
             pid.add_field(Field::from_value(""));
         }
@@ -295,8 +299,20 @@ impl AdtA01Builder {
             pv1.add_field(Field::from_value("1")); // PV1-1: Set ID
             pv1.add_field(Field::from_value(class)); // PV1-2: Patient Class
 
-            // PV1-3: Assigned Patient Location
-            pv1.add_field(Field::from_value(self.assigned_location.as_deref().unwrap_or("")));
+            // PV1-3: Assigned Patient Location (PL data type - proper component structure)
+            if let Some(location) = &self.assigned_location {
+                // Parse location if it contains ^ separator, otherwise treat as single value
+                let parts: Vec<&str> = location.split('^').collect();
+                let mut field = Field::new();
+                let mut rep = Repetition::new();
+                for part in parts {
+                    rep.add_component(Component::from_value(part));
+                }
+                field.add_repetition(rep);
+                pv1.add_field(field);
+            } else {
+                pv1.add_field(Field::from_value(""));
+            }
 
             // PV1-4: Admission Type - empty for now
             pv1.add_field(Field::from_value(""));
@@ -307,8 +323,20 @@ impl AdtA01Builder {
             // PV1-6: Prior Patient Location - empty
             pv1.add_field(Field::from_value(""));
 
-            // PV1-7: Attending Doctor
-            pv1.add_field(Field::from_value(self.attending_doctor.as_deref().unwrap_or("")));
+            // PV1-7: Attending Doctor (XCN data type - proper component structure)
+            if let Some(doctor) = &self.attending_doctor {
+                // Parse doctor if it contains ^ separator, otherwise treat as single value
+                let parts: Vec<&str> = doctor.split('^').collect();
+                let mut field = Field::new();
+                let mut rep = Repetition::new();
+                for part in parts {
+                    rep.add_component(Component::from_value(part));
+                }
+                field.add_repetition(rep);
+                pv1.add_field(field);
+            } else {
+                pv1.add_field(Field::from_value(""));
+            }
 
             self.base.message.add_segment(pv1);
         }

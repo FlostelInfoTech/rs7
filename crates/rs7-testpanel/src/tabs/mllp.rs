@@ -1,6 +1,7 @@
 //! MLLP Tab - Send and receive messages via MLLP protocol
 
 use egui::{self, RichText, Color32};
+use egui_extras::{StripBuilder, Size};
 use std::sync::{Arc, Mutex};
 use crate::samples;
 
@@ -69,17 +70,35 @@ impl MllpTab {
         ui.label("Send and receive HL7 messages using the MLLP (Minimal Lower Layer Protocol).");
         ui.add_space(10.0);
 
-        ui.columns(2, |columns| {
-            // Left: Client
-            columns[0].group(|ui| {
-                self.client_ui(ui, ctx);
-            });
+        // Get available height for full-height panels
+        let available_height = ui.available_height();
 
-            // Right: Server
-            columns[1].group(|ui| {
-                self.server_ui(ui, ctx);
+        StripBuilder::new(ui)
+            .size(Size::relative(0.5).at_least(350.0))
+            .size(Size::remainder().at_least(350.0))
+            .horizontal(|mut strip| {
+                // Left: Client
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+                            self.client_ui(ui, ctx);
+                        });
+                });
+
+                // Right: Server
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+                            self.server_ui(ui, ctx);
+                        });
+                });
             });
-        });
     }
 
     fn client_ui(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
@@ -121,6 +140,7 @@ impl MllpTab {
         ui.label("Message to Send:");
         egui::ScrollArea::vertical()
             .id_salt("client_message")
+            .auto_shrink([false, false])
             .max_height(250.0)
             .show(ui, |ui| {
                 ui.add(
@@ -151,6 +171,7 @@ impl MllpTab {
             ui.label(RichText::new("Response:").strong());
             egui::ScrollArea::vertical()
                 .id_salt("client_response")
+                .auto_shrink([false, false])
                 .max_height(150.0)
                 .show(ui, |ui| {
                     ui.add(
@@ -221,7 +242,7 @@ impl MllpTab {
 
         egui::ScrollArea::vertical()
             .id_salt("server_log")
-            .max_height(350.0)
+            .auto_shrink([false, false])
             .stick_to_bottom(true)
             .show(ui, |ui| {
                 let state = self.state.lock().unwrap();

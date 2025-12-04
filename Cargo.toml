@@ -59,12 +59,12 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.19.0"
+version = "0.21.0"
 edition = "2024"
-authors = ["Alex Shao <alex.fanshao@gmail.com>"]
+authors = ["Alex SHAO Fan <alex.shaofan@flostel.com>"]
 license = "MIT OR Apache-2.0"
-repository = "https://gitlab.flostel.com/alexshao/rs7"
-homepage = "https://gitlab.flostel.com/alexshao/rs7"
+repository = "https://github.com/flostelinfotech/rs7"
+homepage = "https://github.com/flostelinfotech/rs7"
 documentation = "https://docs.rs/rs7"
 keywords = ["hl7", "healthcare", "medical", "interoperability"]
 categories = ["parsing", "network-programming", "healthcare"]
@@ -74,11 +74,11 @@ categories = ["parsing", "network-programming", "healthcare"]
 nom = "8.0.0"
 
 # Async runtime for MLLP
-tokio = { version = "1.40", features = ["full"] }
+tokio = { version = "1.48", features = ["full"] }
 tokio-util = { version = "0.7", features = ["codec"] }
 
 # Error handling
-thiserror = "2.0.17"
+thiserror = "2.0"
 anyhow = "1.0"
 
 # Serialization for specs
@@ -87,7 +87,7 @@ serde_json = "1.0"
 serde_yaml = "0.9"
 
 # Regex
-regex = "1.11"
+regex = "1.12"
 
 # Date/Time handling
 chrono = "0.4"
@@ -96,7 +96,7 @@ chrono = "0.4"
 wasm-bindgen = "0.2"
 
 # Testing
-proptest = "1.5"
+proptest = "1.9"
 
 # Procedural macros
 proc-macro2 = "1.0"
@@ -104,28 +104,28 @@ quote = "1.0"
 syn = { version = "2.0", features = ["full"] }
 
 # Synchronization
-once_cell = "1.19"
+once_cell = "1.21"
 
 # Macro utilities
 paste = "1.0"
 
 # Internal crates
-rs7-core = { version = "0.19.0", path = "crates/rs7-core" }
-rs7-parser = { version = "0.19.0", path = "crates/rs7-parser" }
-rs7-validator = { version = "0.19.0", path = "crates/rs7-validator" }
-rs7-terser = { version = "0.19.0", path = "crates/rs7-terser" }
-rs7-transform = { version = "0.19.0", path = "crates/rs7-transform" }
-rs7-templates = { version = "0.19.0", path = "crates/rs7-templates" }
-rs7-mllp = { version = "0.19.0", path = "crates/rs7-mllp" }
-rs7-http = { version = "0.19.0", path = "crates/rs7-http" }
-rs7-fhir = { version = "0.19.0", path = "crates/rs7-fhir" }
-rs7-custom = { version = "0.19.0", path = "crates/rs7-custom" }
-rs7-conformance = { version = "0.19.0", path = "crates/rs7-conformance" }
-rs7-macros = { version = "0.19.0", path = "crates/rs7-macros" }
-rs7-xml = { version = "0.19.0", path = "crates/rs7-xml" }
+rs7-core = { version = "0.21.0", path = "crates/rs7-core" }
+rs7-parser = { version = "0.21.0", path = "crates/rs7-parser" }
+rs7-validator = { version = "0.21.0", path = "crates/rs7-validator" }
+rs7-terser = { version = "0.21.0", path = "crates/rs7-terser" }
+rs7-transform = { version = "0.21.0", path = "crates/rs7-transform" }
+rs7-templates = { version = "0.21.0", path = "crates/rs7-templates" }
+rs7-mllp = { version = "0.21.0", path = "crates/rs7-mllp" }
+rs7-http = { version = "0.21.0", path = "crates/rs7-http" }
+rs7-fhir = { version = "0.21.0", path = "crates/rs7-fhir" }
+rs7-custom = { version = "0.21.0", path = "crates/rs7-custom" }
+rs7-conformance = { version = "0.21.0", path = "crates/rs7-conformance" }
+rs7-macros = { version = "0.21.0", path = "crates/rs7-macros" }
+rs7-xml = { version = "0.21.0", path = "crates/rs7-xml" }
 
 # XML
-quick-xml = "0.36"
+quick-xml = "0.38"
 
 [profile.release]
 opt-level = 3

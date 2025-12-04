@@ -67,15 +67,63 @@ RXA|0|1|20240115|20240115|141^INFLUENZA, SEASONAL^CVX|0.5|mL^milliliter^UCUM||00
 RXR|C28161^INTRAMUSCULAR^NCIT|LD^LEFT DELTOID^HL70163
 OBX|1|CE|64994-7^VACCINE FUNDING SOURCE^LN||VXC50^PUBLIC^CDCPHINVS||||||F|||20240115"#;
 
+/// Sample MDM^T02 (Document Notification) message
+pub const MDM_T02: &str = r#"MSH|^~\&|DOC_SYSTEM|HOSPITAL|EMR|HOSPITAL|20240215100000||MDM^T02^MDM_T02|DOC00001|P|2.5.1|||AL|NE
+EVN|T02|20240215100000
+PID|1||PAT007^^^HOSPITAL^MR||WILSON^ROBERT^M||19650422|M|||789 PINE ST^^RIVERSIDE^CA^92501
+PV1|1|I|MED^402^A||||1122334455^CHEN^DAVID^L^^^MD
+TXA|1|DS^DISCHARGE SUMMARY^LOINC|TX|||20240215095500|||||1122334455^CHEN^DAVID^L^^^MD||DOC123456|||||AU^AUTHENTICATED
+OBX|1|ED|11502-2^LABORATORY REPORT^LN||^TEXT^TX^A^DISCHARGE SUMMARY CONTENT HERE||||||F"#;
+
+/// Sample RDE^O11 (Pharmacy Order) message
+pub const RDE_O11: &str = r#"MSH|^~\&|PHARMACY|HOSPITAL|RX_SYSTEM|PHARMACY|20240115140000||RDE^O11^RDE_O11|RX00001|P|2.5.1|||AL|NE
+PID|1||PAT005^^^HOSPITAL^MR||ANDERSON^MARY^J||19550810|F
+PV1|1|I|MED^301^B||||5566778899^PATEL^KUMAR^R^^^MD
+ORC|NW|RX001||||||^^^20240115150000^^R||20240115140000|RXTECH01||5566778899^PATEL^KUMAR^R^^^MD
+RXE|1^QD^DAILY^^^R|00001234^LISINOPRIL 10MG^NDC|10||MG||TAKE ONE TABLET BY MOUTH DAILY|G||30|EA|||||||||||||||5566778899^PATEL^KUMAR^R^^^MD
+RXR|PO^ORAL^HL70162"#;
+
+/// Sample BAR^P01 (Add Patient Account) message
+pub const BAR_P01: &str = r#"MSH|^~\&|BILLING|HOSPITAL|FIN_SYSTEM|HOSPITAL|20240115150000||BAR^P01^BAR_P01|BAR00001|P|2.5.1|||AL|NE
+EVN|P01|20240115150000
+PID|1||PAT006^^^HOSPITAL^MR||MARTINEZ^CARLOS^A||19780303|M|||321 OAK BLVD^^LAKESIDE^TX^75001
+PV1|1|I|ICU^501^A||||7788990011^WILLIAMS^SARAH^K^^^MD||SUR||||1
+DG1|1||I21.0^ST ELEVATION MYOCARDIAL INFARCTION^ICD10|||A
+GT1|1||MARTINEZ^CARLOS^A||321 OAK BLVD^^LAKESIDE^TX^75001|^PRN^PH^^1^555^6667777||19780303|M||P||||||||||||||SELF
+IN1|1|AETNA001|AETNA HEALTH|PO BOX 5678^^PHOENIX^AZ^85001|||GRP67890|||||||||||MARTINEZ^CARLOS^A|SELF|19780303|||||||||||||||POLICY123456"#;
+
+/// Sample ADT^A08 (Update Patient) message
+pub const ADT_A08: &str = r#"MSH|^~\&|REG_SYSTEM|HOSPITAL|EMR|HOSPITAL|20240116080000||ADT^A08^ADT_A08|UPD00001|P|2.5.1|||AL|NE
+EVN|A08|20240116080000
+PID|1||12345678^^^HOSPITAL^MR||DOE^JOHN^A^JR||19800115|M|||456 NEW ADDRESS^^SPRINGFIELD^IL^62702^USA||^PRN^PH^^1^555^9998888
+PV1|1|I|MED^201^A||||1234567890^SMITH^JOHN^D^^^MD"#;
+
+/// Sample ADT^A03 (Discharge) message
+pub const ADT_A03: &str = r#"MSH|^~\&|REG_SYSTEM|HOSPITAL|EMR|HOSPITAL|20240120160000||ADT^A03^ADT_A03|DIS00001|P|2.5.1|||AL|NE
+EVN|A03|20240120160000
+PID|1||12345678^^^HOSPITAL^MR||DOE^JOHN^A^JR||19800115|M|||123 MAIN ST^^SPRINGFIELD^IL^62701
+PV1|1|I|MED^201^A||||1234567890^SMITH^JOHN^D^^^MD||||||||||1|||1234567890^SMITH^JOHN^D^^^MD|||||||||||||||||||20240115120000|20240120160000
+DG1|1||J18.9^PNEUMONIA, UNSPECIFIED^ICD10|||F"#;
+
+/// Sample QRY^A19 (Patient Query) message
+pub const QRY_A19: &str = r#"MSH|^~\&|QUERY_APP|HOSPITAL|EMR|HOSPITAL|20240115110000||QRY^A19^QRY_A19|QRY00001|P|2.5.1|||AL|NE
+QRD|20240115110000|R|I|QRY00001|||25^RD|12345678^^^HOSPITAL^MR|DEM^DEMOGRAPHICS"#;
+
 /// Get all sample messages with descriptions
 pub fn get_sample_messages() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         ("ADT^A01 - Patient Admit", "Full admission message with demographics, visit info, vitals, allergies, diagnosis, and insurance", ADT_A01),
+        ("ADT^A03 - Discharge", "Patient discharge message with diagnosis", ADT_A03),
+        ("ADT^A08 - Update Patient", "Patient information update message", ADT_A08),
         ("ORU^R01 - Lab Results", "Laboratory results message with metabolic panel and liver function tests", ORU_R01),
         ("ORM^O01 - Lab Order", "Order message requesting comprehensive metabolic panel and CBC", ORM_O01),
-        ("SIU^S12 - Schedule Appointment", "Scheduling message for booking a follow-up appointment", SIU_S12),
+        ("SIU^S12 - Schedule", "Scheduling message for booking a follow-up appointment", SIU_S12),
         ("VXU^V04 - Immunization", "Vaccination record message for pediatric flu shot", VXU_V04),
+        ("MDM^T02 - Document", "Medical document notification with discharge summary", MDM_T02),
+        ("RDE^O11 - Pharmacy", "Pharmacy/medication order message", RDE_O11),
+        ("BAR^P01 - Billing", "Add patient account with insurance and guarantor", BAR_P01),
+        ("QRY^A19 - Query", "Patient demographics query request", QRY_A19),
         ("ACK - Acknowledgment", "Simple acknowledgment response message", ACK),
-        ("Minimal Message", "Simple minimal ADT message for basic testing", MINIMAL),
+        ("Minimal", "Simple minimal ADT message for basic testing", MINIMAL),
     ]
 }

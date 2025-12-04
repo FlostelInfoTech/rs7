@@ -57,7 +57,7 @@ pub fn parse_message(input: &str) -> Result<Message> {
 /// }
 /// ```
 pub fn parse_message_with_config(input: &str, config: &ParserConfig) -> Result<ParseResult<Message>> {
-    use config::{ParseWarning, WarningCode};
+    // Note: ParseWarning and WarningCode are available in config module for future warning support
 
     let mut warnings = Vec::new();
 
@@ -89,7 +89,7 @@ pub fn parse_message_with_config(input: &str, config: &ParserConfig) -> Result<P
     segment_strings = segment_strings
         .into_iter()
         .enumerate()
-        .filter_map(|(idx, s)| {
+        .filter_map(|(_idx, s)| {
             let s = if config.strip_trailing_whitespace {
                 s.trim_end()
             } else {
@@ -339,6 +339,7 @@ fn parse_field_with_config(input: &str, delimiters: &Delimiters, config: &Parser
 /// MSH format: MSH|^~\&|...
 /// Position 3 is field separator (|)
 /// Positions 4-7 are encoding characters (^~\&)
+#[allow(dead_code)]
 fn extract_delimiters(input: &str) -> Result<Delimiters> {
     if !input.starts_with("MSH") {
         return Err(Error::parse("Message must start with MSH segment"));
@@ -358,6 +359,7 @@ fn extract_delimiters(input: &str) -> Result<Delimiters> {
 }
 
 /// Parse MSH segment (special handling)
+#[allow(dead_code)]
 fn parse_msh_segment(input: &str, delimiters: &Delimiters) -> Result<Segment> {
     if !input.starts_with("MSH") {
         return Err(Error::parse("MSH segment must start with 'MSH'"));

@@ -520,6 +520,7 @@ impl MllpPool {
 
 /// A guard that automatically returns the connection to the pool when dropped
 pub struct PooledConnectionGuard<'a> {
+    #[allow(dead_code)]
     pool: &'a MllpPool,
     conn: Option<PooledConnection>,
 }

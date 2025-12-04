@@ -21,7 +21,7 @@ pub mod siu;
 use crate::{
     delimiters::Delimiters,
     error::Result,
-    field::Field,
+    field::{Component, Field, Repetition},
     message::Message,
     segment::Segment,
     types::format_timestamp,
@@ -89,9 +89,13 @@ impl MessageBuilder {
         // MSH-8: Security (empty)
         msh.add_field(Field::from_value(""));
 
-        // MSH-9: Message Type
-        let msg_type = format!("{}^{}", self.message_type, self.trigger_event);
-        msh.add_field(Field::from_value(&msg_type));
+        // MSH-9: Message Type (MSG data type - proper component structure)
+        let mut msg_type_field = Field::new();
+        let mut rep = Repetition::new();
+        rep.add_component(Component::from_value(&self.message_type));
+        rep.add_component(Component::from_value(&self.trigger_event));
+        msg_type_field.add_repetition(rep);
+        msh.add_field(msg_type_field);
 
         // MSH-10: Message Control ID
         msh.add_field(Field::from_value(control_id));

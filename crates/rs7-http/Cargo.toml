@@ -18,11 +18,11 @@ tokio.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
 
-# HTTP framework (latest versions - January 2025)
+# HTTP framework (latest versions - December 2025)
 axum = "0.8"
 tower = "0.5"
 tower-http = { version = "0.6", features = ["trace", "cors", "compression-gzip"] }
-hyper = { version = "1.6", features = ["full"] }
+hyper = { version = "1.8", features = ["full"] }
 hyper-util = { version = "0.1", features = ["tokio", "client-legacy", "http1", "http2"] }
 
 # HTTP client
@@ -43,7 +43,7 @@ webpki-roots = { version = "1.0", optional = true }
 
 # Security - Authentication (optional)
 base64 = { version = "0.22", optional = true }
-jsonwebtoken = { version = "10.1", features = ["aws_lc_rs"], optional = true }
+jsonwebtoken = { version = "10.2", features = ["aws_lc_rs"], optional = true }
 
 # Protocol - WebSocket (optional)
 tokio-tungstenite = { version = "0.28", optional = true }
@@ -57,7 +57,7 @@ rand = { version = "0.9", optional = true }
 # Operational - Logging (optional)
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"], optional = true }
-uuid = { version = "1.11", features = ["v4"], optional = true }
+uuid = { version = "1.19", features = ["v4"], optional = true }
 rs7-terser = { workspace = true, optional = true }
 
 # Operational - Metrics (optional)

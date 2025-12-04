@@ -38,4 +38,4 @@ testing = []
 full = ["tls", "testing"]
 
 [dev-dependencies]
-uuid = { version = "1.11", features = ["v4"] }
+uuid = { version = "1.19", features = ["v4"] }

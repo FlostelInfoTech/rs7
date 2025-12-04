@@ -2,8 +2,8 @@
 
 use crate::error::{ConformanceError, Result};
 use crate::profile::{
-    Cardinality, ConditionalUsage, ConformanceProfile, FieldProfile, MessageProfile,
-    ProfileMetadata, SegmentProfile, Usage,
+    Cardinality, ConformanceProfile, FieldProfile, MessageProfile, ProfileMetadata, SegmentProfile,
+    Usage,
 };
 use quick_xml::events::Event;
 use quick_xml::Reader;
@@ -319,6 +319,7 @@ impl ProfileParser {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ConditionalUsage;
 
     #[test]
     fn test_parse_version() {

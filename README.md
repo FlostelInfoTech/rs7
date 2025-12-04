@@ -43,8 +43,10 @@ rs7/
 ├── rs7-mllp          - MLLP protocol for network transmission (intra-organization)
 ├── rs7-http          - HTTP transport for inter-organization communication
 ├── rs7-fhir          - HL7 v2 to FHIR R4 conversion
+├── rs7-xml           - XML encoding/decoding for HL7 messages
 ├── rs7-wasm          - WebAssembly bindings for JavaScript/TypeScript
 ├── rs7-cli           - Command-line interface for message analysis
+├── rs7-testpanel     - GUI test panel for interactive message testing
 └── rs7-macros        - Derive macros for message types
 ```
 
@@ -54,16 +56,16 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rs7-core = "0.19"
-rs7-parser = "0.19"
-rs7-terser = "0.19"
-rs7-validator = "0.19"
-rs7-conformance = "0.19"   # Optional: for conformance profile validation
-rs7-orchestration = "0.19" # Optional: for routing, filtering, and workflows
-rs7-custom = "0.19"        # Optional: for custom Z-segment support
-rs7-mllp = "0.19"          # Optional: for MLLP network support with TLS/mTLS (intra-organization)
-rs7-http = "0.19"          # Optional: for HTTP transport with TLS/mTLS (inter-organization)
-rs7-fhir = "0.19"          # Optional: for FHIR conversion (12 converters)
+rs7-core = "0.21"
+rs7-parser = "0.21"
+rs7-terser = "0.21"
+rs7-validator = "0.21"
+rs7-conformance = "0.21"   # Optional: for conformance profile validation
+rs7-orchestration = "0.21" # Optional: for routing, filtering, and workflows
+rs7-custom = "0.21"        # Optional: for custom Z-segment support
+rs7-mllp = "0.21"          # Optional: for MLLP network support with TLS/mTLS (intra-organization)
+rs7-http = "0.21"          # Optional: for HTTP transport with TLS/mTLS (inter-organization)
+rs7-fhir = "0.21"          # Optional: for FHIR conversion (12 converters)
 ```
 
 ### Parsing a Message

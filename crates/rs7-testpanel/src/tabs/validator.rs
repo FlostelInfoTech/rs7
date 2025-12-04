@@ -1,10 +1,12 @@
 //! Validator Tab - Validate HL7 messages against schemas
 
 use egui::{self, RichText, Color32};
+use egui_extras::{StripBuilder, Size};
 use rs7_parser::parse_message;
 use rs7_core::{Message, Version};
 use rs7_validator::Validator;
 use crate::samples;
+use crate::utils::{format_message_tree, TreeNode};
 
 pub struct ValidatorTab {
     input_message: String,
@@ -15,6 +17,8 @@ pub struct ValidatorTab {
     validate_datatypes: bool,
     validate_schema: bool,
     is_valid: Option<bool>,
+    tree_nodes: Vec<TreeNode>,
+    show_tree_view: bool,
 }
 
 #[derive(Clone)]
@@ -83,6 +87,8 @@ impl Default for ValidatorTab {
             validate_datatypes: true,
             validate_schema: true,
             is_valid: None,
+            tree_nodes: Vec::new(),
+            show_tree_view: true,
         }
     }
 }
@@ -128,103 +134,142 @@ impl ValidatorTab {
 
         ui.add_space(10.0);
 
-        ui.columns(2, |columns| {
-            // Left: Message input
-            columns[0].group(|ui| {
-                ui.heading("Message Input");
+        // Get available height for full-height panels
+        let available_height = ui.available_height();
 
-                if let Some(ref error) = self.parse_error {
-                    ui.colored_label(Color32::RED, format!("Parse Error: {}", error));
-                }
+        StripBuilder::new(ui)
+            .size(Size::relative(0.5).at_least(350.0))
+            .size(Size::remainder().at_least(350.0))
+            .horizontal(|mut strip| {
+                // Left: Message input
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
 
-                egui::ScrollArea::vertical()
-                    .id_salt("validator_input")
-                    .max_height(550.0)
-                    .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::multiline(&mut self.input_message)
-                                .font(egui::TextStyle::Monospace)
-                                .desired_width(f32::INFINITY)
-                                .desired_rows(30)
-                                .code_editor()
-                        );
-                    });
-            });
-
-            // Right: Results
-            columns[1].group(|ui| {
-                ui.heading("Validation Results");
-
-                // Summary
-                if let Some(is_valid) = self.is_valid {
-                    if is_valid {
-                        ui.colored_label(Color32::GREEN, RichText::new("VALID").strong());
-                    } else {
-                        ui.colored_label(Color32::RED, RichText::new("INVALID").strong());
-                    }
-
-                    let error_count = self.validation_results.iter()
-                        .filter(|r| matches!(r.severity, Severity::Error))
-                        .count();
-                    let warning_count = self.validation_results.iter()
-                        .filter(|r| matches!(r.severity, Severity::Warning))
-                        .count();
-                    let info_count = self.validation_results.iter()
-                        .filter(|r| matches!(r.severity, Severity::Info))
-                        .count();
-
-                    ui.horizontal(|ui| {
-                        ui.colored_label(Color32::RED, format!("{} Errors", error_count));
-                        ui.colored_label(Color32::YELLOW, format!("{} Warnings", warning_count));
-                        ui.colored_label(Color32::LIGHT_BLUE, format!("{} Info", info_count));
-                    });
-                }
-
-                ui.add_space(10.0);
-                ui.separator();
-
-                // Results list
-                egui::ScrollArea::vertical()
-                    .id_salt("validation_results")
-                    .max_height(480.0)
-                    .show(ui, |ui| {
-                        if self.validation_results.is_empty() && self.is_valid.is_none() {
-                            ui.label("Click 'Validate' to check the message.");
-                            ui.add_space(10.0);
-                            ui.label("Validation checks:");
-                            ui.label("- Message structure (required segments)");
-                            ui.label("- Segment order");
-                            ui.label("- Required fields");
-                            ui.label("- Data type formats (dates, times, IDs)");
-                            ui.label("- Field lengths");
-                        } else if self.validation_results.is_empty() {
-                            ui.colored_label(Color32::GREEN, "No issues found!");
-                        } else {
-                            for item in &self.validation_results {
-                                ui.horizontal(|ui| {
-                                    let (icon, color) = match item.severity {
-                                        Severity::Error => ("", Color32::RED),
-                                        Severity::Warning => ("", Color32::YELLOW),
-                                        Severity::Info => ("", Color32::LIGHT_BLUE),
-                                    };
-
-                                    ui.colored_label(color, icon);
-                                    ui.vertical(|ui| {
-                                        ui.label(RichText::new(&item.location).strong());
-                                        ui.label(&item.message);
-                                    });
+                            ui.horizontal(|ui| {
+                                ui.heading("Message Input");
+                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                    ui.checkbox(&mut self.show_tree_view, "Tree View");
                                 });
-                                ui.add_space(5.0);
+                            });
+
+                            if let Some(ref error) = self.parse_error {
+                                ui.colored_label(Color32::RED, format!("Parse Error: {}", error));
                             }
-                        }
-                    });
+
+                            if self.show_tree_view && !self.tree_nodes.is_empty() {
+                                // Show tree view
+                                egui::ScrollArea::vertical()
+                                    .id_salt("validator_tree")
+                                    .auto_shrink([false, false])
+                                    .show(ui, |ui| {
+                                        for node in &mut self.tree_nodes {
+                                            node.ui(ui);
+                                        }
+                                    });
+                            } else {
+                                // Show raw input
+                                egui::ScrollArea::vertical()
+                                    .id_salt("validator_input")
+                                    .auto_shrink([false, false])
+                                    .show(ui, |ui| {
+                                        ui.add(
+                                            egui::TextEdit::multiline(&mut self.input_message)
+                                                .font(egui::TextStyle::Monospace)
+                                                .desired_width(f32::INFINITY)
+                                                .desired_rows(30)
+                                                .code_editor()
+                                        );
+                                    });
+                            }
+                        });
+                });
+
+                // Right: Results
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+
+                            ui.heading("Validation Results");
+
+                            // Summary
+                            if let Some(is_valid) = self.is_valid {
+                                if is_valid {
+                                    ui.colored_label(Color32::GREEN, RichText::new("VALID").strong());
+                                } else {
+                                    ui.colored_label(Color32::RED, RichText::new("INVALID").strong());
+                                }
+
+                                let error_count = self.validation_results.iter()
+                                    .filter(|r| matches!(r.severity, Severity::Error))
+                                    .count();
+                                let warning_count = self.validation_results.iter()
+                                    .filter(|r| matches!(r.severity, Severity::Warning))
+                                    .count();
+                                let info_count = self.validation_results.iter()
+                                    .filter(|r| matches!(r.severity, Severity::Info))
+                                    .count();
+
+                                ui.horizontal(|ui| {
+                                    ui.colored_label(Color32::RED, format!("{} Errors", error_count));
+                                    ui.colored_label(Color32::YELLOW, format!("{} Warnings", warning_count));
+                                    ui.colored_label(Color32::LIGHT_BLUE, format!("{} Info", info_count));
+                                });
+                            }
+
+                            ui.add_space(10.0);
+                            ui.separator();
+
+                            // Results list
+                            egui::ScrollArea::vertical()
+                                .id_salt("validation_results")
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    if self.validation_results.is_empty() && self.is_valid.is_none() {
+                                        ui.label("Click 'Validate' to check the message.");
+                                        ui.add_space(10.0);
+                                        ui.label("Validation checks:");
+                                        ui.label("- Message structure (required segments)");
+                                        ui.label("- Segment order");
+                                        ui.label("- Required fields");
+                                        ui.label("- Data type formats (dates, times, IDs)");
+                                        ui.label("- Field lengths");
+                                    } else if self.validation_results.is_empty() {
+                                        ui.colored_label(Color32::GREEN, "No issues found!");
+                                    } else {
+                                        for item in &self.validation_results {
+                                            ui.horizontal(|ui| {
+                                                let (icon, color) = match item.severity {
+                                                    Severity::Error => ("", Color32::RED),
+                                                    Severity::Warning => ("", Color32::YELLOW),
+                                                    Severity::Info => ("", Color32::LIGHT_BLUE),
+                                                };
+
+                                                ui.colored_label(color, icon);
+                                                ui.vertical(|ui| {
+                                                    ui.label(RichText::new(&item.location).strong());
+                                                    ui.label(&item.message);
+                                                });
+                                            });
+                                            ui.add_space(5.0);
+                                        }
+                                    }
+                                });
+                        });
+                });
             });
-        });
     }
 
     fn validate(&mut self) {
         self.validation_results.clear();
         self.is_valid = None;
+        self.tree_nodes.clear();
 
         // Parse the message first
         let normalized = self.input_message
@@ -235,6 +280,7 @@ impl ValidatorTab {
             Ok(message) => {
                 self.parsed_message = Some(message.clone());
                 self.parse_error = None;
+                self.tree_nodes = format_message_tree(&message);
 
                 // Determine version
                 let version = self.selected_version.to_version()

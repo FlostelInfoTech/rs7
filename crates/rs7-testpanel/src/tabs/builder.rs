@@ -1,6 +1,7 @@
 //! Message Builder Tab - Build HL7 messages visually
 
 use egui::{self, RichText, Color32};
+use egui_extras::{StripBuilder, Size};
 use rs7_core::builders::adt::AdtA01Builder;
 use rs7_core::Version;
 
@@ -40,6 +41,9 @@ pub struct BuilderTab {
     // Output
     built_message: Option<String>,
     build_error: Option<String>,
+
+    // Display options
+    show_line_feeds: bool,
 }
 
 #[derive(Default, PartialEq, Clone, Copy)]
@@ -119,6 +123,7 @@ impl Default for BuilderTab {
             receiving_facility: "RECEIVING_FAC".to_string(),
             built_message: None,
             build_error: None,
+            show_line_feeds: true,  // Default to showing line feeds for readability
         }
     }
 }
@@ -129,13 +134,26 @@ impl BuilderTab {
         ui.label("Build HL7 messages using the fluent builder API.");
         ui.add_space(10.0);
 
-        ui.columns(2, |columns| {
-            // Left column: Form
-            columns[0].group(|ui| {
-                egui::ScrollArea::vertical()
-                    .id_salt("builder_form")
-                    .max_height(650.0)
-                    .show(ui, |ui| {
+        // Get available size for full-height panels
+        let available_height = ui.available_height();
+
+        // Use StripBuilder for responsive proportional columns (55% form, 45% output)
+        StripBuilder::new(ui)
+            .size(Size::relative(0.55).at_least(400.0))
+            .size(Size::remainder().at_least(300.0))
+            .horizontal(|mut strip| {
+                // Left column: Form
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+                            egui::ScrollArea::vertical()
+                                .id_salt("builder_form")
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    ui.set_min_width(ui.available_width());
                         // Message Type
                         ui.heading("Message Type");
                         ui.horizontal(|ui| {
@@ -279,45 +297,65 @@ impl BuilderTab {
                                 *self = Self::default();
                             }
                         });
-                    });
-            });
-
-            // Right column: Output
-            columns[1].group(|ui| {
-                ui.heading("Generated Message");
-
-                if let Some(ref error) = self.build_error {
-                    ui.colored_label(Color32::RED, format!("Error: {}", error));
-                } else if let Some(ref message) = self.built_message {
-                    ui.label(format!("Size: {} bytes", message.len()));
-
-                    if ui.button("Copy to Clipboard").clicked() {
-                        ui.output_mut(|o| o.copied_text = message.clone());
-                    }
-
-                    ui.add_space(10.0);
-
-                    egui::ScrollArea::vertical()
-                        .id_salt("built_message")
-                        .max_height(580.0)
-                        .show(ui, |ui| {
-                            ui.add(
-                                egui::TextEdit::multiline(&mut message.as_str())
-                                    .font(egui::TextStyle::Monospace)
-                                    .desired_width(f32::INFINITY)
-                                    .desired_rows(35)
-                                    .interactive(false)
-                            );
+                                });
                         });
-                } else {
-                    ui.label("Fill in the form and click 'Build Message' to generate an HL7 message.");
-                    ui.add_space(20.0);
-                    ui.label("The builder uses the fluent API from rs7-core:");
-                    ui.add_space(10.0);
-                    ui.code("AdtA01Builder::new()\n    .sending_application(\"APP\")\n    .patient_id(\"12345\")\n    .patient_name(name)\n    .build()");
-                }
+                });
+
+                // Right column: Output
+                strip.cell(|ui| {
+                    let panel_height = available_height - 10.0;
+                    egui::Frame::group(ui.style())
+                        .show(ui, |ui| {
+                            ui.set_height(panel_height);
+                            ui.set_width(ui.available_width());
+
+                            ui.heading("Generated Message");
+
+                            if let Some(ref error) = self.build_error {
+                                ui.colored_label(Color32::RED, format!("Error: {}", error));
+                            } else if let Some(ref message) = self.built_message {
+                                ui.horizontal(|ui| {
+                                    ui.label(format!("Size: {} bytes", message.len()));
+                                    ui.separator();
+                                    ui.checkbox(&mut self.show_line_feeds, "Show segments on separate lines");
+                                });
+
+                                if ui.button("Copy to Clipboard").clicked() {
+                                    // Copy the original raw message (with \r)
+                                    ui.ctx().copy_text(message.clone());
+                                }
+
+                                ui.add_space(10.0);
+
+                                // Format message for display based on option
+                                let display_message = if self.show_line_feeds {
+                                    message.replace('\r', "\n")
+                                } else {
+                                    message.clone()
+                                };
+
+                                egui::ScrollArea::both()
+                                    .id_salt("built_message")
+                                    .auto_shrink([false, false])
+                                    .show(ui, |ui| {
+                                        ui.add(
+                                            egui::TextEdit::multiline(&mut display_message.as_str())
+                                                .font(egui::TextStyle::Monospace)
+                                                .desired_width(f32::INFINITY)
+                                                .desired_rows(35)
+                                                .interactive(false)
+                                        );
+                                    });
+                            } else {
+                                ui.label("Fill in the form and click 'Build Message' to generate an HL7 message.");
+                                ui.add_space(20.0);
+                                ui.label("The builder uses the fluent API from rs7-core:");
+                                ui.add_space(10.0);
+                                ui.code("AdtA01Builder::new()\n    .sending_application(\"APP\")\n    .patient_id(\"12345\")\n    .patient_name(name)\n    .build()");
+                            }
+                        });
+                });
             });
-        });
     }
 
     fn build_message(&mut self) {
