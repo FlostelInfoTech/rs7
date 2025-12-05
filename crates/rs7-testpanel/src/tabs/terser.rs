@@ -204,6 +204,7 @@ impl TerserTab {
 
                             // History
                             ui.heading("Query History");
+                            let mut history_clicked_path: Option<String> = None;
                             egui::ScrollArea::vertical()
                                 .id_salt("terser_history")
                                 .auto_shrink([false, false])
@@ -211,13 +212,19 @@ impl TerserTab {
                                 .show(ui, |ui| {
                                     for (path, value) in self.path_history.iter().rev().take(10) {
                                         ui.horizontal(|ui| {
-                                            if ui.small_button("").clicked() {
-                                                self.terser_path = path.clone();
+                                            if ui.small_button("🔄").on_hover_text("Re-query this path").clicked() {
+                                                history_clicked_path = Some(path.clone());
                                             }
                                             ui.label(format!("{} = {}", path, if value.is_empty() { "(empty)" } else { value }));
                                         });
                                     }
                                 });
+
+                            // Handle history click - set path and query
+                            if let Some(path) = history_clicked_path {
+                                self.terser_path = path;
+                                self.get_value();
+                            }
 
                             if self.show_help {
                                 ui.add_space(10.0);
