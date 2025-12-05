@@ -132,15 +132,27 @@ impl TerserTab {
                             }
 
                             if self.show_tree_view && !self.tree_nodes.is_empty() {
-                                // Show tree view
+                                // Show tree view with clickable paths
+                                ui.label(egui::RichText::new("Click any field to query its value").small().italics());
+                                ui.add_space(4.0);
+
+                                let mut clicked_path: Option<String> = None;
                                 egui::ScrollArea::vertical()
                                     .id_salt("terser_tree")
                                     .auto_shrink([false, false])
                                     .show(ui, |ui| {
                                         for node in &mut self.tree_nodes {
-                                            node.ui(ui);
+                                            if let Some(path) = node.ui_interactive(ui) {
+                                                clicked_path = Some(path);
+                                            }
                                         }
                                     });
+
+                                // Handle clicked path - set it and query
+                                if let Some(path) = clicked_path {
+                                    self.terser_path = path;
+                                    self.get_value();
+                                }
                             } else {
                                 // Show raw input
                                 egui::ScrollArea::vertical()

@@ -510,11 +510,20 @@ pub fn get_field_name(segment_id: &str, field_num: usize) -> Option<&'static str
 pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
     let mut nodes = Vec::new();
 
+    // Track segment counts for Terser indexing (e.g., OBX(1), OBX(2))
+    let mut segment_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+
     for (seg_idx, segment) in message.segments.iter().enumerate() {
+        // Increment segment count for this type
+        let seg_count = segment_counts.entry(segment.id.clone()).or_insert(0);
+        *seg_count += 1;
+        let seg_instance = *seg_count;
+
         let mut segment_node = TreeNode {
             label: format!("{} (Segment {})", segment.id, seg_idx + 1),
             children: Vec::new(),
             expanded: seg_idx == 0, // Expand first segment by default
+            path: None, // Segments don't have a direct Terser path
         };
 
         for (field_idx, field) in segment.fields.iter().enumerate() {
@@ -545,10 +554,25 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
                     )
                 };
 
+                // Build Terser path for this field
+                // Use segment instance index for repeated segments (e.g., OBX(1)-5, OBX(2)-5)
+                let field_path = if seg_instance > 1 || segment_counts.values().filter(|&&v| v > 0).count() > 0 {
+                    // Check if this segment type appears multiple times in the message
+                    let total_of_this_type = message.segments.iter().filter(|s| s.id == segment.id).count();
+                    if total_of_this_type > 1 {
+                        format!("{}({})-{}", segment.id, seg_instance, field_num)
+                    } else {
+                        format!("{}-{}", segment.id, field_num)
+                    }
+                } else {
+                    format!("{}-{}", segment.id, field_num)
+                };
+
                 let mut field_node = TreeNode {
                     label: field_label,
                     children: Vec::new(),
                     expanded: false,
+                    path: Some(field_path.clone()),
                 };
 
                 // Get the data type for this field (for component names)
@@ -559,6 +583,8 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
                     if field.repetitions.len() > 1 {
                         let rep_value = repetition.value().unwrap_or("");
                         if !rep_value.is_empty() {
+                            // Build path with repetition index (0-based for repetitions)
+                            let rep_path = format!("{}({})", field_path, rep_idx);
                             let rep_label = format!(
                                 "Rep {}: {}",
                                 rep_idx + 1,
@@ -569,15 +595,16 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
                                 label: rep_label,
                                 children: Vec::new(),
                                 expanded: false,
+                                path: Some(rep_path.clone()),
                             };
 
                             // Add components with names
-                            add_component_nodes(&mut rep_node, repetition, &segment.id, field_num, data_type);
+                            add_component_nodes(&mut rep_node, repetition, &rep_path, data_type);
                             field_node.children.push(rep_node);
                         }
                     } else {
                         // Single repetition - add components directly
-                        add_component_nodes(&mut field_node, repetition, &segment.id, field_num, data_type);
+                        add_component_nodes(&mut field_node, repetition, &field_path, data_type);
                     }
                 }
 
@@ -594,8 +621,7 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
 fn add_component_nodes(
     parent: &mut TreeNode,
     repetition: &rs7_core::Repetition,
-    segment_id: &str,
-    field_num: usize,
+    base_path: &str,
     data_type: Option<&str>,
 ) {
     if repetition.components.len() > 1 {
@@ -604,25 +630,24 @@ fn add_component_nodes(
             if !comp_value.is_empty() {
                 let comp_num = comp_idx + 1;
 
+                // Build component path (e.g., PID-5-1, OBX(1)-5-1)
+                let comp_path = format!("{}-{}", base_path, comp_num);
+
                 // Get component name if data type is known
                 let comp_name = data_type.and_then(|dt| get_component_name(dt, comp_num));
 
                 // Use Terser notation: SEG-F-C (e.g., MSH-9-1)
                 let comp_label = if let Some(name) = comp_name {
                     format!(
-                        "{}-{}-{} ({}): {}",
-                        segment_id,
-                        field_num,
-                        comp_num,
+                        "{} ({}): {}",
+                        comp_path,
                         name,
                         truncate_string(comp_value, 35)
                     )
                 } else {
                     format!(
-                        "{}-{}-{}: {}",
-                        segment_id,
-                        field_num,
-                        comp_num,
+                        "{}: {}",
+                        comp_path,
                         truncate_string(comp_value, 40)
                     )
                 };
@@ -631,6 +656,7 @@ fn add_component_nodes(
                     label: comp_label,
                     children: Vec::new(),
                     expanded: false,
+                    path: Some(comp_path.clone()),
                 };
 
                 // Add subcomponents if present
@@ -638,26 +664,25 @@ fn add_component_nodes(
                     for (sub_idx, subcomp) in component.subcomponents.iter().enumerate() {
                         if !subcomp.value.is_empty() {
                             let sub_num = sub_idx + 1;
+
+                            // Build subcomponent path (e.g., PID-5-1-1)
+                            let sub_path = format!("{}-{}", comp_path, sub_num);
+
                             // Get subcomponent name (typically HD pattern for nested structures)
                             let sub_name = get_subcomponent_name(sub_num);
 
                             // Use Terser notation: SEG-F-C-S (e.g., MSH-9-1-1)
                             let sub_label = if let Some(name) = sub_name {
-                                format!(
-                                    "{}-{}-{}-{} ({}): {}",
-                                    segment_id, field_num, comp_num, sub_num, name, &subcomp.value
-                                )
+                                format!("{} ({}): {}", sub_path, name, &subcomp.value)
                             } else {
-                                format!(
-                                    "{}-{}-{}-{}: {}",
-                                    segment_id, field_num, comp_num, sub_num, &subcomp.value
-                                )
+                                format!("{}: {}", sub_path, &subcomp.value)
                             };
 
                             comp_node.children.push(TreeNode {
                                 label: sub_label,
                                 children: Vec::new(),
                                 expanded: false,
+                                path: Some(sub_path),
                             });
                         }
                     }
@@ -675,22 +700,55 @@ pub struct TreeNode {
     pub label: String,
     pub children: Vec<TreeNode>,
     pub expanded: bool,
+    /// Optional Terser path for this node (e.g., "PID-5-1")
+    pub path: Option<String>,
 }
 
 impl TreeNode {
     /// Render this tree node in the UI
     pub fn ui(&mut self, ui: &mut egui::Ui) {
+        self.ui_interactive(ui);
+    }
+
+    /// Render this tree node in the UI and return the path if clicked
+    pub fn ui_interactive(&mut self, ui: &mut egui::Ui) -> Option<String> {
+        let mut clicked_path = None;
+
         if self.children.is_empty() {
-            ui.label(&self.label);
+            // Leaf node - make it clickable if it has a path
+            if self.path.is_some() {
+                let response = ui.selectable_label(false, &self.label);
+                if response.clicked() {
+                    clicked_path = self.path.clone();
+                }
+                if let Some(ref path) = self.path {
+                    response.on_hover_text(format!("Click to query: {}", path));
+                }
+            } else {
+                ui.label(&self.label);
+            }
         } else {
+            // Parent node with children
             egui::CollapsingHeader::new(&self.label)
                 .default_open(self.expanded)
                 .show(ui, |ui| {
+                    // If this node has a path, add a clickable button
+                    if let Some(ref path) = self.path {
+                        if ui.small_button(format!("📋 {}", path)).on_hover_text("Click to query this path").clicked() {
+                            clicked_path = Some(path.clone());
+                        }
+                        ui.add_space(2.0);
+                    }
+
                     for child in &mut self.children {
-                        child.ui(ui);
+                        if let Some(path) = child.ui_interactive(ui) {
+                            clicked_path = Some(path);
+                        }
                     }
                 });
         }
+
+        clicked_path
     }
 }
 
