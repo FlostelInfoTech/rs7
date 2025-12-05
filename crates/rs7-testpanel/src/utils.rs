@@ -572,12 +572,12 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
                             };
 
                             // Add components with names
-                            add_component_nodes(&mut rep_node, repetition, data_type);
+                            add_component_nodes(&mut rep_node, repetition, &segment.id, field_num, data_type);
                             field_node.children.push(rep_node);
                         }
                     } else {
                         // Single repetition - add components directly
-                        add_component_nodes(&mut field_node, repetition, data_type);
+                        add_component_nodes(&mut field_node, repetition, &segment.id, field_num, data_type);
                     }
                 }
 
@@ -594,6 +594,8 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
 fn add_component_nodes(
     parent: &mut TreeNode,
     repetition: &rs7_core::Repetition,
+    segment_id: &str,
+    field_num: usize,
     data_type: Option<&str>,
 ) {
     if repetition.components.len() > 1 {
@@ -605,16 +607,21 @@ fn add_component_nodes(
                 // Get component name if data type is known
                 let comp_name = data_type.and_then(|dt| get_component_name(dt, comp_num));
 
+                // Use Terser notation: SEG-F-C (e.g., MSH-9-1)
                 let comp_label = if let Some(name) = comp_name {
                     format!(
-                        "Comp {} ({}): {}",
+                        "{}-{}-{} ({}): {}",
+                        segment_id,
+                        field_num,
                         comp_num,
                         name,
                         truncate_string(comp_value, 35)
                     )
                 } else {
                     format!(
-                        "Comp {}: {}",
+                        "{}-{}-{}: {}",
+                        segment_id,
+                        field_num,
                         comp_num,
                         truncate_string(comp_value, 40)
                     )
@@ -634,10 +641,17 @@ fn add_component_nodes(
                             // Get subcomponent name (typically HD pattern for nested structures)
                             let sub_name = get_subcomponent_name(sub_num);
 
+                            // Use Terser notation: SEG-F-C-S (e.g., MSH-9-1-1)
                             let sub_label = if let Some(name) = sub_name {
-                                format!("Sub {} ({}): {}", sub_num, name, &subcomp.value)
+                                format!(
+                                    "{}-{}-{}-{} ({}): {}",
+                                    segment_id, field_num, comp_num, sub_num, name, &subcomp.value
+                                )
                             } else {
-                                format!("Sub {}: {}", sub_num, &subcomp.value)
+                                format!(
+                                    "{}-{}-{}-{}: {}",
+                                    segment_id, field_num, comp_num, sub_num, &subcomp.value
+                                )
                             };
 
                             comp_node.children.push(TreeNode {
