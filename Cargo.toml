@@ -14,6 +14,7 @@ description = "Comprehensive HL7 v2.x library for Rust - parsing, validation, an
 [features]
 default = []
 tls = ["rs7-mllp/tls"]
+testing = ["rs7-mllp/testing"]
 
 [dependencies]
 rs7-core.workspace = true
@@ -29,6 +30,10 @@ required-features = ["tls"]
 [[example]]
 name = "mllp_tls_client"
 required-features = ["tls"]
+
+[[example]]
+name = "e2e_benchmark"
+required-features = ["testing"]
 
 [dev-dependencies]
 chrono.workspace = true

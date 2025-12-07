@@ -46,22 +46,13 @@ enum MllpStream {
 }
 
 impl MllpStream {
-    async fn read_exact(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+    async fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         match self {
-            MllpStream::Plain(stream) => {
-                stream.read_exact(buf).await?;
-                Ok(buf.len())
-            }
+            MllpStream::Plain(stream) => stream.read(buf).await,
             #[cfg(feature = "tls")]
-            MllpStream::TlsClient(stream) => {
-                stream.read_exact(buf).await?;
-                Ok(buf.len())
-            }
+            MllpStream::TlsClient(stream) => stream.read(buf).await,
             #[cfg(feature = "tls")]
-            MllpStream::TlsServer(stream) => {
-                stream.read_exact(buf).await?;
-                Ok(buf.len())
-            }
+            MllpStream::TlsServer(stream) => stream.read(buf).await,
         }
     }
 
@@ -72,6 +63,16 @@ impl MllpStream {
             MllpStream::TlsClient(stream) => stream.write_all(buf).await,
             #[cfg(feature = "tls")]
             MllpStream::TlsServer(stream) => stream.write_all(buf).await,
+        }
+    }
+
+    async fn flush(&mut self) -> std::io::Result<()> {
+        match self {
+            MllpStream::Plain(stream) => stream.flush().await,
+            #[cfg(feature = "tls")]
+            MllpStream::TlsClient(stream) => stream.flush().await,
+            #[cfg(feature = "tls")]
+            MllpStream::TlsServer(stream) => stream.flush().await,
         }
     }
 
@@ -225,6 +226,10 @@ impl MllpClient {
         .map_err(|_| Error::Network(format!("Connection timeout after {:?}", config.connect_timeout)))?
         .map_err(|e| Error::Network(format!("Failed to connect: {}", e)))?;
 
+        // Disable Nagle's algorithm for low-latency messaging
+        tcp_stream.set_nodelay(true)
+            .map_err(|e| Error::Network(format!("Failed to set TCP_NODELAY: {}", e)))?;
+
         Ok(Self {
             stream: MllpStream::Plain(tcp_stream),
             max_message_size: config.max_message_size,
@@ -370,7 +375,10 @@ impl MllpClient {
         // Send with timeout
         tokio::time::timeout(
             self.write_timeout,
-            self.stream.write_all(&framed)
+            async {
+                self.stream.write_all(&framed).await?;
+                self.stream.flush().await
+            }
         )
         .await
         .map_err(|_| Error::Network(format!("Write timeout after {:?}", self.write_timeout)))?
@@ -393,53 +401,52 @@ impl MllpClient {
     /// Internal method to receive a message with buffer size protection
     async fn receive_message_internal(&mut self) -> Result<Message> {
         let mut buffer = Vec::with_capacity(8192); // Pre-allocate reasonable size
-        let mut byte = [0u8; 1];
+        let mut chunk = [0u8; 4096]; // Read in larger chunks for efficiency
+        let mut found_start = false;
 
-        // Read until we find the start marker
         loop {
-            self.stream
-                .read_exact(&mut byte)
+            let n = self.stream
+                .read(&mut chunk)
                 .await
                 .map_err(|e| Error::Network(format!("Failed to read: {}", e)))?;
 
-            if byte[0] == START_OF_BLOCK {
-                buffer.push(byte[0]);
-                break;
-            }
-        }
-
-        // Read until we find the end markers
-        let mut found_end = false;
-        while !found_end {
-            // Check buffer size limit
-            if buffer.len() >= self.max_message_size {
-                return Err(Error::Mllp(format!(
-                    "Message exceeds maximum size of {} bytes",
-                    self.max_message_size
-                )));
+            if n == 0 {
+                return Err(Error::Network("Connection closed".to_string()));
             }
 
-            self.stream
-                .read_exact(&mut byte)
-                .await
-                .map_err(|e| Error::Network(format!("Failed to read: {}", e)))?;
+            for i in 0..n {
+                let byte = chunk[i];
 
-            buffer.push(byte[0]);
+                if !found_start {
+                    if byte == START_OF_BLOCK {
+                        found_start = true;
+                        buffer.push(byte);
+                    }
+                    continue;
+                }
 
-            // Check for end sequence (FS CR)
-            if buffer.len() >= 2 {
-                let len = buffer.len();
-                if buffer[len - 2] == END_OF_BLOCK && buffer[len - 1] == CARRIAGE_RETURN {
-                    found_end = true;
+                // Check buffer size limit
+                if buffer.len() >= self.max_message_size {
+                    return Err(Error::Mllp(format!(
+                        "Message exceeds maximum size of {} bytes",
+                        self.max_message_size
+                    )));
+                }
+
+                buffer.push(byte);
+
+                // Check for end sequence (FS CR)
+                if buffer.len() >= 3 {
+                    let len = buffer.len();
+                    if buffer[len - 2] == END_OF_BLOCK && buffer[len - 1] == CARRIAGE_RETURN {
+                        // Unwrap frame
+                        let hl7_text = MllpFrame::unwrap(&buffer)?;
+                        // Parse message
+                        return parse_message(&hl7_text);
+                    }
                 }
             }
         }
-
-        // Unwrap frame
-        let hl7_text = MllpFrame::unwrap(&buffer)?;
-
-        // Parse message
-        parse_message(&hl7_text)
     }
 
     /// Close the connection
@@ -574,6 +581,10 @@ impl MllpServer {
             .await
             .map_err(|e| Error::Network(format!("Failed to accept: {}", e)))?;
 
+        // Disable Nagle's algorithm for low-latency messaging
+        tcp_stream.set_nodelay(true)
+            .map_err(|e| Error::Network(format!("Failed to set TCP_NODELAY: {}", e)))?;
+
         #[cfg(feature = "tls")]
         let stream = if let Some(ref acceptor) = self.tls_acceptor {
             // Perform TLS handshake
@@ -627,53 +638,52 @@ impl MllpConnection {
     /// Internal method to receive a message with buffer size protection
     async fn receive_message_internal(&mut self) -> Result<Message> {
         let mut buffer = Vec::with_capacity(8192); // Pre-allocate reasonable size
-        let mut byte = [0u8; 1];
+        let mut chunk = [0u8; 4096]; // Read in larger chunks for efficiency
+        let mut found_start = false;
 
-        // Read until we find the start marker
         loop {
-            self.stream
-                .read_exact(&mut byte)
+            let n = self.stream
+                .read(&mut chunk)
                 .await
                 .map_err(|e| Error::Network(format!("Failed to read: {}", e)))?;
 
-            if byte[0] == START_OF_BLOCK {
-                buffer.push(byte[0]);
-                break;
-            }
-        }
-
-        // Read until we find the end markers
-        let mut found_end = false;
-        while !found_end {
-            // Check buffer size limit
-            if buffer.len() >= self.max_message_size {
-                return Err(Error::Mllp(format!(
-                    "Message exceeds maximum size of {} bytes",
-                    self.max_message_size
-                )));
+            if n == 0 {
+                return Err(Error::Network("Connection closed".to_string()));
             }
 
-            self.stream
-                .read_exact(&mut byte)
-                .await
-                .map_err(|e| Error::Network(format!("Failed to read: {}", e)))?;
+            for i in 0..n {
+                let byte = chunk[i];
 
-            buffer.push(byte[0]);
+                if !found_start {
+                    if byte == START_OF_BLOCK {
+                        found_start = true;
+                        buffer.push(byte);
+                    }
+                    continue;
+                }
 
-            // Check for end sequence (FS CR)
-            if buffer.len() >= 2 {
-                let len = buffer.len();
-                if buffer[len - 2] == END_OF_BLOCK && buffer[len - 1] == CARRIAGE_RETURN {
-                    found_end = true;
+                // Check buffer size limit
+                if buffer.len() >= self.max_message_size {
+                    return Err(Error::Mllp(format!(
+                        "Message exceeds maximum size of {} bytes",
+                        self.max_message_size
+                    )));
+                }
+
+                buffer.push(byte);
+
+                // Check for end sequence (FS CR)
+                if buffer.len() >= 3 {
+                    let len = buffer.len();
+                    if buffer[len - 2] == END_OF_BLOCK && buffer[len - 1] == CARRIAGE_RETURN {
+                        // Unwrap frame
+                        let hl7_text = MllpFrame::unwrap(&buffer)?;
+                        // Parse message
+                        return parse_message(&hl7_text);
+                    }
                 }
             }
         }
-
-        // Unwrap frame
-        let hl7_text = MllpFrame::unwrap(&buffer)?;
-
-        // Parse message
-        parse_message(&hl7_text)
     }
 
     /// Send a message with timeout
@@ -683,7 +693,10 @@ impl MllpConnection {
 
         tokio::time::timeout(
             self.write_timeout,
-            self.stream.write_all(&framed)
+            async {
+                self.stream.write_all(&framed).await?;
+                self.stream.flush().await
+            }
         )
         .await
         .map_err(|_| Error::Network(format!("Write timeout after {:?}", self.write_timeout)))?
