@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2025-12-07
+
+### Added - Performance Optimization & E2E Benchmarking 🚀
+
+- **MLLP High-Throughput Optimization** - 8.9x performance improvement for network message transmission:
+  - **TCP_NODELAY**: Disabled Nagle's algorithm for immediate packet transmission
+  - **Chunk-Based I/O**: Process incoming data in 4KB chunks instead of byte-by-byte
+  - **Buffered Writes**: Use BufWriter for efficient ACK responses
+  - **Results**: Throughput improved from 652 msg/s to 5,831 msg/s
+  - **Latency**: Single message round-trip reduced from ~1.5ms to ~170µs
+
+- **E2E Benchmarking Framework** - Comprehensive end-to-end performance testing:
+  - Real network I/O through MLLP with MockMllpServer
+  - Test messages: ADT^A01 (316 bytes, 3 segments), ORU^R01 (814 bytes, 13 segments)
+  - Multiple test scenarios:
+    - T1: Single client sequential (10,000 iterations)
+    - T2: 4 concurrent clients (20,000 total messages)
+    - T3: Connection establishment overhead
+  - Latency percentile analysis (p50, p90, p95, p99, p99.9)
+  - Feature flag: `testing` for benchmark infrastructure
+
+- **Performance Documentation** - Comprehensive PERFORMANCE.md updates:
+  - E2E Testing Setup section with test architecture
+  - Complete test results summary with before/after metrics
+  - Measurement methodology documentation
+  - Connection management details
+
+### Fixed
+
+- **Test Panel Tree View Composite Fields** - Display full composite values correctly:
+  - MSH-9 now shows "ADT^A01^ADT_A01" instead of just "ADT"
+  - All fields, repetitions, and components display complete values
+  - Changed from `value()` (first subcomponent only) to `encode()` (full composite)
+
+- **Test Panel Delimiter Display** - Show delimiters without HL7 escape encoding:
+  - MSH-2 now shows `^~\&` instead of `^~\E\&`
+  - Added display helper functions for UI rendering without escape sequences
+  - Tree view displays raw values for better readability
+
+### Changed
+
+- Updated workspace version to 0.22.0
+- Updated rs7-testpanel version to 0.22.0
+
 ## [0.19.0] - 2025-01-20
 
 ### Added - Phase 4: Testing Infrastructure & TLS/mTLS Security 🔒
@@ -1730,7 +1774,8 @@ This release completes the core FHIR R4 conversion functionality, providing prod
 - Comprehensive test coverage
 - Documentation and examples
 
-[Unreleased]: https://gitlab.flostel.com/alexshao/rs7/compare/v0.19.0...HEAD
+[Unreleased]: https://gitlab.flostel.com/alexshao/rs7/compare/v0.22.0...HEAD
+[0.22.0]: https://gitlab.flostel.com/alexshao/rs7/compare/v0.19.0...v0.22.0
 [0.19.0]: https://gitlab.flostel.com/alexshao/rs7/compare/v0.18.0...v0.19.0
 [0.18.0]: https://gitlab.flostel.com/alexshao/rs7/compare/v0.17.0...v0.18.0
 [0.17.0]: https://gitlab.flostel.com/alexshao/rs7/compare/v0.16.0...v0.17.0
