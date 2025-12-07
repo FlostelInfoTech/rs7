@@ -1,6 +1,6 @@
 [package]
 name = "rs7-testpanel"
-version = "0.21.0"
+version = "0.22.0"
 edition = "2024"
 authors = ["Alex SHAO Fan <alex.shaofan@flostel.com>"]
 description = "GUI Test Panel for RS7 HL7 Library - demonstrates parsing, building, validation, MLLP, and FHIR conversion"

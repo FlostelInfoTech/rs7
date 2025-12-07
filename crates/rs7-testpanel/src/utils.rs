@@ -1,8 +1,38 @@
 //! Utility functions for the RS7 Test Panel
 
-use rs7_core::Message;
+use rs7_core::{Message, Delimiters, Field, Repetition, Component};
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
+
+/// Display a field value without escape encoding (for UI display)
+/// Joins repetitions with the repetition separator
+fn display_field(field: &Field, delimiters: &Delimiters) -> String {
+    field.repetitions
+        .iter()
+        .map(|r| display_repetition(r, delimiters))
+        .collect::<Vec<_>>()
+        .join(&delimiters.repetition_separator.to_string())
+}
+
+/// Display a repetition value without escape encoding (for UI display)
+/// Joins components with the component separator
+fn display_repetition(repetition: &Repetition, delimiters: &Delimiters) -> String {
+    repetition.components
+        .iter()
+        .map(|c| display_component(c, delimiters))
+        .collect::<Vec<_>>()
+        .join(&delimiters.component_separator.to_string())
+}
+
+/// Display a component value without escape encoding (for UI display)
+/// Joins subcomponents with the subcomponent separator
+fn display_component(component: &Component, delimiters: &Delimiters) -> String {
+    component.subcomponents
+        .iter()
+        .map(|sc| sc.value.clone())
+        .collect::<Vec<_>>()
+        .join(&delimiters.subcomponent_separator.to_string())
+}
 
 /// HL7 data type to field mapping for component names
 /// Format: (segment_id, field_number) -> data_type
@@ -528,8 +558,8 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
         };
 
         for (field_idx, field) in segment.fields.iter().enumerate() {
-            // Use encode() to get the full field value with all components
-            let field_value = field.encode(delimiters);
+            // Use display function to get the full field value without escape encoding
+            let field_value = display_field(field, delimiters);
             if !field_value.is_empty() {
                 // Calculate the correct HL7 field number
                 // RS7 parser stores all fields starting at index 0 = field 1
@@ -583,8 +613,8 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
                 // Add repetitions if present
                 for (rep_idx, repetition) in field.repetitions.iter().enumerate() {
                     if field.repetitions.len() > 1 {
-                        // Use encode() to get the full repetition value with all components
-                        let rep_value = repetition.encode(delimiters);
+                        // Use display function to get the full repetition value without escape encoding
+                        let rep_value = display_repetition(repetition, delimiters);
                         if !rep_value.is_empty() {
                             // Build path with repetition index (0-based for repetitions)
                             let rep_path = format!("{}({})", field_path, rep_idx);
@@ -630,8 +660,8 @@ fn add_component_nodes(
 ) {
     if repetition.components.len() > 1 {
         for (comp_idx, component) in repetition.components.iter().enumerate() {
-            // Use encode() to get the full component value with all subcomponents
-            let comp_value = component.encode(delimiters);
+            // Use display function to get the full component value without escape encoding
+            let comp_value = display_component(component, delimiters);
             if !comp_value.is_empty() {
                 let comp_num = comp_idx + 1;
 
