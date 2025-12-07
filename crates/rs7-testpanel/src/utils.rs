@@ -509,6 +509,7 @@ pub fn get_field_name(segment_id: &str, field_num: usize) -> Option<&'static str
 /// Format a message as a tree structure for display
 pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
     let mut nodes = Vec::new();
+    let delimiters = &message.delimiters;
 
     // Track segment counts for Terser indexing (e.g., OBX(1), OBX(2))
     let mut segment_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
@@ -527,7 +528,8 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
         };
 
         for (field_idx, field) in segment.fields.iter().enumerate() {
-            let field_value = field.value().unwrap_or("");
+            // Use encode() to get the full field value with all components
+            let field_value = field.encode(delimiters);
             if !field_value.is_empty() {
                 // Calculate the correct HL7 field number
                 // RS7 parser stores all fields starting at index 0 = field 1
@@ -543,14 +545,14 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
                         segment.id,
                         field_num,
                         name,
-                        truncate_string(field_value, 50)
+                        truncate_string(&field_value, 50)
                     )
                 } else {
                     format!(
                         "{}-{}: {}",
                         segment.id,
                         field_num,
-                        truncate_string(field_value, 60)
+                        truncate_string(&field_value, 60)
                     )
                 };
 
@@ -581,14 +583,15 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
                 // Add repetitions if present
                 for (rep_idx, repetition) in field.repetitions.iter().enumerate() {
                     if field.repetitions.len() > 1 {
-                        let rep_value = repetition.value().unwrap_or("");
+                        // Use encode() to get the full repetition value with all components
+                        let rep_value = repetition.encode(delimiters);
                         if !rep_value.is_empty() {
                             // Build path with repetition index (0-based for repetitions)
                             let rep_path = format!("{}({})", field_path, rep_idx);
                             let rep_label = format!(
                                 "Rep {}: {}",
                                 rep_idx + 1,
-                                truncate_string(rep_value, 50)
+                                truncate_string(&rep_value, 50)
                             );
 
                             let mut rep_node = TreeNode {
@@ -599,12 +602,12 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
                             };
 
                             // Add components with names
-                            add_component_nodes(&mut rep_node, repetition, &rep_path, data_type);
+                            add_component_nodes(&mut rep_node, repetition, &rep_path, data_type, delimiters);
                             field_node.children.push(rep_node);
                         }
                     } else {
                         // Single repetition - add components directly
-                        add_component_nodes(&mut field_node, repetition, &field_path, data_type);
+                        add_component_nodes(&mut field_node, repetition, &field_path, data_type, delimiters);
                     }
                 }
 
@@ -623,10 +626,12 @@ fn add_component_nodes(
     repetition: &rs7_core::Repetition,
     base_path: &str,
     data_type: Option<&str>,
+    delimiters: &rs7_core::Delimiters,
 ) {
     if repetition.components.len() > 1 {
         for (comp_idx, component) in repetition.components.iter().enumerate() {
-            let comp_value = component.value().unwrap_or("");
+            // Use encode() to get the full component value with all subcomponents
+            let comp_value = component.encode(delimiters);
             if !comp_value.is_empty() {
                 let comp_num = comp_idx + 1;
 
@@ -642,13 +647,13 @@ fn add_component_nodes(
                         "{} ({}): {}",
                         comp_path,
                         name,
-                        truncate_string(comp_value, 35)
+                        truncate_string(&comp_value, 35)
                     )
                 } else {
                     format!(
                         "{}: {}",
                         comp_path,
-                        truncate_string(comp_value, 40)
+                        truncate_string(&comp_value, 40)
                     )
                 };
 
