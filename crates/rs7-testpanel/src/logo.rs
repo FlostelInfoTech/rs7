@@ -47,15 +47,15 @@ fn render_svg_to_pixels(svg_data: &str, width: u32, height: u32) -> Option<LogoD
     let mut fontdb = usvg::fontdb::Database::new();
     fontdb.load_system_fonts();
 
-    // Set fallback fonts for missing fonts like "aakar"
-    fontdb.set_sans_serif_family("DejaVu Sans");
-    fontdb.set_serif_family("DejaVu Serif");
+    // Set fallback fonts - use Arial which is available on Windows
+    fontdb.set_sans_serif_family("Arial");
+    fontdb.set_serif_family("Times New Roman");
 
     // Parse the SVG with font database in options
-    // Use DejaVu Sans as default font family for any unresolved fonts
+    // Use Arial as default font family for any unresolved fonts
     let options = usvg::Options {
         fontdb: std::sync::Arc::new(fontdb),
-        font_family: "DejaVu Sans".to_string(),
+        font_family: "Arial".to_string(),
         ..Default::default()
     };
     let tree = usvg::Tree::from_str(svg_data, &options).ok()?;

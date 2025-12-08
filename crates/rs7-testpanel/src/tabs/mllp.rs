@@ -196,17 +196,16 @@ impl MllpTab {
 
         if let Some(ref response) = state.client_response {
             ui.label(RichText::new("Response:").strong());
+            let mut formatted_response = format_hl7_for_display(response);
             egui::ScrollArea::vertical()
                 .id_salt("client_response")
                 .auto_shrink([false, false])
                 .max_height(150.0)
                 .show(ui, |ui| {
-                    ui.add(
-                        egui::TextEdit::multiline(&mut response.as_str())
-                            .font(egui::TextStyle::Monospace)
-                            .desired_width(f32::INFINITY)
-                            .interactive(false)
-                    );
+                    egui::TextEdit::multiline(&mut formatted_response)
+                        .font(egui::TextStyle::Monospace)
+                        .desired_width(f32::INFINITY)
+                        .show(ui);
                 });
         }
     }
@@ -286,13 +285,13 @@ impl MllpTab {
                         ui.label(&entry.timestamp);
                     });
 
-                    ui.add(
-                        egui::TextEdit::multiline(&mut entry.message.as_str())
-                            .font(egui::TextStyle::Monospace)
-                            .desired_width(f32::INFINITY)
-                            .desired_rows(3)
-                            .interactive(false)
-                    );
+                    // Format HL7 messages for display (convert \r to \n)
+                    let mut formatted_message = format_hl7_for_display(&entry.message);
+                    egui::TextEdit::multiline(&mut formatted_message)
+                        .font(egui::TextStyle::Monospace)
+                        .desired_width(f32::INFINITY)
+                        .desired_rows(3)
+                        .show(ui);
                     ui.add_space(5.0);
                 }
             });
@@ -668,6 +667,12 @@ async fn run_mllp_server(
             }
         }
     }
+}
+
+/// Format an HL7 message for display by converting segment separators to line feeds
+fn format_hl7_for_display(message: &str) -> String {
+    // HL7 uses \r as segment separator - convert to \n for display
+    message.replace('\r', "\n").trim_end_matches('\n').to_string()
 }
 
 /// Generate an ACK response for an HL7 message

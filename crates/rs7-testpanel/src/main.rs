@@ -1,3 +1,6 @@
+// Hide console window on Windows in release builds
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 //! RS7 Test Panel - GUI Application for HL7 Message Testing
 //!
 //! A comprehensive GUI application demonstrating the capabilities of the RS7 HL7 library.
@@ -25,12 +28,21 @@ fn main() -> eframe::Result<()> {
     #[cfg(debug_assertions)]
     env_logger::init();
 
+    let viewport = egui::ViewportBuilder::default()
+        .with_inner_size([1400.0, 900.0])
+        .with_min_inner_size([900.0, 650.0])
+        .with_title("RS7 Test Panel - HL7 v2.x Testing Suite")
+        .with_app_id("rs7-testpanel");
+
+    // Load and set window icon
+    let viewport = if let Some(icon) = load_window_icon() {
+        viewport.with_icon(icon)
+    } else {
+        viewport
+    };
+
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_inner_size([1400.0, 900.0])
-            .with_min_inner_size([900.0, 650.0])
-            .with_title("RS7 Test Panel - HL7 v2.x Testing Suite")
-            .with_app_id("rs7-testpanel"),
+        viewport,
         centered: true,
         ..Default::default()
     };
@@ -44,6 +56,50 @@ fn main() -> eframe::Result<()> {
             Ok(Box::new(Rs7TestPanel::new(cc)))
         }),
     )
+}
+
+/// Load the window icon from the embedded SVG logo
+fn load_window_icon() -> Option<egui::IconData> {
+    // Embed the SVG at compile time
+    const LOGO_SVG: &str = include_str!("../assets/flostel.svg");
+
+    // Parse the SVG with system fonts
+    let mut fontdb = usvg::fontdb::Database::new();
+    fontdb.load_system_fonts();
+    fontdb.set_sans_serif_family("Arial");
+    fontdb.set_serif_family("Times New Roman");
+
+    let options = usvg::Options {
+        fontdb: std::sync::Arc::new(fontdb),
+        font_family: "Arial".to_string(),
+        ..Default::default()
+    };
+    let tree = usvg::Tree::from_str(LOGO_SVG, &options).ok()?;
+
+    // Render at 64x64 for window icon
+    let size = 64u32;
+    let mut pixmap = tiny_skia::Pixmap::new(size, size)?;
+
+    let svg_size = tree.size();
+    let scale_x = size as f32 / svg_size.width();
+    let scale_y = size as f32 / svg_size.height();
+    let scale = scale_x.min(scale_y);
+
+    let transform = tiny_skia::Transform::from_scale(scale, scale);
+    resvg::render(&tree, transform, &mut pixmap.as_mut());
+
+    // Convert to RGBA bytes
+    let rgba: Vec<u8> = pixmap
+        .pixels()
+        .iter()
+        .flat_map(|p| [p.red(), p.green(), p.blue(), p.alpha()])
+        .collect();
+
+    Some(egui::IconData {
+        rgba,
+        width: size,
+        height: size,
+    })
 }
 
 fn setup_custom_style(ctx: &egui::Context) {
