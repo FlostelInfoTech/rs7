@@ -103,6 +103,39 @@ fn load_window_icon() -> Option<egui::IconData> {
 }
 
 fn setup_custom_style(ctx: &egui::Context) {
+    // Set up high-contrast light theme
+    let mut light_visuals = egui::Visuals::light();
+
+    // White background for better contrast
+    light_visuals.panel_fill = egui::Color32::WHITE;
+    light_visuals.window_fill = egui::Color32::WHITE;
+    light_visuals.extreme_bg_color = egui::Color32::WHITE;
+    light_visuals.faint_bg_color = egui::Color32::from_gray(250);
+
+    // Black text for maximum contrast
+    light_visuals.widgets.noninteractive.fg_stroke.color = egui::Color32::BLACK;
+    light_visuals.widgets.inactive.fg_stroke.color = egui::Color32::from_gray(30);
+    light_visuals.widgets.hovered.fg_stroke.color = egui::Color32::BLACK;
+    light_visuals.widgets.active.fg_stroke.color = egui::Color32::BLACK;
+
+    // Slightly darker backgrounds for widgets to stand out
+    light_visuals.widgets.noninteractive.bg_fill = egui::Color32::from_gray(245);
+    light_visuals.widgets.inactive.bg_fill = egui::Color32::from_gray(240);
+    light_visuals.widgets.hovered.bg_fill = egui::Color32::from_gray(230);
+    light_visuals.widgets.active.bg_fill = egui::Color32::from_gray(220);
+
+    // Stronger borders for better definition
+    light_visuals.widgets.noninteractive.bg_stroke.color = egui::Color32::from_gray(200);
+    light_visuals.widgets.inactive.bg_stroke.color = egui::Color32::from_gray(180);
+    light_visuals.widgets.hovered.bg_stroke.color = egui::Color32::from_gray(150);
+    light_visuals.widgets.active.bg_stroke.color = egui::Color32::from_gray(100);
+
+    // Selection highlight
+    light_visuals.selection.bg_fill = egui::Color32::from_rgb(59, 130, 246).gamma_multiply(0.3);
+    light_visuals.selection.stroke.color = egui::Color32::from_rgb(59, 130, 246);
+
+    ctx.set_visuals_of(egui::Theme::Light, light_visuals);
+
     let mut style = (*ctx.style()).clone();
 
     // Use a slightly larger font for better readability
