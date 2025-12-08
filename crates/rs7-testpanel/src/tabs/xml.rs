@@ -79,6 +79,18 @@ impl XmlTab {
 </HL7Message>"#.to_string()
     }
 
+    /// Set the ER7 input message content (used by File > Open)
+    pub fn set_message(&mut self, content: String) {
+        self.er7_input = content;
+        self.xml_output.clear();
+        self.er7_to_xml_error = None;
+    }
+
+    /// Get the current ER7 input message content (used by File > Save)
+    pub fn get_message(&self) -> &str {
+        &self.er7_input
+    }
+
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("XML Encoding");
         ui.label("Convert between HL7 ER7 (pipe-delimited) and XML formats.");

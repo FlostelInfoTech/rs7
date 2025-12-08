@@ -41,6 +41,19 @@ impl Default for TerserTab {
 }
 
 impl TerserTab {
+    /// Set the input message content (used by File > Open)
+    pub fn set_message(&mut self, content: String) {
+        self.input_message = content;
+        self.parsed_message = None;
+        self.parse_error = None;
+        self.tree_nodes.clear();
+    }
+
+    /// Get the current input message content (used by File > Save)
+    pub fn get_message(&self) -> &str {
+        &self.input_message
+    }
+
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("Terser - Field Access");
         ui.label("Access and modify HL7 message fields using path notation (similar to HAPI Terser).");

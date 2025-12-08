@@ -140,6 +140,18 @@ impl FhirTab {
 }"#.to_string()
     }
 
+    /// Set the HL7 input message content (used by File > Open)
+    pub fn set_message(&mut self, content: String) {
+        self.hl7_input = content;
+        self.fhir_output.clear();
+        self.hl7_to_fhir_error = None;
+    }
+
+    /// Get the current HL7 input message content (used by File > Save)
+    pub fn get_message(&self) -> &str {
+        &self.hl7_input
+    }
+
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("FHIR Converter");
         ui.label("Convert between HL7 v2.x messages and FHIR R4 resources.");

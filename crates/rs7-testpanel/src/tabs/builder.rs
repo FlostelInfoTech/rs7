@@ -129,6 +129,17 @@ impl Default for BuilderTab {
 }
 
 impl BuilderTab {
+    /// Get the built message content (used by File > Save)
+    /// Returns the built message if available, otherwise an empty string
+    pub fn get_message(&self) -> &str {
+        self.built_message.as_deref().unwrap_or("")
+    }
+
+    /// Check if the builder has a message that can be saved
+    pub fn has_message(&self) -> bool {
+        self.built_message.is_some()
+    }
+
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("Message Builder");
         ui.label("Build HL7 messages using the fluent builder API.");

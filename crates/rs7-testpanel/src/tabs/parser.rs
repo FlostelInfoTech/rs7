@@ -31,6 +31,19 @@ impl Default for ParserTab {
 }
 
 impl ParserTab {
+    /// Set the input message content (used by File > Open)
+    pub fn set_message(&mut self, content: String) {
+        self.input_message = content;
+        self.parsed_message = None;
+        self.parse_error = None;
+        self.tree_nodes.clear();
+    }
+
+    /// Get the current input message content (used by File > Save)
+    pub fn get_message(&self) -> &str {
+        &self.input_message
+    }
+
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("Message Parser");
         ui.label("Parse HL7 v2.x messages and explore their structure.");

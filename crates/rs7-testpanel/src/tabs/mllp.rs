@@ -70,6 +70,16 @@ impl Default for MllpTab {
 }
 
 impl MllpTab {
+    /// Set the client message content (used by File > Open)
+    pub fn set_message(&mut self, content: String) {
+        self.client_message = content;
+    }
+
+    /// Get the current client message content (used by File > Save)
+    pub fn get_message(&self) -> &str {
+        &self.client_message
+    }
+
     pub fn ui(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         ui.heading("MLLP Client/Server");
         ui.label("Send and receive HL7 messages using the MLLP (Minimal Lower Layer Protocol).");

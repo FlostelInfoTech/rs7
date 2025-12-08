@@ -5,6 +5,7 @@ use crate::logo;
 use crate::tabs::{
     ParserTab, BuilderTab, MllpTab, ValidatorTab, FhirTab, TerserTab, XmlTab,
 };
+use std::path::PathBuf;
 
 /// The active tab in the application
 #[derive(Default, PartialEq, Clone, Copy)]
@@ -81,6 +82,8 @@ pub struct Rs7TestPanel {
     xml_tab: XmlTab,
     show_about: bool,
     show_shortcuts: bool,
+    current_file: Option<PathBuf>,
+    status_message: Option<String>,
 }
 
 impl Rs7TestPanel {
@@ -96,10 +99,110 @@ impl Rs7TestPanel {
             xml_tab: XmlTab::default(),
             show_about: false,
             show_shortcuts: false,
+            current_file: None,
+            status_message: None,
+        }
+    }
+
+    /// Check if Open is available for the current tab
+    fn can_open(&self) -> bool {
+        // Builder tab doesn't support opening files (it builds from scratch)
+        self.active_tab != ActiveTab::Builder
+    }
+
+    /// Check if Save is available for the current tab
+    fn can_save(&self) -> bool {
+        match self.active_tab {
+            ActiveTab::Builder => self.builder_tab.has_message(),
+            _ => true,
+        }
+    }
+
+    fn open_file(&mut self) {
+        if !self.can_open() {
+            return;
+        }
+
+        let file = rfd::FileDialog::new()
+            .add_filter("HL7 Messages", &["hl7", "txt"])
+            .add_filter("All Files", &["*"])
+            .set_title("Open HL7 Message")
+            .pick_file();
+
+        if let Some(path) = file {
+            match std::fs::read_to_string(&path) {
+                Ok(content) => {
+                    // Set message in the current tab
+                    match self.active_tab {
+                        ActiveTab::Parser => self.parser_tab.set_message(content),
+                        ActiveTab::Terser => self.terser_tab.set_message(content),
+                        ActiveTab::Validator => self.validator_tab.set_message(content),
+                        ActiveTab::Mllp => self.mllp_tab.set_message(content),
+                        ActiveTab::Fhir => self.fhir_tab.set_message(content),
+                        ActiveTab::Xml => self.xml_tab.set_message(content),
+                        ActiveTab::Builder => {} // Builder doesn't support open
+                    }
+                    self.current_file = Some(path.clone());
+                    self.status_message = Some(format!("Opened: {}", path.display()));
+                }
+                Err(e) => {
+                    self.status_message = Some(format!("Error opening file: {}", e));
+                }
+            }
+        }
+    }
+
+    fn save_file(&mut self) {
+        if !self.can_save() {
+            self.status_message = Some("No message to save. Build a message first.".to_string());
+            return;
+        }
+
+        let file = rfd::FileDialog::new()
+            .add_filter("HL7 Messages", &["hl7"])
+            .add_filter("Text Files", &["txt"])
+            .add_filter("All Files", &["*"])
+            .set_title("Save HL7 Message")
+            .set_file_name(
+                self.current_file
+                    .as_ref()
+                    .and_then(|p| p.file_name())
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("message.hl7"),
+            )
+            .save_file();
+
+        if let Some(path) = file {
+            // Get content from the current tab and normalize line endings
+            let content = match self.active_tab {
+                ActiveTab::Parser => self.parser_tab.get_message(),
+                ActiveTab::Builder => self.builder_tab.get_message(),
+                ActiveTab::Terser => self.terser_tab.get_message(),
+                ActiveTab::Validator => self.validator_tab.get_message(),
+                ActiveTab::Mllp => self.mllp_tab.get_message(),
+                ActiveTab::Fhir => self.fhir_tab.get_message(),
+                ActiveTab::Xml => self.xml_tab.get_message(),
+            };
+
+            // Normalize line endings to CR for HL7
+            let content = content.replace("\r\n", "\r").replace('\n', "\r");
+
+            match std::fs::write(&path, &content) {
+                Ok(()) => {
+                    self.current_file = Some(path.clone());
+                    self.status_message = Some(format!("Saved: {}", path.display()));
+                }
+                Err(e) => {
+                    self.status_message = Some(format!("Error saving file: {}", e));
+                }
+            }
         }
     }
 
     fn handle_keyboard_shortcuts(&mut self, ctx: &egui::Context) {
+        let mut open_file = false;
+        let mut save_file = false;
+
         ctx.input(|i| {
             if i.modifiers.ctrl {
                 if i.key_pressed(egui::Key::Num1) {
@@ -116,12 +219,24 @@ impl Rs7TestPanel {
                     self.active_tab = ActiveTab::Fhir;
                 } else if i.key_pressed(egui::Key::Num7) {
                     self.active_tab = ActiveTab::Xml;
+                } else if i.key_pressed(egui::Key::O) {
+                    open_file = true;
+                } else if i.key_pressed(egui::Key::S) {
+                    save_file = true;
                 }
             }
             if i.key_pressed(egui::Key::F1) {
                 self.show_shortcuts = !self.show_shortcuts;
             }
         });
+
+        // Handle file operations outside of input closure
+        if open_file {
+            self.open_file();
+        }
+        if save_file {
+            self.save_file();
+        }
     }
 }
 
@@ -138,20 +253,37 @@ impl eframe::App for Rs7TestPanel {
                 ui.label(RichText::new("RS7").strong().size(16.0).color(Color32::from_rgb(59, 130, 246)));
                 ui.separator();
 
+                let mut open_clicked = false;
+                let mut save_clicked = false;
+                let can_open = self.can_open();
+                let can_save = self.can_save();
+
                 ui.menu_button("File", |ui| {
-                    if ui.button("\u{1F4C2} Open Message...").clicked() {
-                        // TODO: File open dialog
-                        ui.close();
-                    }
-                    if ui.button("\u{1F4BE} Save Message...").clicked() {
-                        // TODO: File save dialog
-                        ui.close();
-                    }
+                    ui.add_enabled_ui(can_open, |ui| {
+                        if ui.button("\u{1F4C2} Open Message...").clicked() {
+                            open_clicked = true;
+                            ui.close();
+                        }
+                    });
+                    ui.add_enabled_ui(can_save, |ui| {
+                        if ui.button("\u{1F4BE} Save Message...").clicked() {
+                            save_clicked = true;
+                            ui.close();
+                        }
+                    });
                     ui.separator();
                     if ui.button("\u{274C} Exit").clicked() {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                     }
                 });
+
+                // Handle file operations after menu closes
+                if open_clicked {
+                    self.open_file();
+                }
+                if save_clicked {
+                    self.save_file();
+                }
 
                 ui.menu_button("View", |ui| {
                     for tab in ActiveTab::all() {
@@ -218,7 +350,11 @@ impl eframe::App for Rs7TestPanel {
                 ui.separator();
                 ui.label(RichText::new(format!("{} {}", self.active_tab.icon(), self.active_tab.label())).weak());
                 ui.separator();
-                ui.label(RichText::new("Ready").weak());
+                if let Some(ref msg) = self.status_message {
+                    ui.label(RichText::new(msg).weak());
+                } else {
+                    ui.label(RichText::new("Ready").weak());
+                }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     ui.label(RichText::new("Press F1 for shortcuts").weak().italics());
                     ui.separator();
@@ -354,6 +490,23 @@ impl eframe::App for Rs7TestPanel {
                             }
 
                             // Empty row for spacing (add_space not allowed in grid)
+                            ui.label("");
+                            ui.label("");
+                            ui.end_row();
+
+                            ui.label(RichText::new("File").strong().underline());
+                            ui.label("");
+                            ui.end_row();
+
+                            ui.label("Ctrl+O");
+                            ui.label("Open message file");
+                            ui.end_row();
+
+                            ui.label("Ctrl+S");
+                            ui.label("Save message file");
+                            ui.end_row();
+
+                            // Empty row for spacing
                             ui.label("");
                             ui.label("");
                             ui.end_row();

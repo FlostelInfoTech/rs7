@@ -94,6 +94,21 @@ impl Default for ValidatorTab {
 }
 
 impl ValidatorTab {
+    /// Set the input message content (used by File > Open)
+    pub fn set_message(&mut self, content: String) {
+        self.input_message = content;
+        self.parsed_message = None;
+        self.parse_error = None;
+        self.validation_results.clear();
+        self.is_valid = None;
+        self.tree_nodes.clear();
+    }
+
+    /// Get the current input message content (used by File > Save)
+    pub fn get_message(&self) -> &str {
+        &self.input_message
+    }
+
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("Message Validator");
         ui.label("Validate HL7 messages against schemas and data type rules.");
