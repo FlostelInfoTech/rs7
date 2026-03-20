@@ -24,11 +24,13 @@ use rs7_terser::Terser;
 use rs7_validator::Validator;
 use rs7_core::Version;
 
+mod definitions;
 mod utils;
 mod message;
 mod terser;
 mod validation;
 
+pub use definitions::*;
 pub use message::*;
 pub use terser::*;
 pub use validation::*;

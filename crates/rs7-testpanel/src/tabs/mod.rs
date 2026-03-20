@@ -1,17 +1,23 @@
 //! Tab modules for the RS7 Test Panel
 
-mod parser;
 mod builder;
+mod dicom;
+mod fhir;
+mod ftp;
+mod http;
+mod mllp;
+mod parser;
 mod terser;
 mod validator;
-mod mllp;
-mod fhir;
 mod xml;
 
-pub use parser::ParserTab;
 pub use builder::BuilderTab;
+pub use dicom::DicomTab;
+pub use fhir::FhirTab;
+pub use ftp::FtpTab;
+pub use http::HttpTab;
+pub use mllp::MllpTab;
+pub use parser::ParserTab;
 pub use terser::TerserTab;
 pub use validator::ValidatorTab;
-pub use mllp::MllpTab;
-pub use fhir::FhirTab;
 pub use xml::XmlTab;

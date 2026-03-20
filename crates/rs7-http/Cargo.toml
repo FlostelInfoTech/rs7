@@ -43,7 +43,7 @@ webpki-roots = { version = "1.0", optional = true }
 
 # Security - Authentication (optional)
 base64 = { version = "0.22", optional = true }
-jsonwebtoken = { version = "10.2", features = ["aws_lc_rs"], optional = true }
+jsonwebtoken = { version = "10.2", features = ["rust_crypto"], optional = true }
 
 # Protocol - WebSocket (optional)
 tokio-tungstenite = { version = "0.28", optional = true }

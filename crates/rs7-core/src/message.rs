@@ -203,6 +203,40 @@ impl Default for Message {
     }
 }
 
+impl Message {
+    /// Convert this message into an Arc for cheap cloning
+    ///
+    /// This is useful when the same message needs to be shared across multiple
+    /// contexts (e.g., routing to multiple destinations, audit logging, etc.)
+    /// without incurring the cost of deep cloning the entire message structure.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use rs7_core::message::Message;
+    /// use std::sync::Arc;
+    ///
+    /// let message = Message::new();
+    /// let shared: Arc<Message> = message.into_arc();
+    ///
+    /// // Cheap clone - just increments reference count
+    /// let shared2 = Arc::clone(&shared);
+    /// ```
+    #[inline]
+    pub fn into_arc(self) -> std::sync::Arc<Self> {
+        std::sync::Arc::new(self)
+    }
+
+    /// Create an Arc-wrapped message directly
+    ///
+    /// This is a convenience method that creates a new message and wraps it
+    /// in an Arc in one step.
+    #[inline]
+    pub fn new_arc() -> std::sync::Arc<Self> {
+        std::sync::Arc::new(Self::new())
+    }
+}
+
 /// Message type identifiers
 pub mod message_types {
     /// ADT - Admit/Discharge/Transfer

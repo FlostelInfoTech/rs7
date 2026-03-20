@@ -170,6 +170,30 @@ impl Repetition {
         self.components.first().and_then(|c| c.value())
     }
 
+    /// Get the full value of all components joined by the component separator (^)
+    ///
+    /// This returns the complete field value including all components.
+    /// For example, for MSH-9 with "ADT^A01", this returns "ADT^A01" instead of just "ADT".
+    pub fn full_value(&self) -> Option<String> {
+        if self.components.is_empty() {
+            return None;
+        }
+
+        // Get values from all components, using empty string for None
+        let values: Vec<&str> = self
+            .components
+            .iter()
+            .map(|c| c.value().unwrap_or(""))
+            .collect();
+
+        // Trim trailing empty components
+        let last_non_empty = values.iter().rposition(|v| !v.is_empty());
+        match last_non_empty {
+            Some(idx) => Some(values[..=idx].join("^")),
+            None => self.value().map(|s| s.to_string()),
+        }
+    }
+
     /// Encode the repetition
     pub fn encode(&self, delimiters: &Delimiters) -> String {
         self.components

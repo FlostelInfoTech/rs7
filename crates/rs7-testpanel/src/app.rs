@@ -3,7 +3,8 @@
 use eframe::egui::{self, Color32, RichText, Stroke};
 use crate::logo;
 use crate::tabs::{
-    ParserTab, BuilderTab, MllpTab, ValidatorTab, FhirTab, TerserTab, XmlTab,
+    BuilderTab, DicomTab, FhirTab, FtpTab, HttpTab, MllpTab, ParserTab, TerserTab, ValidatorTab,
+    XmlTab,
 };
 use std::path::PathBuf;
 
@@ -16,8 +17,11 @@ pub enum ActiveTab {
     Terser,
     Validator,
     Mllp,
+    Http,
+    Ftp,
     Fhir,
     Xml,
+    Dicom,
 }
 
 impl ActiveTab {
@@ -28,8 +32,11 @@ impl ActiveTab {
             ActiveTab::Terser => "Terser",
             ActiveTab::Validator => "Validator",
             ActiveTab::Mllp => "MLLP",
+            ActiveTab::Http => "HTTP",
+            ActiveTab::Ftp => "FTP",
             ActiveTab::Fhir => "FHIR",
             ActiveTab::Xml => "XML",
+            ActiveTab::Dicom => "DICOM",
         }
     }
 
@@ -40,8 +47,11 @@ impl ActiveTab {
             ActiveTab::Terser => "\u{1F4CD}",      // Pin/locator
             ActiveTab::Validator => "\u{2705}",    // Check mark
             ActiveTab::Mllp => "\u{1F4E1}",        // Antenna/network
+            ActiveTab::Http => "\u{1F310}",        // Globe
+            ActiveTab::Ftp => "\u{1F4C1}",         // Folder
             ActiveTab::Fhir => "\u{1F525}",        // Fire (FHIR)
             ActiveTab::Xml => "\u{1F4C4}",         // Document
+            ActiveTab::Dicom => "\u{1F3E5}",       // Hospital
         }
     }
 
@@ -52,8 +62,11 @@ impl ActiveTab {
             ActiveTab::Terser => "Access fields using path notation (Ctrl+3)",
             ActiveTab::Validator => "Validate messages against schemas (Ctrl+4)",
             ActiveTab::Mllp => "Send/receive via MLLP protocol (Ctrl+5)",
-            ActiveTab::Fhir => "Convert to/from FHIR R4 (Ctrl+6)",
-            ActiveTab::Xml => "Convert between ER7 and XML (Ctrl+7)",
+            ActiveTab::Http => "Send/receive via HTTP protocol (Ctrl+6)",
+            ActiveTab::Ftp => "Transfer files via FTP/SFTP (Ctrl+7)",
+            ActiveTab::Fhir => "Convert to/from FHIR R4 (Ctrl+8)",
+            ActiveTab::Xml => "Convert between ER7 and XML (Ctrl+9)",
+            ActiveTab::Dicom => "DICOM medical imaging (Ctrl+0)",
         }
     }
 
@@ -64,8 +77,11 @@ impl ActiveTab {
             ActiveTab::Terser,
             ActiveTab::Validator,
             ActiveTab::Mllp,
+            ActiveTab::Http,
+            ActiveTab::Ftp,
             ActiveTab::Fhir,
             ActiveTab::Xml,
+            ActiveTab::Dicom,
         ]
     }
 }
@@ -78,8 +94,11 @@ pub struct Rs7TestPanel {
     terser_tab: TerserTab,
     validator_tab: ValidatorTab,
     mllp_tab: MllpTab,
+    http_tab: HttpTab,
+    ftp_tab: FtpTab,
     fhir_tab: FhirTab,
     xml_tab: XmlTab,
+    dicom_tab: DicomTab,
     show_about: bool,
     show_shortcuts: bool,
     current_file: Option<PathBuf>,
@@ -95,8 +114,11 @@ impl Rs7TestPanel {
             terser_tab: TerserTab::default(),
             validator_tab: ValidatorTab::default(),
             mllp_tab: MllpTab::default(),
+            http_tab: HttpTab::default(),
+            ftp_tab: FtpTab::default(),
             fhir_tab: FhirTab::default(),
             xml_tab: XmlTab::default(),
+            dicom_tab: DicomTab::default(),
             show_about: false,
             show_shortcuts: false,
             current_file: None,
@@ -138,8 +160,11 @@ impl Rs7TestPanel {
                         ActiveTab::Terser => self.terser_tab.set_message(content),
                         ActiveTab::Validator => self.validator_tab.set_message(content),
                         ActiveTab::Mllp => self.mllp_tab.set_message(content),
+                        ActiveTab::Http => self.http_tab.set_message(content),
+                        ActiveTab::Ftp => self.ftp_tab.set_message(content),
                         ActiveTab::Fhir => self.fhir_tab.set_message(content),
                         ActiveTab::Xml => self.xml_tab.set_message(content),
+                        ActiveTab::Dicom => self.dicom_tab.set_message(&content),
                         ActiveTab::Builder => {} // Builder doesn't support open
                     }
                     self.current_file = Some(path.clone());
@@ -180,8 +205,11 @@ impl Rs7TestPanel {
                 ActiveTab::Terser => self.terser_tab.get_message(),
                 ActiveTab::Validator => self.validator_tab.get_message(),
                 ActiveTab::Mllp => self.mllp_tab.get_message(),
+                ActiveTab::Http => self.http_tab.get_message(),
+                ActiveTab::Ftp => self.ftp_tab.get_message(),
                 ActiveTab::Fhir => self.fhir_tab.get_message(),
                 ActiveTab::Xml => self.xml_tab.get_message(),
+                ActiveTab::Dicom => self.dicom_tab.get_message(),
             };
 
             // Normalize line endings to CR for HL7
@@ -216,9 +244,15 @@ impl Rs7TestPanel {
                 } else if i.key_pressed(egui::Key::Num5) {
                     self.active_tab = ActiveTab::Mllp;
                 } else if i.key_pressed(egui::Key::Num6) {
-                    self.active_tab = ActiveTab::Fhir;
+                    self.active_tab = ActiveTab::Http;
                 } else if i.key_pressed(egui::Key::Num7) {
+                    self.active_tab = ActiveTab::Ftp;
+                } else if i.key_pressed(egui::Key::Num8) {
+                    self.active_tab = ActiveTab::Fhir;
+                } else if i.key_pressed(egui::Key::Num9) {
                     self.active_tab = ActiveTab::Xml;
+                } else if i.key_pressed(egui::Key::Num0) {
+                    self.active_tab = ActiveTab::Dicom;
                 } else if i.key_pressed(egui::Key::O) {
                     open_file = true;
                 } else if i.key_pressed(egui::Key::S) {
@@ -372,8 +406,11 @@ impl eframe::App for Rs7TestPanel {
                 ActiveTab::Terser => self.terser_tab.ui(ui),
                 ActiveTab::Validator => self.validator_tab.ui(ui),
                 ActiveTab::Mllp => self.mllp_tab.ui(ui, ctx),
+                ActiveTab::Http => self.http_tab.ui(ui, ctx),
+                ActiveTab::Ftp => self.ftp_tab.ui(ui, ctx),
                 ActiveTab::Fhir => self.fhir_tab.ui(ui),
                 ActiveTab::Xml => self.xml_tab.ui(ui),
+                ActiveTab::Dicom => self.dicom_tab.ui(ui),
             }
         });
 
