@@ -60,7 +60,7 @@ pub mod macros;
 // Re-exports
 pub use error::{CustomSegmentError, Result};
 pub use message_ext::MessageExt;
-pub use registry::CustomSegmentRegistry;
+pub use registry::{CustomSegmentRegistry, FactoryInfo};
 pub use segment::{
     BuildableField, BuilderField, CustomSegment, FieldDefinition, ParseSegmentField,
     SerializeSegmentField,

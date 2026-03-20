@@ -23,6 +23,15 @@ pub trait CustomSegmentFactory: Send + Sync {
     fn type_name(&self) -> &'static str;
 }
 
+/// Information about a registered segment factory
+#[derive(Debug, Clone)]
+pub struct FactoryInfo {
+    /// The segment ID this factory handles (e.g., "ZPV")
+    pub segment_id: String,
+    /// The Rust type name for debugging
+    pub type_name: String,
+}
+
 /// Implementation of CustomSegmentFactory for types implementing CustomSegment
 struct CustomSegmentFactoryImpl<T: CustomSegment + 'static> {
     _phantom: std::marker::PhantomData<T>,
@@ -172,7 +181,10 @@ impl CustomSegmentRegistry {
         Ok(self)
     }
 
-    /// Get the factory for a segment ID
+    /// Get metadata about a registered segment factory
+    ///
+    /// Returns the segment ID and type name for a registered factory.
+    /// To create a custom segment instance, use [`parse_segment()`] instead.
     ///
     /// # Arguments
     ///
@@ -180,29 +192,57 @@ impl CustomSegmentRegistry {
     ///
     /// # Returns
     ///
-    /// `Some(&dyn CustomSegmentFactory)` if the segment is registered,
-    /// `None` otherwise
+    /// `Some(FactoryInfo)` if the segment is registered, `None` otherwise
     ///
     /// # Example
     ///
     /// ```rust,ignore
-    /// if let Some(factory) = registry.get("ZPV") {
-    ///     let segment = factory.create(&generic_segment)?;
+    /// if let Some(info) = registry.get("ZPV") {
+    ///     println!("Found factory for {} (type: {})", info.segment_id, info.type_name);
     /// }
     /// ```
-    pub fn get(&self, id: &str) -> Option<Box<dyn CustomSegmentFactory + '_>> {
+    pub fn get(&self, id: &str) -> Option<FactoryInfo> {
         let factories = self.factories.read().ok()?;
 
-        // We need to clone the factory reference since we're returning a Box
-        // This is safe because the factory is just a thin wrapper
-        if factories.contains_key(id) {
-            // Return a reference wrapped in Option, but we can't actually
-            // return the factory due to lifetime issues with RwLock
-            // For now, return None - we'll fix this in the next iteration
-            // TODO: Refactor to return factory data instead of reference
-            None
+        factories.get(id).map(|factory| FactoryInfo {
+            segment_id: factory.segment_id().to_string(),
+            type_name: factory.type_name().to_string(),
+        })
+    }
+
+    /// Create a custom segment from a generic segment using the registered factory
+    ///
+    /// This is the primary way to use a registered factory. It acquires the
+    /// read lock, looks up the factory, and creates the segment in one step.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The segment ID to look up (e.g., "ZPV")
+    /// * `segment` - The generic segment to convert
+    ///
+    /// # Returns
+    ///
+    /// A boxed custom segment if the ID is registered and creation succeeds,
+    /// `None` if the segment isn't registered
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// if let Some(custom) = registry.create("ZPV", &generic_segment)? {
+    ///     // custom is Box<dyn Any + Send>
+    ///     let zpv = custom.downcast::<ZPV>().unwrap();
+    /// }
+    /// ```
+    pub fn create(&self, id: &str, segment: &Segment) -> Result<Option<Box<dyn Any + Send>>> {
+        let factories = self.factories.read().map_err(|e| {
+            CustomSegmentError::Other(format!("Failed to acquire read lock: {}", e))
+        })?;
+
+        if let Some(factory) = factories.get(id) {
+            let custom_segment = factory.create(segment)?;
+            Ok(Some(custom_segment))
         } else {
-            None
+            Ok(None)
         }
     }
 
@@ -390,6 +430,43 @@ mod tests {
 
         let segment = Segment::new("ZXY");
         let result = registry.parse_segment(&segment);
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_none());
+    }
+
+    #[test]
+    fn test_get_factory_info() {
+        let registry = CustomSegmentRegistry::new();
+        registry.register::<TestZPV>().unwrap();
+
+        let info = registry.get("ZPV");
+        assert!(info.is_some());
+        let info = info.unwrap();
+        assert_eq!(info.segment_id, "ZPV");
+
+        // Unregistered segment returns None
+        assert!(registry.get("ZXX").is_none());
+    }
+
+    #[test]
+    fn test_create_segment() {
+        let registry = CustomSegmentRegistry::new();
+        registry.register::<TestZPV>().unwrap();
+
+        let mut segment = Segment::new("ZPV");
+        segment.set_field_value(1, "INPATIENT").unwrap();
+
+        let result = registry.create("ZPV", &segment);
+        assert!(result.is_ok());
+        let custom = result.unwrap();
+        assert!(custom.is_some());
+
+        // Downcast to verify the actual type
+        let zpv = custom.unwrap().downcast::<TestZPV>().unwrap();
+        assert_eq!(zpv.visit_type, "INPATIENT");
+
+        // Unregistered ID returns None
+        let result = registry.create("ZXX", &segment);
         assert!(result.is_ok());
         assert!(result.unwrap().is_none());
     }

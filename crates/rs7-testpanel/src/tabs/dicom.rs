@@ -11,8 +11,41 @@ use tokio::runtime::Runtime;
 
 // DICOM SOP Class UIDs
 const VERIFICATION_SOP_CLASS: &str = "1.2.840.10008.1.1";
+const PATIENT_ROOT_FIND_SOP_CLASS: &str = "1.2.840.10008.5.1.4.1.2.1.1";
+const STUDY_ROOT_FIND_SOP_CLASS: &str = "1.2.840.10008.5.1.4.1.2.2.1";
 const IMPLICIT_VR_LITTLE_ENDIAN: &str = "1.2.840.10008.1.2";
 const EXPLICIT_VR_LITTLE_ENDIAN: &str = "1.2.840.10008.1.2.1";
+
+/// Query level for C-FIND
+#[derive(Clone, Copy, PartialEq, Default)]
+enum QueryLevel {
+    #[default]
+    Patient,
+    Study,
+}
+
+impl QueryLevel {
+    fn as_str(&self) -> &'static str {
+        match self {
+            QueryLevel::Patient => "Patient Root",
+            QueryLevel::Study => "Study Root",
+        }
+    }
+
+    fn sop_class(&self) -> &'static str {
+        match self {
+            QueryLevel::Patient => PATIENT_ROOT_FIND_SOP_CLASS,
+            QueryLevel::Study => STUDY_ROOT_FIND_SOP_CLASS,
+        }
+    }
+
+    fn query_retrieve_level(&self) -> &'static str {
+        match self {
+            QueryLevel::Patient => "PATIENT",
+            QueryLevel::Study => "STUDY",
+        }
+    }
+}
 
 /// Direction for log entries
 #[derive(Clone, Copy, PartialEq)]
@@ -96,6 +129,11 @@ pub struct DicomTab {
     scu_local_ae: String,
     scu_file_path: String,
 
+    // C-FIND query settings
+    scu_query_level: QueryLevel,
+    scu_query_patient_id: String,
+    scu_query_patient_name: String,
+
     // SCP (Server) settings
     scp_port: String,
     scp_ae_title: String,
@@ -121,6 +159,11 @@ impl Default for DicomTab {
             scu_remote_ae: "ANY-SCP".to_string(),
             scu_local_ae: "RS7-SCU".to_string(),
             scu_file_path: String::new(),
+
+            // C-FIND defaults
+            scu_query_level: QueryLevel::default(),
+            scu_query_patient_id: String::new(),
+            scu_query_patient_name: String::new(),
 
             // SCP defaults
             scp_port: "11113".to_string(),
@@ -239,16 +282,37 @@ impl DicomTab {
 
             ui.add_space(4.0);
 
-            // C-FIND (placeholder)
+            // C-FIND
+            ui.separator();
+            ui.label(RichText::new("C-FIND (Query)").strong());
+            ui.add_space(2.0);
+
             ui.horizontal(|ui| {
-                if ui
-                    .add_enabled(false, egui::Button::new("C-FIND (Query)"))
-                    .clicked()
-                {
-                    // TODO: Implement C-FIND
-                }
-                ui.label("- Coming soon");
+                ui.label("Query Level:");
+                egui::ComboBox::from_id_salt("cfind_level")
+                    .selected_text(self.scu_query_level.as_str())
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut self.scu_query_level, QueryLevel::Patient, "Patient Root");
+                        ui.selectable_value(&mut self.scu_query_level, QueryLevel::Study, "Study Root");
+                    });
             });
+
+            ui.horizontal(|ui| {
+                ui.label("Patient ID:");
+                ui.add(TextEdit::singleline(&mut self.scu_query_patient_id).desired_width(120.0).hint_text("*"));
+            });
+
+            ui.horizontal(|ui| {
+                ui.label("Patient Name:");
+                ui.add(TextEdit::singleline(&mut self.scu_query_patient_name).desired_width(120.0).hint_text("*"));
+            });
+
+            if ui
+                .add_enabled(!connecting, egui::Button::new("C-FIND (Query)"))
+                .clicked()
+            {
+                self.do_c_find(ui.ctx().clone());
+            }
         });
 
         ui.add_space(8.0);
@@ -527,6 +591,74 @@ impl DicomTab {
         });
     }
 
+    fn do_c_find(&mut self, ctx: egui::Context) {
+        let host = self.scu_remote_host.clone();
+        let port: u16 = self.scu_remote_port.parse().unwrap_or(11112);
+        let remote_ae = self.scu_remote_ae.clone();
+        let local_ae = self.scu_local_ae.clone();
+        let query_level = self.scu_query_level;
+        let patient_id = self.scu_query_patient_id.clone();
+        let patient_name = self.scu_query_patient_name.clone();
+        let state = self.scu_state.clone();
+
+        {
+            let mut s = state.lock().unwrap();
+            s.connecting = true;
+            s.last_result = None;
+            s.error = None;
+            s.log_entries.push(LogEntry {
+                timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+                direction: Direction::Info,
+                message: format!(
+                    "Starting C-FIND ({}) to {}:{}",
+                    query_level.as_str(),
+                    host,
+                    port
+                ),
+            });
+        }
+        ctx.request_repaint();
+
+        self.runtime.spawn(async move {
+            let result = do_c_find_async(
+                &host,
+                port,
+                &remote_ae,
+                &local_ae,
+                query_level,
+                &patient_id,
+                &patient_name,
+            )
+            .await;
+
+            let mut s = state.lock().unwrap();
+            s.connecting = false;
+
+            match result {
+                Ok(msg) => {
+                    s.last_result = Some(msg.clone());
+                    s.error = None;
+                    s.log_entries.push(LogEntry {
+                        timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+                        direction: Direction::Incoming,
+                        message: msg,
+                    });
+                }
+                Err(e) => {
+                    s.error = Some(e.clone());
+                    s.last_result = None;
+                    s.log_entries.push(LogEntry {
+                        timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
+                        direction: Direction::Error,
+                        message: e,
+                    });
+                }
+            }
+
+            ctx.request_repaint();
+        });
+    }
+
     fn start_scp(&mut self, ctx: egui::Context) {
         let port: u16 = self.scp_port.parse().unwrap_or(11113);
         let ae_title = self.scp_ae_title.clone();
@@ -745,6 +877,294 @@ async fn do_c_store_async(
         "C-STORE association established for {} (SOP Class: {}, {} bytes)",
         file_name, sop_class_uid_for_result, file_size
     ))
+}
+
+// === DICOM C-FIND Operation ===
+
+async fn do_c_find_async(
+    host: &str,
+    port: u16,
+    remote_ae: &str,
+    local_ae: &str,
+    query_level: QueryLevel,
+    patient_id: &str,
+    patient_name: &str,
+) -> Result<String, String> {
+    use dicom_ul::association::client::ClientAssociationOptions;
+    use dicom_ul::pdu::Pdu;
+    use std::time::Duration;
+
+    let addr = format!("{}:{}", host, port);
+    let remote_ae_owned = remote_ae.to_string();
+    let local_ae_owned = local_ae.to_string();
+    let sop_class = query_level.sop_class().to_string();
+    let qr_level = query_level.query_retrieve_level().to_string();
+    let patient_id_owned = patient_id.to_string();
+    let patient_name_owned = patient_name.to_string();
+    let level_str = query_level.as_str().to_string();
+
+    let result = tokio::task::spawn_blocking(move || -> Result<Vec<String>, String> {
+        // Establish association with the C-FIND SOP Class
+        let ts_implicit = IMPLICIT_VR_LITTLE_ENDIAN.to_string();
+        let ts_explicit = EXPLICIT_VR_LITTLE_ENDIAN.to_string();
+        let transfer_syntaxes: Vec<&String> = vec![&ts_implicit, &ts_explicit];
+        let options = ClientAssociationOptions::new()
+            .calling_ae_title(&local_ae_owned)
+            .called_ae_title(&remote_ae_owned)
+            .with_presentation_context(&sop_class, transfer_syntaxes)
+            .read_timeout(Duration::from_secs(30))
+            .write_timeout(Duration::from_secs(30));
+
+        let mut association = options
+            .establish(&addr)
+            .map_err(|e| format!("Failed to establish association: {}", e))?;
+
+        // Build the C-FIND-RQ command and identifier as raw DICOM data
+        // Command group (group 0000)
+        let mut command_data: Vec<u8> = Vec::new();
+
+        // Affected SOP Class UID (0000,0002)
+        write_dicom_element(&mut command_data, 0x0000, 0x0002, sop_class.as_bytes());
+        // Command Field (0000,0100) = 0x0020 (C-FIND-RQ)
+        write_dicom_element(&mut command_data, 0x0000, 0x0100, &0x0020u16.to_le_bytes());
+        // Message ID (0000,0110) = 1
+        write_dicom_element(&mut command_data, 0x0000, 0x0110, &1u16.to_le_bytes());
+        // Priority (0000,0700) = 0 (MEDIUM)
+        write_dicom_element(&mut command_data, 0x0000, 0x0700, &0u16.to_le_bytes());
+        // Command Data Set Type (0000,0800) = 0x0001 (data set present)
+        write_dicom_element(&mut command_data, 0x0000, 0x0800, &0x0001u16.to_le_bytes());
+
+        // Recalculate and prepend Command Group Length (0000,0000)
+        let group_length = command_data.len() as u32;
+        let mut full_command: Vec<u8> = Vec::new();
+        write_dicom_element(&mut full_command, 0x0000, 0x0000, &group_length.to_le_bytes());
+        full_command.extend_from_slice(&command_data);
+
+        // Build identifier (query keys) dataset
+        let mut identifier_data: Vec<u8> = Vec::new();
+
+        // Query/Retrieve Level (0008,0052)
+        let padded_level = pad_to_even(&qr_level);
+        write_dicom_element(&mut identifier_data, 0x0008, 0x0052, padded_level.as_bytes());
+
+        // Patient ID (0010,0020) - empty means wildcard match
+        let pid = if patient_id_owned.is_empty() {
+            "*".to_string()
+        } else {
+            patient_id_owned.clone()
+        };
+        let padded_pid = pad_to_even(&pid);
+        write_dicom_element(&mut identifier_data, 0x0010, 0x0020, padded_pid.as_bytes());
+
+        // Patient Name (0010,0010) - empty means wildcard match
+        let pname = if patient_name_owned.is_empty() {
+            "*".to_string()
+        } else {
+            patient_name_owned.clone()
+        };
+        let padded_pname = pad_to_even(&pname);
+        write_dicom_element(&mut identifier_data, 0x0010, 0x0010, padded_pname.as_bytes());
+
+        // Get the presentation context ID for our SOP class
+        let pc_id = association
+            .presentation_contexts()
+            .iter()
+            .find(|pc| pc.transfer_syntax == IMPLICIT_VR_LITTLE_ENDIAN || pc.transfer_syntax == EXPLICIT_VR_LITTLE_ENDIAN)
+            .map(|pc| pc.id)
+            .unwrap_or(1);
+
+        // Send command as P-DATA with command flag (last fragment = true, command = true)
+        // P-DATA-TF contains PDV items: [length(4)][context_id(1)][flags(1)][data...]
+        // flags: bit 0 = command(1)/data(0), bit 1 = last fragment
+        let command_pdv = build_pdv(pc_id, true, &full_command);
+        let data_pdv = build_pdv(pc_id, false, &identifier_data);
+
+        // Send command PDU
+        association
+            .send(&Pdu::PData {
+                data: vec![command_pdv],
+            })
+            .map_err(|e| format!("Failed to send C-FIND command: {}", e))?;
+
+        // Send data PDU (identifier)
+        association
+            .send(&Pdu::PData {
+                data: vec![data_pdv],
+            })
+            .map_err(|e| format!("Failed to send C-FIND identifier: {}", e))?;
+
+        // Receive responses
+        let mut results = Vec::new();
+        loop {
+            match association.receive() {
+                Ok(pdu) => match pdu {
+                    Pdu::PData { data } => {
+                        for pdv in &data {
+                            let is_command = pdv.value_type == dicom_ul::pdu::PDataValueType::Command;
+
+                            if is_command {
+                                // Parse status from command response
+                                let status = extract_status(&pdv.data);
+                                match status {
+                                    Some(0x0000) => {
+                                        // Success - no more results
+                                        let _ = association.release();
+                                        return Ok(results);
+                                    }
+                                    Some(0xFF00) | Some(0xFF01) => {
+                                        // Pending - more results coming
+                                    }
+                                    Some(code) => {
+                                        let _ = association.release();
+                                        return Err(format!("C-FIND failed with status: 0x{:04X}", code));
+                                    }
+                                    None => {}
+                                }
+                            } else {
+                                // Data response - extract patient info
+                                let info = extract_patient_info(&pdv.data);
+                                if !info.is_empty() {
+                                    results.push(info);
+                                }
+                            }
+                        }
+                    }
+                    Pdu::ReleaseRQ => {
+                        let _ = association.send(&Pdu::ReleaseRP);
+                        return Ok(results);
+                    }
+                    Pdu::AbortRQ { .. } => {
+                        return Err("Association aborted by remote".to_string());
+                    }
+                    _ => {}
+                },
+                Err(e) => {
+                    return Err(format!("PDU receive error: {}", e));
+                }
+            }
+        }
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))?;
+
+    let results = result?;
+    if results.is_empty() {
+        Ok(format!(
+            "C-FIND complete ({}) - No matching results found",
+            level_str
+        ))
+    } else {
+        let summary = results.join("\n");
+        Ok(format!(
+            "C-FIND complete ({}) - {} result(s):\n{}",
+            level_str,
+            results.len(),
+            summary
+        ))
+    }
+}
+
+/// Write a DICOM data element in Implicit VR Little Endian format
+fn write_dicom_element(buf: &mut Vec<u8>, group: u16, element: u16, value: &[u8]) {
+    buf.extend_from_slice(&group.to_le_bytes());
+    buf.extend_from_slice(&element.to_le_bytes());
+    buf.extend_from_slice(&(value.len() as u32).to_le_bytes());
+    buf.extend_from_slice(value);
+}
+
+/// Pad a string value to even length (DICOM requirement)
+fn pad_to_even(s: &str) -> String {
+    if s.len() % 2 != 0 {
+        format!("{} ", s)
+    } else {
+        s.to_string()
+    }
+}
+
+/// Build a PDV (Presentation Data Value) item
+fn build_pdv(context_id: u8, is_command: bool, data: &[u8]) -> dicom_ul::pdu::PDataValue {
+    dicom_ul::pdu::PDataValue {
+        presentation_context_id: context_id,
+        value_type: if is_command {
+            dicom_ul::pdu::PDataValueType::Command
+        } else {
+            dicom_ul::pdu::PDataValueType::Data
+        },
+        is_last: true,
+        data: data.to_vec(),
+    }
+}
+
+/// Extract status code from a DICOM command dataset
+fn extract_status(data: &[u8]) -> Option<u16> {
+    // Search for Status tag (0000,0900) in implicit VR LE
+    let target: [u8; 4] = [0x00, 0x00, 0x00, 0x09]; // (0000,0900) in LE
+    let mut pos = 0;
+    while pos + 8 <= data.len() {
+        if data[pos..pos + 4] == target {
+            let value_len = u32::from_le_bytes([
+                data[pos + 4],
+                data[pos + 5],
+                data[pos + 6],
+                data[pos + 7],
+            ]) as usize;
+            if value_len >= 2 && pos + 8 + value_len <= data.len() {
+                return Some(u16::from_le_bytes([data[pos + 8], data[pos + 9]]));
+            }
+        }
+        // Advance by element size
+        if pos + 8 <= data.len() {
+            let vl = u32::from_le_bytes([
+                data[pos + 4],
+                data[pos + 5],
+                data[pos + 6],
+                data[pos + 7],
+            ]) as usize;
+            pos += 8 + vl;
+        } else {
+            break;
+        }
+    }
+    None
+}
+
+/// Extract patient info from a C-FIND response dataset
+fn extract_patient_info(data: &[u8]) -> String {
+    let mut patient_name = String::new();
+    let mut patient_id = String::new();
+
+    let mut pos = 0;
+    while pos + 8 <= data.len() {
+        let group = u16::from_le_bytes([data[pos], data[pos + 1]]);
+        let element = u16::from_le_bytes([data[pos + 2], data[pos + 3]]);
+        let value_len = u32::from_le_bytes([
+            data[pos + 4],
+            data[pos + 5],
+            data[pos + 6],
+            data[pos + 7],
+        ]) as usize;
+
+        if value_len == 0xFFFFFFFF || pos + 8 + value_len > data.len() {
+            break;
+        }
+
+        let value_bytes = &data[pos + 8..pos + 8 + value_len];
+        let value = String::from_utf8_lossy(value_bytes).trim().to_string();
+
+        match (group, element) {
+            (0x0010, 0x0010) => patient_name = value, // Patient Name
+            (0x0010, 0x0020) => patient_id = value,   // Patient ID
+            _ => {}
+        }
+
+        pos += 8 + value_len;
+    }
+
+    if patient_name.is_empty() && patient_id.is_empty() {
+        String::new()
+    } else {
+        format!("  {} (ID: {})", patient_name, patient_id)
+    }
 }
 
 // === DICOM SCP Server ===

@@ -21,8 +21,135 @@ impl ConformanceProfile {
     }
 
     /// Validate the profile structure itself
+    ///
+    /// Checks that the profile is well-formed before it can be used to validate messages.
+    /// This validates metadata, message structure, segment definitions, and field constraints.
     pub fn validate(&self) -> Result<()> {
-        // TODO: Implement profile validation
+        // Validate metadata
+        if self.metadata.name.trim().is_empty() {
+            return Err(crate::error::ConformanceError::InvalidProfile(
+                "Profile name must not be empty".to_string(),
+            ));
+        }
+        if self.metadata.version.trim().is_empty() {
+            return Err(crate::error::ConformanceError::InvalidProfile(
+                "Profile version must not be empty".to_string(),
+            ));
+        }
+
+        // Validate message structure
+        if self.message.message_type.trim().is_empty() {
+            return Err(crate::error::ConformanceError::InvalidProfile(
+                "Message type must not be empty".to_string(),
+            ));
+        }
+        if self.message.trigger_event.trim().is_empty() {
+            return Err(crate::error::ConformanceError::InvalidProfile(
+                "Trigger event must not be empty".to_string(),
+            ));
+        }
+        if self.message.segments.is_empty() {
+            return Err(crate::error::ConformanceError::InvalidProfile(
+                "Profile must define at least one segment".to_string(),
+            ));
+        }
+
+        // Validate each segment
+        for segment in &self.message.segments {
+            // Segment name must be a valid 3-character identifier
+            if segment.name.trim().is_empty() {
+                return Err(crate::error::ConformanceError::InvalidProfile(
+                    "Segment name must not be empty".to_string(),
+                ));
+            }
+            if segment.name.len() != 3 || !segment.name.chars().all(|c| c.is_ascii_alphanumeric()) {
+                return Err(crate::error::ConformanceError::InvalidProfile(
+                    format!("Invalid segment ID '{}': must be exactly 3 alphanumeric characters", segment.name),
+                ));
+            }
+
+            // Validate field profiles
+            for field in &segment.fields {
+                if field.position == 0 {
+                    return Err(crate::error::ConformanceError::InvalidProfile(
+                        format!("Field position must be >= 1 in segment '{}'", segment.name),
+                    ));
+                }
+
+                if let Some(length) = field.length {
+                    if length == 0 {
+                        return Err(crate::error::ConformanceError::InvalidProfile(
+                            format!("Field {}-{} length must be > 0", segment.name, field.position),
+                        ));
+                    }
+                }
+
+                // Validate component profiles if present
+                if let Some(ref components) = field.components {
+                    for component in components {
+                        if component.position == 0 {
+                            return Err(crate::error::ConformanceError::InvalidProfile(
+                                format!(
+                                    "Component position must be >= 1 in field {}-{}",
+                                    segment.name, field.position
+                                ),
+                            ));
+                        }
+                        if let Some(length) = component.length {
+                            if length == 0 {
+                                return Err(crate::error::ConformanceError::InvalidProfile(
+                                    format!(
+                                        "Component {}-{}.{} length must be > 0",
+                                        segment.name, field.position, component.position
+                                    ),
+                                ));
+                            }
+                        }
+                    }
+                }
+
+                // Validate value set binding if present
+                if let Some(ref vs) = field.value_set {
+                    if vs.value_set_id.trim().is_empty() {
+                        return Err(crate::error::ConformanceError::InvalidProfile(
+                            format!(
+                                "Value set ID must not be empty for field {}-{}",
+                                segment.name, field.position
+                            ),
+                        ));
+                    }
+                }
+
+                // Validate predicate condition if conditional
+                if let ConditionalUsage::Conditional(ref predicate) = field.usage {
+                    if predicate.condition.trim().is_empty() {
+                        return Err(crate::error::ConformanceError::InvalidProfile(
+                            format!(
+                                "Predicate condition must not be empty for conditional field {}-{}",
+                                segment.name, field.position
+                            ),
+                        ));
+                    }
+                }
+            }
+        }
+
+        // Validate co-constraints if present
+        if let Some(ref constraints) = self.message.co_constraints {
+            for constraint in constraints {
+                if constraint.id.trim().is_empty() {
+                    return Err(crate::error::ConformanceError::InvalidProfile(
+                        "Co-constraint ID must not be empty".to_string(),
+                    ));
+                }
+                if constraint.condition.trim().is_empty() {
+                    return Err(crate::error::ConformanceError::InvalidProfile(
+                        format!("Co-constraint '{}' condition must not be empty", constraint.id),
+                    ));
+                }
+            }
+        }
+
         Ok(())
     }
 }
@@ -577,5 +704,106 @@ mod tests {
     fn test_cardinality_invalid() {
         let result = Cardinality::new(5, Some(3));
         assert!(result.is_err());
+    }
+
+    fn make_valid_profile() -> ConformanceProfile {
+        let metadata = ProfileMetadata::new(
+            "Test Profile".to_string(),
+            "1.0".to_string(),
+            Version::V2_5,
+        );
+        let mut message = MessageProfile::new("ADT".to_string(), "A01".to_string());
+        let mut msh = SegmentProfile::new("MSH".to_string(), Usage::Required, Cardinality::one());
+        msh.add_field(FieldProfile::new(1, Usage::Required, Cardinality::one()));
+        message.add_segment(msh);
+        ConformanceProfile::new(metadata, message)
+    }
+
+    #[test]
+    fn test_validate_valid_profile() {
+        let profile = make_valid_profile();
+        assert!(profile.validate().is_ok());
+    }
+
+    #[test]
+    fn test_validate_empty_name() {
+        let mut profile = make_valid_profile();
+        profile.metadata.name = "".to_string();
+        assert!(profile.validate().is_err());
+    }
+
+    #[test]
+    fn test_validate_empty_version() {
+        let mut profile = make_valid_profile();
+        profile.metadata.version = "".to_string();
+        assert!(profile.validate().is_err());
+    }
+
+    #[test]
+    fn test_validate_empty_message_type() {
+        let mut profile = make_valid_profile();
+        profile.message.message_type = "".to_string();
+        assert!(profile.validate().is_err());
+    }
+
+    #[test]
+    fn test_validate_no_segments() {
+        let mut profile = make_valid_profile();
+        profile.message.segments.clear();
+        assert!(profile.validate().is_err());
+    }
+
+    #[test]
+    fn test_validate_invalid_segment_id() {
+        let mut profile = make_valid_profile();
+        profile.message.segments[0].name = "AB".to_string(); // Too short
+        assert!(profile.validate().is_err());
+    }
+
+    #[test]
+    fn test_validate_field_position_zero() {
+        let mut profile = make_valid_profile();
+        profile.message.segments[0].fields[0].position = 0;
+        assert!(profile.validate().is_err());
+    }
+
+    #[test]
+    fn test_validate_field_zero_length() {
+        let mut profile = make_valid_profile();
+        profile.message.segments[0].fields[0].length = Some(0);
+        assert!(profile.validate().is_err());
+    }
+
+    #[test]
+    fn test_validate_empty_predicate_condition() {
+        let mut profile = make_valid_profile();
+        profile.message.segments[0].fields[0].usage =
+            ConditionalUsage::Conditional(Predicate::new(
+                "".to_string(),
+                Usage::Required,
+                Usage::Optional,
+            ));
+        assert!(profile.validate().is_err());
+    }
+
+    #[test]
+    fn test_validate_empty_value_set_id() {
+        let mut profile = make_valid_profile();
+        profile.message.segments[0].fields[0].value_set = Some(ValueSetBinding::new(
+            "".to_string(),
+            BindingStrength::Required,
+        ));
+        assert!(profile.validate().is_err());
+    }
+
+    #[test]
+    fn test_validate_empty_co_constraint_id() {
+        let mut profile = make_valid_profile();
+        profile.message.co_constraints = Some(vec![CoConstraint::new(
+            "".to_string(),
+            "desc".to_string(),
+            "condition".to_string(),
+        )]);
+        assert!(profile.validate().is_err());
     }
 }
