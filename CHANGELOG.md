@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-03-21
+
+### Added - Healthcare-Grade Benchmark Framework
+
+- **Comprehensive Benchmark Suite** — 9 new benchmark files covering the full RS7 pipeline:
+  - `message_types_bench` — Parse and round-trip across 7 HL7 message types (ADT, ORU, RDE, SIU, MDM, DFT, ORM)
+  - `edge_cases_bench` — Escape sequence density, batch/file parsing, lenient vs strict mode
+  - `core_bench` — Isolated encoding, escape encode/decode, builder construction
+  - `validator_bench` — Schema loading/validation, data type validation, vocabulary validation
+  - `fhir_bench` — 9 FHIR converters, JSON serialization, full parse-to-FHIR pipeline
+  - `cached_terser_bench` — CachedTerser vs Terser comparison, clinical workflow extraction patterns
+  - `pipeline_bench` — Cross-crate pipeline (parse, validate, extract, transform, encode)
+  - `transport_bench` — End-to-end MLLP and HTTP transport with real TCP network I/O
+  - `alloc_profile_bench` — Memory allocation profiling with per-parse heap tracking
+
+- **Shared Message Corpus** (`corpus.rs`) — 9 realistic HL7 messages plus batch/file generators
+
+- **Memory Allocation Profiler** — Custom `GlobalAlloc` wrapper that tracks allocations per parse and reports amplification factor (heap bytes / input bytes)
+
+- **Environment Reporter** — Automatic system info collection (CPU, RAM, OS, Rust toolchain) included in benchmark output
+
+- **Structured Benchmark Reports** — All standalone benchmarks output 4-section reports:
+  1. Purpose — what is measured and why
+  2. Methodology — how the measurement is taken
+  3. Configuration — hardware, toolchain, parameters, reproduction command
+  4. Results — tabular data with latency percentiles
+
+### Changed
+
+- **Version 1.0.0** — First stable release. Unified workspace versioning across all 16 crates.
+- **rs7-testpanel** now uses `version.workspace = true` instead of hardcoded version
+- Removed third-party engine throughput numbers from benchmark reports (methodology references retained)
+
 ## [0.22.0] - 2025-12-07
 
 ### Added - Performance Optimization & E2E Benchmarking 🚀

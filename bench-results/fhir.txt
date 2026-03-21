@@ -1,0 +1,101 @@
+Gnuplot not found, using plotters backend
+FHIR_Individual/PatientConverter
+                        time:   [4.5150 µs 4.5506 µs 4.5942 µs]
+                        change: [+1.4648% +2.7218% +4.2161%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 12 outliers among 100 measurements (12.00%)
+  4 (4.00%) high mild
+  8 (8.00%) high severe
+FHIR_Individual/ObservationConverter_all
+                        time:   [13.406 µs 13.475 µs 13.553 µs]
+                        change: [+2.4131% +3.3658% +4.4448%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 14 outliers among 100 measurements (14.00%)
+  6 (6.00%) high mild
+  8 (8.00%) high severe
+FHIR_Individual/ObservationConverter_single
+                        time:   [2.4118 µs 2.4745 µs 2.5438 µs]
+                        change: [+0.5195% +2.1382% +3.7798%] (p = 0.01 < 0.05)
+                        Change within noise threshold.
+Found 11 outliers among 100 measurements (11.00%)
+  7 (7.00%) high mild
+  4 (4.00%) high severe
+FHIR_Individual/EncounterConverter
+                        time:   [2.4828 µs 2.4946 µs 2.5079 µs]
+                        change: [+0.9572% +1.9019% +2.8071%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 6 outliers among 100 measurements (6.00%)
+  2 (2.00%) high mild
+  4 (4.00%) high severe
+FHIR_Individual/DiagnosticReportConverter
+                        time:   [2.6118 µs 2.6390 µs 2.6686 µs]
+                        change: [+0.6776% +1.5483% +2.4587%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 4 outliers among 100 measurements (4.00%)
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+FHIR_Individual/PractitionerConverter
+                        time:   [2.0424 µs 2.0608 µs 2.0830 µs]
+                        change: [−0.3997% +0.2964% +1.0077%] (p = 0.41 > 0.05)
+                        No change in performance detected.
+Found 5 outliers among 100 measurements (5.00%)
+  3 (3.00%) high mild
+  2 (2.00%) high severe
+FHIR_Individual/AllergyIntoleranceConverter
+                        time:   [896.28 ns 911.19 ns 929.78 ns]
+                        change: [−1.2529% −0.3345% +0.8867%] (p = 0.54 > 0.05)
+                        No change in performance detected.
+Found 5 outliers among 100 measurements (5.00%)
+  2 (2.00%) high mild
+  3 (3.00%) high severe
+FHIR_Individual/ConditionConverter
+                        time:   [635.14 ns 641.02 ns 647.49 ns]
+                        change: [−1.1559% −0.4247% +0.3289%] (p = 0.28 > 0.05)
+                        No change in performance detected.
+Found 7 outliers among 100 measurements (7.00%)
+  4 (4.00%) high mild
+  3 (3.00%) high severe
+FHIR_Individual/ProcedureConverter
+                        time:   [1.3203 µs 1.3382 µs 1.3571 µs]
+                        change: [+3.0722% +4.1314% +5.1989%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 9 outliers among 100 measurements (9.00%)
+  8 (8.00%) high mild
+  1 (1.00%) high severe
+
+FHIR_Serialization/Patient_to_json
+                        time:   [653.00 ns 663.54 ns 679.09 ns]
+                        change: [+3.1203% +4.3359% +5.7931%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 9 outliers among 100 measurements (9.00%)
+  5 (5.00%) high mild
+  4 (4.00%) high severe
+FHIR_Serialization/Observations_to_json
+                        time:   [2.5053 µs 2.5218 µs 2.5403 µs]
+                        change: [−0.2584% +0.5578% +1.2711%] (p = 0.16 > 0.05)
+                        No change in performance detected.
+Found 4 outliers among 100 measurements (4.00%)
+  4 (4.00%) high mild
+FHIR_Serialization/Encounter_to_json
+                        time:   [824.84 ns 829.37 ns 834.63 ns]
+                        change: [+1.8501% +3.0640% +4.4152%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 9 outliers among 100 measurements (9.00%)
+  6 (6.00%) high mild
+  3 (3.00%) high severe
+
+FHIR_Full_Pipeline/ORU_parse_convert_all_serialize
+                        time:   [63.385 µs 63.952 µs 64.623 µs]
+                        change: [+3.8761% +6.0902% +8.6416%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  3 (3.00%) high mild
+  8 (8.00%) high severe
+FHIR_Full_Pipeline/ADT_parse_convert_all_serialize
+                        time:   [29.305 µs 29.659 µs 30.092 µs]
+                        change: [+0.7870% +1.9910% +3.2600%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 5 outliers among 100 measurements (5.00%)
+  4 (4.00%) high mild
+  1 (1.00%) high severe
+

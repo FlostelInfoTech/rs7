@@ -325,15 +325,8 @@ fn print_summary(results: &[BenchResult]) {
 
     println!("╚══════════════════════════════════════════════════════════════════════╝");
 
-    // Industry comparison
-    println!("\n  Industry Comparison (End-to-End Throughput):");
-    println!("  ─────────────────────────────────────────────");
-    println!("  Iguana Interface Engine:     1,000 - 3,600 msg/s");
-    println!("  Mirth Connect:               ~1,000 - 2,000 msg/s");
-    println!("  InterSystems IRIS:           \"extreme\" (varies)");
-    println!();
     println!(
-        "  RS7 (single client):         {:>6.0} msg/s",
+        "\n  RS7 (single client):         {:>6.0} msg/s",
         results[0].throughput()
     );
     if results.len() > 2 {

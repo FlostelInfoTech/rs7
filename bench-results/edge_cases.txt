@@ -1,0 +1,142 @@
+Gnuplot not found, using plotters backend
+EscapeSequence_Density/parse/0%_escapes
+                        time:   [7.2491 µs 7.2812 µs 7.3198 µs]
+                        thrpt:  [45.470 MiB/s 45.711 MiB/s 45.914 MiB/s]
+                 change:
+                        time:   [−1.2095% −0.3603% +0.3596%] (p = 0.39 > 0.05)
+                        thrpt:  [−0.3583% +0.3616% +1.2243%]
+                        No change in performance detected.
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) high mild
+  2 (2.00%) high severe
+EscapeSequence_Density/parse/5%_escapes
+                        time:   [8.0722 µs 8.1262 µs 8.1836 µs]
+                        thrpt:  [41.836 MiB/s 42.132 MiB/s 42.413 MiB/s]
+                 change:
+                        time:   [−14.387% −13.577% −12.835%] (p = 0.00 < 0.05)
+                        thrpt:  [+14.725% +15.710% +16.804%]
+                        Performance has improved.
+Found 8 outliers among 100 measurements (8.00%)
+  4 (4.00%) high mild
+  4 (4.00%) high severe
+EscapeSequence_Density/parse/20%_escapes
+                        time:   [8.4474 µs 8.4972 µs 8.5561 µs]
+                        thrpt:  [43.358 MiB/s 43.659 MiB/s 43.916 MiB/s]
+                 change:
+                        time:   [+0.4611% +1.0754% +1.6771%] (p = 0.00 < 0.05)
+                        thrpt:  [−1.6494% −1.0640% −0.4590%]
+                        Change within noise threshold.
+Found 6 outliers among 100 measurements (6.00%)
+  4 (4.00%) high mild
+  2 (2.00%) high severe
+EscapeSequence_Density/parse/50%_escapes
+                        time:   [9.3812 µs 9.4192 µs 9.4576 µs]
+                        thrpt:  [45.276 MiB/s 45.461 MiB/s 45.644 MiB/s]
+                 change:
+                        time:   [−0.5740% +0.2720% +1.0224%] (p = 0.51 > 0.05)
+                        thrpt:  [−1.0121% −0.2713% +0.5774%]
+                        No change in performance detected.
+Found 4 outliers among 100 measurements (4.00%)
+  4 (4.00%) high mild
+
+Batch_File_Parsing/parse_batch/1_messages
+                        time:   [10.195 µs 10.274 µs 10.377 µs]
+                        thrpt:  [25.917 MiB/s 26.176 MiB/s 26.380 MiB/s]
+                 change:
+                        time:   [−2.3069% −1.2125% −0.1542%] (p = 0.03 < 0.05)
+                        thrpt:  [+0.1544% +1.2274% +2.3613%]
+                        Change within noise threshold.
+Found 6 outliers among 100 measurements (6.00%)
+  3 (3.00%) high mild
+  3 (3.00%) high severe
+Batch_File_Parsing/parse_batch/5_messages
+                        time:   [56.133 µs 56.465 µs 56.859 µs]
+                        thrpt:  [19.221 MiB/s 19.356 MiB/s 19.470 MiB/s]
+                 change:
+                        time:   [+3.1213% +3.9261% +5.0012%] (p = 0.00 < 0.05)
+                        thrpt:  [−4.7630% −3.7778% −3.0268%]
+                        Performance has regressed.
+Found 6 outliers among 100 measurements (6.00%)
+  3 (3.00%) high mild
+  3 (3.00%) high severe
+Batch_File_Parsing/parse_batch/10_messages
+                        time:   [80.277 µs 80.828 µs 81.487 µs]
+                        thrpt:  [26.122 MiB/s 26.335 MiB/s 26.516 MiB/s]
+                 change:
+                        time:   [+0.1305% +1.6991% +3.3064%] (p = 0.03 < 0.05)
+                        thrpt:  [−3.2005% −1.6707% −0.1303%]
+                        Change within noise threshold.
+Found 9 outliers among 100 measurements (9.00%)
+  3 (3.00%) high mild
+  6 (6.00%) high severe
+Batch_File_Parsing/parse_batch/50_messages
+                        time:   [548.07 µs 553.16 µs 559.28 µs]
+                        thrpt:  [18.760 MiB/s 18.968 MiB/s 19.144 MiB/s]
+                 change:
+                        time:   [−1.6652% −0.4030% +0.9649%] (p = 0.54 > 0.05)
+                        thrpt:  [−0.9556% +0.4047% +1.6934%]
+                        No change in performance detected.
+Found 6 outliers among 100 measurements (6.00%)
+  3 (3.00%) high mild
+  3 (3.00%) high severe
+Batch_File_Parsing/parse_file_2x10
+                        time:   [211.20 µs 212.55 µs 214.19 µs]
+                        thrpt:  [17.472 MiB/s 17.607 MiB/s 17.718 MiB/s]
+                 change:
+                        time:   [−0.2658% +1.5063% +3.2733%] (p = 0.10 > 0.05)
+                        thrpt:  [−3.1696% −1.4840% +0.2665%]
+                        No change in performance detected.
+Found 10 outliers among 100 measurements (10.00%)
+  10 (10.00%) high severe
+
+Lenient_vs_Strict/strict
+                        time:   [26.182 µs 26.394 µs 26.652 µs]
+                        thrpt:  [12.238 MiB/s 12.357 MiB/s 12.457 MiB/s]
+                 change:
+                        time:   [−1.8424% −1.1356% −0.4435%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.4455% +1.1487% +1.8770%]
+                        Change within noise threshold.
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) high mild
+  2 (2.00%) high severe
+Lenient_vs_Strict/lenient
+                        time:   [10.971 µs 11.032 µs 11.098 µs]
+                        thrpt:  [29.388 MiB/s 29.565 MiB/s 29.728 MiB/s]
+                 change:
+                        time:   [+0.4612% +1.5020% +2.7549%] (p = 0.01 < 0.05)
+                        thrpt:  [−2.6810% −1.4798% −0.4591%]
+                        Change within noise threshold.
+Found 9 outliers among 100 measurements (9.00%)
+  4 (4.00%) high mild
+  5 (5.00%) high severe
+
+Production_Patterns/trailing_delimiters
+                        time:   [10.867 µs 10.950 µs 11.082 µs]
+                        thrpt:  [29.432 MiB/s 29.787 MiB/s 30.013 MiB/s]
+                 change:
+                        time:   [−0.4286% +0.4101% +1.2655%] (p = 0.35 > 0.05)
+                        thrpt:  [−1.2497% −0.4084% +0.4304%]
+                        No change in performance detected.
+Found 8 outliers among 100 measurements (8.00%)
+  4 (4.00%) high mild
+  4 (4.00%) high severe
+Production_Patterns/escape_heavy
+                        time:   [13.010 µs 13.102 µs 13.229 µs]
+                        thrpt:  [35.539 MiB/s 35.886 MiB/s 36.137 MiB/s]
+                 change:
+                        time:   [−2.3327% −1.4762% −0.6590%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.6633% +1.4984% +2.3884%]
+                        Change within noise threshold.
+Found 5 outliers among 100 measurements (5.00%)
+  4 (4.00%) high mild
+  1 (1.00%) high severe
+Production_Patterns/large_narrative_obx
+                        time:   [26.799 µs 26.894 µs 26.992 µs]
+                        thrpt:  [92.817 MiB/s 93.154 MiB/s 93.484 MiB/s]
+                 change:
+                        time:   [−3.8683% −2.6795% −1.6331%] (p = 0.00 < 0.05)
+                        thrpt:  [+1.6602% +2.7533% +4.0240%]
+                        Performance has improved.
+Found 3 outliers among 100 measurements (3.00%)
+  3 (3.00%) high mild
+

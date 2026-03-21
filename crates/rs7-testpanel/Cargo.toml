@@ -1,11 +1,11 @@
 [package]
 name = "rs7-testpanel"
-version = "0.22.0"
-edition = "2024"
-authors = ["Alex SHAO Fan <alex.shaofan@flostel.com>"]
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "GUI Test Panel for RS7 HL7 Library - demonstrates parsing, building, validation, MLLP, and FHIR conversion"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/flostelinfotech/rs7"
 keywords = ["hl7", "healthcare", "gui", "test-panel"]
 categories = ["gui", "development-tools::testing"]
 

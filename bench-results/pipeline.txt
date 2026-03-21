@@ -1,0 +1,82 @@
+Gnuplot not found, using plotters backend
+Pipeline_Parse_Only/ADT_A01
+                        time:   [14.474 µs 14.694 µs 14.948 µs]
+                        thrpt:  [22.777 MiB/s 23.170 MiB/s 23.523 MiB/s]
+                 change:
+                        time:   [+3.3741% +4.7635% +6.2691%] (p = 0.00 < 0.05)
+                        thrpt:  [−5.8992% −4.5469% −3.2640%]
+                        Performance has regressed.
+Found 9 outliers among 100 measurements (9.00%)
+  2 (2.00%) high mild
+  7 (7.00%) high severe
+Pipeline_Parse_Only/ORU_R01
+                        time:   [37.215 µs 38.128 µs 39.246 µs]
+                        thrpt:  [18.128 MiB/s 18.660 MiB/s 19.117 MiB/s]
+                 change:
+                        time:   [+0.4362% +1.7810% +3.2307%] (p = 0.01 < 0.05)
+                        thrpt:  [−3.1296% −1.7498% −0.4343%]
+                        Change within noise threshold.
+Found 11 outliers among 100 measurements (11.00%)
+  5 (5.00%) high mild
+  6 (6.00%) high severe
+
+Pipeline_Parse_Validate/ADT_A01
+                        time:   [27.945 µs 28.190 µs 28.479 µs]
+                        change: [+0.1023% +1.5795% +2.9086%] (p = 0.03 < 0.05)
+                        Change within noise threshold.
+Found 8 outliers among 100 measurements (8.00%)
+  2 (2.00%) high mild
+  6 (6.00%) high severe
+Pipeline_Parse_Validate/ORU_R01
+                        time:   [47.928 µs 48.669 µs 49.524 µs]
+                        change: [+0.0101% +1.4792% +3.3197%] (p = 0.08 > 0.05)
+                        No change in performance detected.
+Found 2 outliers among 100 measurements (2.00%)
+  1 (1.00%) high mild
+  1 (1.00%) high severe
+
+Pipeline_Parse_Extract/ADT_10_fields_terser
+                        time:   [20.665 µs 20.869 µs 21.090 µs]
+                        change: [+15.580% +17.051% +18.772%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 6 outliers among 100 measurements (6.00%)
+  4 (4.00%) high mild
+  2 (2.00%) high severe
+Pipeline_Parse_Extract/ADT_10_fields_cached_terser
+                        time:   [22.051 µs 22.226 µs 22.423 µs]
+                        change: [+16.095% +17.230% +18.383%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 12 outliers among 100 measurements (12.00%)
+  6 (6.00%) high mild
+  6 (6.00%) high severe
+
+Pipeline_Parse_Transform_Encode/ADT_modify_and_encode
+                        time:   [28.652 µs 28.906 µs 29.231 µs]
+                        change: [+17.269% +18.485% +19.876%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 14 outliers among 100 measurements (14.00%)
+  7 (7.00%) high mild
+  7 (7.00%) high severe
+Pipeline_Parse_Transform_Encode/ORU_modify_and_encode
+                        time:   [45.134 µs 45.412 µs 45.720 µs]
+                        change: [+0.3047% +1.3987% +2.4386%] (p = 0.01 < 0.05)
+                        Change within noise threshold.
+Found 7 outliers among 100 measurements (7.00%)
+  4 (4.00%) high mild
+  3 (3.00%) high severe
+
+Pipeline_Interface_Engine_Sim/ADT_route_and_ack
+                        time:   [19.876 µs 19.996 µs 20.133 µs]
+                        change: [+2.7727% +3.6901% +4.6146%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 9 outliers among 100 measurements (9.00%)
+  7 (7.00%) high mild
+  2 (2.00%) high severe
+Pipeline_Interface_Engine_Sim/ORU_route_and_ack
+                        time:   [29.080 µs 29.191 µs 29.310 µs]
+                        change: [+1.8781% +2.5243% +3.1561%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 5 outliers among 100 measurements (5.00%)
+  4 (4.00%) high mild
+  1 (1.00%) high severe
+

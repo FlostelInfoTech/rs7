@@ -1,0 +1,115 @@
+================================================================================
+  RS7 Transport Benchmark Report
+================================================================================
+
+  1. PURPOSE
+  ----------
+  Measure end-to-end HL7 message processing throughput and latency over real
+  network transports (MLLP over TCP, HTTP/1.1) on localhost. This benchmark
+  answers: "How fast can RS7 send, receive, parse, and acknowledge HL7 messages
+  over a network?" — the metric that matters in production interface engines.
+
+  The full round-trip includes:
+    Client: encode message → MLLP/HTTP frame → TCP send
+    Server: TCP receive → deframe → parse HL7 → generate ACK → frame → TCP send
+    Client: TCP receive → deframe → parse ACK → return
+
+  Test methodology follows standard HL7 interface engine benchmarking practices
+  (T1 store-and-forward, T2 translation, T3 round-trip). All tests run on
+  localhost with mock servers; results reflect RS7 library-level performance
+  under controlled conditions.
+
+  2. METHODOLOGY
+  ---------------
+  Transport:     MLLP/TCP (intra-org, persistent connection, VT/FS/CR framing)
+                 HTTP/1.1 (inter-org, reqwest client, axum server, keep-alive)
+  Network:       localhost (127.0.0.1), auto-allocated ephemeral port
+  Server:        MockMllpServer / MockHttpServer with ACK handler
+  Messages:      3 types — ADT^A01 (admission), ORU^R01 (lab result), RDE^O11 (Rx)
+  Concurrency:   1, 4, 8 simultaneous clients (persistent connections)
+  Warmup:        1,000 messages discarded before measurement
+  Iterations:    10,000 (single), 20,000 (4c), 40,000 (8c) measured round-trips
+  Sustained:     15-second continuous send (single client, ADT^A01)
+  Timing:        std::time::Instant per round-trip; sorted for percentile analysis
+  Latency:       Wall-clock time from send_message() call to ACK received
+  Throughput:    iterations / total_wall_clock_time (includes all overhead)
+
+  3. CONFIGURATION
+  -----------------
+
+  Hardware:
+    OS:            Linux Mint 22.3
+    Kernel:        6.8.0-106-generic
+    CPU:           AMD Ryzen 5 4600U with Radeon Graphics
+    Cores:         12
+    RAM:           15.0 GB
+
+  Toolchain:
+    Rust:          rustc 1.94.0 (4a4ef493e 2026-03-02)
+    Cargo:         cargo 1.94.0 (85eff7c80 2026-01-15)
+    Target:        x86_64-unknown-linux-gnu
+    Profile:       release (opt-level=3, lto=true, codegen-units=1)
+
+  Benchmark Parameters:
+    Iterations:    10000 (single client per message type)
+    Warmup:        1000 messages (discarded)
+    Sustained:     15 seconds continuous
+    Concurrency:   1, 4, 8 clients
+
+  Test Messages:
+    ADT^A01:       315B  (patient admission — 3 segments)
+    ORU^R01:       746B  (lab results — 9 segments, 4 OBX)
+    RDE^O11:       518B  (pharmacy order — 7 segments, RXE/TQ1/RXR)
+
+  Reproduce:
+    cargo bench --bench transport_bench --features testing
+
+  Running benchmarks...
+    MLLP ADT^A01 (1c)... 7951 msg/s
+    MLLP ORU^R01 (1c)... 4757 msg/s
+    MLLP RDE^O11 (1c)... 5161 msg/s
+    MLLP ADT^A01 (4c)... 34613 msg/s
+    MLLP ADT^A01 (8c)... 54203 msg/s
+    HTTP ADT^A01 (1c)... 3403 msg/s
+    HTTP ORU^R01 (1c)... 2357 msg/s
+    HTTP RDE^O11 (1c)... 3064 msg/s
+    HTTP ADT^A01 (4c)... 19680 msg/s
+    HTTP ADT^A01 (8c)... 26683 msg/s
+    MLLP sustained (15s)... 5809 msg/s
+    HTTP sustained (15s)... 3334 msg/s
+
+  4. RESULTS
+  ----------
+
+  4a. MLLP Transport (TCP, persistent connection)
+
+  Test          Clients      msg/s       MB/s    p50(ms)    p90(ms)    p99(ms)    max(ms)
+  ────────────────────────────────────────────────────────────────────────────────────────
+  ADT^A01             1       7951        2.4      0.111      0.197      0.292      0.904
+  ORU^R01             1       4757        3.4      0.161      0.368      0.503      1.130
+  RDE^O11             1       5161        2.5      0.154      0.303      0.385      1.180
+  ADT^A01             4      34613       10.4      0.106      0.141      0.242      0.540
+  ADT^A01             8      54203       16.3      0.130      0.201      0.392      2.544
+
+  4b. HTTP Transport (HTTP/1.1, keep-alive)
+
+  Test          Clients      msg/s       MB/s    p50(ms)    p90(ms)    p99(ms)    max(ms)
+  ────────────────────────────────────────────────────────────────────────────────────────
+  ADT^A01             1       3403        1.0      0.257      0.449      0.542      1.486
+  ORU^R01             1       2357        1.7      0.468      0.571      0.648      0.892
+  RDE^O11             1       3064        1.5      0.316      0.484      0.595      2.312
+  ADT^A01             4      19680        5.9      0.173      0.204      0.333      1.736
+  ADT^A01             8      26683        8.0      0.221      0.346      0.653      3.174
+
+  4c. Sustained Throughput (15-second continuous, single client, ADT^A01)
+
+  MLLP:     87130 messages      5809 msg/s   501.9M messages/day
+  HTTP:     50012 messages      3334 msg/s   288.1M messages/day
+
+  4d. Protocol Comparison (single client, ADT^A01)
+
+  MLLP is 2.3x faster throughput than HTTP (7951 vs 3403 msg/s)
+  MLLP p50 latency is 2.3x lower than HTTP (0.111 vs 0.257 ms)
+
+================================================================================
+

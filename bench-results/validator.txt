@@ -1,0 +1,181 @@
+Gnuplot not found, using plotters backend
+Schema_Validation/load_schema/ADT_A01
+                        time:   [52.254 µs 52.542 µs 52.914 µs]
+                        change: [−1.1836% −0.2953% +0.7356%] (p = 0.56 > 0.05)
+                        No change in performance detected.
+Found 7 outliers among 100 measurements (7.00%)
+  2 (2.00%) high mild
+  5 (5.00%) high severe
+Schema_Validation/load_schema/ORU_R01
+                        time:   [46.404 µs 46.710 µs 47.055 µs]
+                        change: [−0.6847% +0.0536% +0.7527%] (p = 0.89 > 0.05)
+                        No change in performance detected.
+Found 3 outliers among 100 measurements (3.00%)
+  2 (2.00%) high mild
+  1 (1.00%) high severe
+Schema_Validation/load_schema/ORM_O01
+                        time:   [45.393 µs 45.737 µs 46.165 µs]
+                        change: [−0.4685% +0.6776% +1.7555%] (p = 0.24 > 0.05)
+                        No change in performance detected.
+Found 5 outliers among 100 measurements (5.00%)
+  2 (2.00%) high mild
+  3 (3.00%) high severe
+Schema_Validation/validate/ADT_A01
+                        time:   [6.3864 µs 6.4185 µs 6.4599 µs]
+                        change: [+0.3467% +1.3657% +2.7435%] (p = 0.03 < 0.05)
+                        Change within noise threshold.
+Found 13 outliers among 100 measurements (13.00%)
+  4 (4.00%) high mild
+  9 (9.00%) high severe
+Schema_Validation/validate/ORU_R01
+                        time:   [6.3391 µs 6.4309 µs 6.5402 µs]
+                        change: [+3.2886% +5.0500% +6.8208%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) high mild
+  2 (2.00%) high severe
+Schema_Validation/validate/ORM_O01
+                        time:   [5.0524 µs 5.1140 µs 5.1815 µs]
+                        change: [+5.7137% +7.3649% +9.1240%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 4 outliers among 100 measurements (4.00%)
+  1 (1.00%) high mild
+  3 (3.00%) high severe
+
+DataType_Validation/DT_valid
+                        time:   [17.471 ns 17.816 ns 18.226 ns]
+                        change: [+3.9376% +6.3119% +8.8529%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 7 outliers among 100 measurements (7.00%)
+  4 (4.00%) high mild
+  3 (3.00%) high severe
+DataType_Validation/TM_valid
+                        time:   [42.487 ns 43.076 ns 43.762 ns]
+                        change: [+8.1038% +9.5199% +11.097%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 8 outliers among 100 measurements (8.00%)
+  6 (6.00%) high mild
+  2 (2.00%) high severe
+DataType_Validation/DTM_valid
+                        time:   [44.976 ns 45.347 ns 45.799 ns]
+                        change: [+4.4900% +6.0390% +7.6019%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 7 outliers among 100 measurements (7.00%)
+  5 (5.00%) high mild
+  2 (2.00%) high severe
+DataType_Validation/NM_valid
+                        time:   [14.107 ns 14.234 ns 14.379 ns]
+                        change: [+5.6874% +7.3148% +9.0345%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 6 outliers among 100 measurements (6.00%)
+  4 (4.00%) high mild
+  2 (2.00%) high severe
+DataType_Validation/SI_valid
+                        time:   [9.6932 ns 9.7207 ns 9.7500 ns]
+                        change: [+1.6827% +2.0878% +2.4793%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 3 outliers among 100 measurements (3.00%)
+  1 (1.00%) low mild
+  2 (2.00%) high mild
+DataType_Validation/ST_valid
+                        time:   [9.8548 ns 9.8731 ns 9.8973 ns]
+                        change: [−0.3928% −0.1531% +0.0861%] (p = 0.23 > 0.05)
+                        No change in performance detected.
+Found 10 outliers among 100 measurements (10.00%)
+  2 (2.00%) low mild
+  1 (1.00%) high mild
+  7 (7.00%) high severe
+DataType_Validation/CWE_valid
+                        time:   [9.8678 ns 9.8787 ns 9.8920 ns]
+                        change: [+0.0937% +0.3233% +0.5655%] (p = 0.01 < 0.05)
+                        Change within noise threshold.
+Found 17 outliers among 100 measurements (17.00%)
+  2 (2.00%) low mild
+  7 (7.00%) high mild
+  8 (8.00%) high severe
+DataType_Validation/XPN_valid
+                        time:   [9.8496 ns 9.8601 ns 9.8724 ns]
+                        change: [+0.1688% +0.3426% +0.5093%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 6 outliers among 100 measurements (6.00%)
+  6 (6.00%) high mild
+
+Vocabulary_Validation/Table_0001_sex_M
+                        time:   [42.213 ns 42.607 ns 43.062 ns]
+                        change: [+6.7538% +7.9329% +9.0775%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 3 outliers among 100 measurements (3.00%)
+  2 (2.00%) high mild
+  1 (1.00%) high severe
+Vocabulary_Validation/Table_0001_sex_F
+                        time:   [42.562 ns 42.941 ns 43.341 ns]
+                        change: [−0.4601% +1.3712% +2.9862%] (p = 0.14 > 0.05)
+                        No change in performance detected.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high severe
+Vocabulary_Validation/Table_0004_class_I
+                        time:   [40.883 ns 41.139 ns 41.422 ns]
+                        change: [+4.4874% +6.0780% +7.9025%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 7 outliers among 100 measurements (7.00%)
+  4 (4.00%) high mild
+  3 (3.00%) high severe
+Vocabulary_Validation/Table_0004_class_O
+                        time:   [41.753 ns 42.040 ns 42.339 ns]
+                        change: [+5.6762% +6.6966% +7.7347%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) low mild
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+Vocabulary_Validation/Table_0085_status_F
+                        time:   [41.809 ns 42.136 ns 42.441 ns]
+                        change: [+3.2708% +4.1837% +4.9545%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Vocabulary_Validation/Table_0085_status_P
+                        time:   [41.138 ns 41.427 ns 41.754 ns]
+                        change: [+0.5414% +1.9440% +3.2708%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 4 outliers among 100 measurements (4.00%)
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+Vocabulary_Validation/Table_0103_proc_T
+                        time:   [41.822 ns 42.294 ns 42.837 ns]
+                        change: [+3.6140% +5.1551% +6.5626%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 7 outliers among 100 measurements (7.00%)
+  6 (6.00%) high mild
+  1 (1.00%) high severe
+Vocabulary_Validation/Table_0001_invalid
+                        time:   [362.82 ns 364.35 ns 366.06 ns]
+                        change: [−5.1409% −4.3977% −3.7291%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 7 outliers among 100 measurements (7.00%)
+  6 (6.00%) high mild
+  1 (1.00%) high severe
+
+Full_Validation_Pipeline/ADT_A01
+                        time:   [23.063 µs 23.310 µs 23.649 µs]
+                        change: [+3.4465% +4.4837% +5.5754%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 6 outliers among 100 measurements (6.00%)
+  2 (2.00%) high mild
+  4 (4.00%) high severe
+Full_Validation_Pipeline/ORU_R01
+                        time:   [27.791 µs 27.996 µs 28.235 µs]
+                        change: [−14.317% −13.750% −13.165%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 8 outliers among 100 measurements (8.00%)
+  1 (1.00%) low mild
+  5 (5.00%) high mild
+  2 (2.00%) high severe
+Full_Validation_Pipeline/ORM_O01
+                        time:   [18.722 µs 18.894 µs 19.129 µs]
+                        change: [+2.0066% +2.7250% +3.5156%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 3 outliers among 100 measurements (3.00%)
+  2 (2.00%) high mild
+  1 (1.00%) high severe
+

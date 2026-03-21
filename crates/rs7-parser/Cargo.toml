@@ -27,3 +27,19 @@ harness = false
 [[bench]]
 name = "industry_bench"
 harness = false
+
+[[bench]]
+name = "message_types_bench"
+harness = false
+
+[[bench]]
+name = "edge_cases_bench"
+harness = false
+
+[[bench]]
+name = "alloc_profile_bench"
+harness = false
+
+[[bench]]
+name = "env_report_bench"
+harness = false

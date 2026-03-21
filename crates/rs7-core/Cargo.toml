@@ -24,3 +24,8 @@ serde = ["dep:serde", "dep:serde_json", "chrono/serde"]
 [dev-dependencies]
 proptest.workspace = true
 rs7-parser.workspace = true
+criterion = "0.7"
+
+[[bench]]
+name = "core_bench"
+harness = false

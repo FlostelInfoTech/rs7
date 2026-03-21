@@ -1,11 +1,7 @@
-//! Industry-Standard HL7 Performance Benchmarks
+//! HL7 Performance Benchmarks
 //!
-//! Based on methodologies from:
-//! - iNTERFACEWARE HL7 Message Throughput White Paper
-//! - InterSystems IRIS for Health Benchmarks
-//! - HL7 Interface Engine Industry Standards
-//!
-//! ## Test Categories
+//! Test categories follow standard interface engine benchmarking methodology
+//! (T1/T2/T3 classifications from HL7 throughput testing practices):
 //!
 //! 1. **Store-and-Forward (T1)**: Raw parsing without transformation
 //! 2. **Message Translation (T2)**: Parse + extract fields + create ACK
@@ -388,12 +384,10 @@ fn measure_latency_percentiles() {
 fn print_summary_header() {
     println!("\n");
     println!("╔══════════════════════════════════════════════════════════════════════╗");
-    println!("║          RS7 Industry-Standard HL7 Performance Benchmarks            ║");
+    println!("║              RS7 HL7 Performance Benchmarks                          ║");
     println!("╠══════════════════════════════════════════════════════════════════════╣");
-    println!("║  Methodology based on:                                               ║");
-    println!("║  • iNTERFACEWARE HL7 Message Throughput White Paper                  ║");
-    println!("║  • InterSystems IRIS for Health Benchmarks                           ║");
-    println!("║  • HL7 Interface Engine Industry Standards                           ║");
+    println!("║  Test methodology: T1/T2/T3 classifications from standard            ║");
+    println!("║  HL7 interface engine throughput testing practices                    ║");
     println!("╚══════════════════════════════════════════════════════════════════════╝");
     println!();
 }
