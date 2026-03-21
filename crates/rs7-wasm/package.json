@@ -1,6 +1,6 @@
 {
   "name": "rs7-wasm",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "WebAssembly bindings for RS7 - HL7 v2.x library for JavaScript/TypeScript",
   "main": "pkg/rs7_wasm.js",
   "types": "pkg/rs7_wasm.d.ts",

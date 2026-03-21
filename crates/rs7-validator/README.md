@@ -20,7 +20,7 @@ Comprehensive HL7 v2.x message validation for Rust.
 
 ```toml
 [dependencies]
-rs7-validator = "0.19"
+rs7-validator = "1.1"
 ```
 
 ## Quick Start
