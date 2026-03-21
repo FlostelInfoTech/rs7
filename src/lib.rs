@@ -5,8 +5,8 @@
 //! ## Features
 //!
 //! - **Parsing and Serialization**: Parse HL7 pipe-delimited messages and serialize back
-//! - **Multiple HL7 Versions**: Support for v2.3, v2.4, v2.5, v2.6, v2.7
-//! - **Message Validation**: 32 message schemas across all HL7 versions
+//! - **Multiple HL7 Versions**: Support for v2.3, v2.4, v2.5, v2.6, v2.7, v2.8
+//! - **Message Validation**: 43 message schemas across all HL7 versions (v2.3-v2.8)
 //! - **Terser API**: Easy field access using path notation
 //! - **MLLP Support**: Network transmission protocol
 //!

@@ -16,8 +16,7 @@ pub fn load_schema(version: Version, message_type: &str, trigger_event: &str) ->
         Version::V2_5 | Version::V2_5_1 => "v2_5",
         Version::V2_6 => "v2_6",
         Version::V2_7 | Version::V2_7_1 => "v2_7",
-        // v2.8.x uses v2.7 schemas as a base (until v2.8 schemas are added)
-        Version::V2_8 | Version::V2_8_1 | Version::V2_8_2 => "v2_7",
+        Version::V2_8 | Version::V2_8_1 | Version::V2_8_2 => "v2_8",
     };
 
     // Construct the schema key
@@ -271,6 +270,52 @@ fn load_embedded_schema(version: &str, schema_key: &str) -> Option<MessageSchema
         ("v2_7", "OUL_R21") => parse_schema_json(include_str!("../schemas/v2_7/OUL_R21.json")),
         ("v2_7", "OML_O21") => parse_schema_json(include_str!("../schemas/v2_7/OML_O21.json")),
 
+        // V2.8 schemas - ADT messages
+        ("v2_8", "ADT_A01") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A01.json")),
+        ("v2_8", "ADT_A02") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A02.json")),
+        ("v2_8", "ADT_A03") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A03.json")),
+        ("v2_8", "ADT_A04") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A04.json")),
+        ("v2_8", "ADT_A05") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A05.json")),
+        ("v2_8", "ADT_A06") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A06.json")),
+        ("v2_8", "ADT_A07") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A07.json")),
+        ("v2_8", "ADT_A08") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A08.json")),
+        ("v2_8", "ADT_A09") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A09.json")),
+        ("v2_8", "ADT_A10") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A10.json")),
+        ("v2_8", "ADT_A11") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A11.json")),
+        ("v2_8", "ADT_A12") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A12.json")),
+        ("v2_8", "ADT_A13") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A13.json")),
+        ("v2_8", "ADT_A17") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A17.json")),
+        ("v2_8", "ADT_A28") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A28.json")),
+        ("v2_8", "ADT_A31") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A31.json")),
+        ("v2_8", "ADT_A40") => parse_schema_json(include_str!("../schemas/v2_8/ADT_A40.json")),
+        // V2.8 - Other message types
+        ("v2_8", "ORU_R01") => parse_schema_json(include_str!("../schemas/v2_8/ORU_R01.json")),
+        ("v2_8", "ORM_O01") => parse_schema_json(include_str!("../schemas/v2_8/ORM_O01.json")),
+        ("v2_8", "ACK") => parse_schema_json(include_str!("../schemas/v2_8/ACK.json")),
+        ("v2_8", "SIU_S12") => parse_schema_json(include_str!("../schemas/v2_8/SIU_S12.json")),
+        ("v2_8", "SIU_S13") => parse_schema_json(include_str!("../schemas/v2_8/SIU_S13.json")),
+        ("v2_8", "SIU_S14") => parse_schema_json(include_str!("../schemas/v2_8/SIU_S14.json")),
+        ("v2_8", "SIU_S15") => parse_schema_json(include_str!("../schemas/v2_8/SIU_S15.json")),
+        ("v2_8", "MDM_T01") => parse_schema_json(include_str!("../schemas/v2_8/MDM_T01.json")),
+        ("v2_8", "MDM_T02") => parse_schema_json(include_str!("../schemas/v2_8/MDM_T02.json")),
+        ("v2_8", "MDM_T04") => parse_schema_json(include_str!("../schemas/v2_8/MDM_T04.json")),
+        ("v2_8", "DFT_P03") => parse_schema_json(include_str!("../schemas/v2_8/DFT_P03.json")),
+        ("v2_8", "DFT_P11") => parse_schema_json(include_str!("../schemas/v2_8/DFT_P11.json")),
+        ("v2_8", "QRY_A19") => parse_schema_json(include_str!("../schemas/v2_8/QRY_A19.json")),
+        ("v2_8", "QRY_Q01") => parse_schema_json(include_str!("../schemas/v2_8/QRY_Q01.json")),
+        ("v2_8", "QRY_Q02") => parse_schema_json(include_str!("../schemas/v2_8/QRY_Q02.json")),
+        ("v2_8", "BAR_P01") => parse_schema_json(include_str!("../schemas/v2_8/BAR_P01.json")),
+        ("v2_8", "BAR_P02") => parse_schema_json(include_str!("../schemas/v2_8/BAR_P02.json")),
+        ("v2_8", "RDE_O11") => parse_schema_json(include_str!("../schemas/v2_8/RDE_O11.json")),
+        ("v2_8", "RAS_O17") => parse_schema_json(include_str!("../schemas/v2_8/RAS_O17.json")),
+        ("v2_8", "MFN_M01") => parse_schema_json(include_str!("../schemas/v2_8/MFN_M01.json")),
+        ("v2_8", "RDS_O13") => parse_schema_json(include_str!("../schemas/v2_8/RDS_O13.json")),
+        ("v2_8", "RGV_O15") => parse_schema_json(include_str!("../schemas/v2_8/RGV_O15.json")),
+        ("v2_8", "RRD_O14") => parse_schema_json(include_str!("../schemas/v2_8/RRD_O14.json")),
+        ("v2_8", "RRA_O18") => parse_schema_json(include_str!("../schemas/v2_8/RRA_O18.json")),
+        ("v2_8", "OUL_R21") => parse_schema_json(include_str!("../schemas/v2_8/OUL_R21.json")),
+        ("v2_8", "OML_O21") => parse_schema_json(include_str!("../schemas/v2_8/OML_O21.json")),
+
         _ => None,
     }
 }
@@ -315,7 +360,7 @@ pub fn list_available_schemas(version: Version) -> Vec<String> {
     ];
 
     // All versions currently have the same set of schemas
-    // Legacy versions (2.1, 2.2) use v2.3 schemas, v2.8.x uses v2.7 schemas
+    // Legacy versions (2.1, 2.2) use v2.3 schemas
     match version {
         Version::V2_1 | Version::V2_2 => schemas,
         Version::V2_3 | Version::V2_3_1 => schemas,
@@ -425,14 +470,14 @@ mod tests {
     #[test]
     fn test_load_new_schemas_all_versions() {
         // Test BAR_P01 across all versions
-        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7] {
+        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7, Version::V2_8] {
             let schema = load_schema(version, "BAR", "P01").unwrap();
             assert_eq!(schema.message_type, "BAR");
             assert_eq!(schema.trigger_event, "P01");
         }
 
         // Test RDE_O11 across all versions
-        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7] {
+        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7, Version::V2_8] {
             let schema = load_schema(version, "RDE", "O11").unwrap();
             assert_eq!(schema.message_type, "RDE");
             assert_eq!(schema.trigger_event, "O11");
@@ -472,21 +517,21 @@ mod tests {
     #[test]
     fn test_load_pharmacy_schemas_all_versions() {
         // Test RGV_O15 across all versions
-        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7] {
+        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7, Version::V2_8] {
             let schema = load_schema(version, "RGV", "O15").unwrap();
             assert_eq!(schema.message_type, "RGV");
             assert_eq!(schema.trigger_event, "O15");
         }
 
         // Test RRD_O14 across all versions
-        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7] {
+        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7, Version::V2_8] {
             let schema = load_schema(version, "RRD", "O14").unwrap();
             assert_eq!(schema.message_type, "RRD");
             assert_eq!(schema.trigger_event, "O14");
         }
 
         // Test RRA_O18 across all versions
-        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7] {
+        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7, Version::V2_8] {
             let schema = load_schema(version, "RRA", "O18").unwrap();
             assert_eq!(schema.message_type, "RRA");
             assert_eq!(schema.trigger_event, "O18");
@@ -519,17 +564,58 @@ mod tests {
     #[test]
     fn test_load_laboratory_schemas_all_versions() {
         // Test OUL_R21 across all versions
-        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7] {
+        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7, Version::V2_8] {
             let schema = load_schema(version, "OUL", "R21").unwrap();
             assert_eq!(schema.message_type, "OUL");
             assert_eq!(schema.trigger_event, "R21");
         }
 
         // Test OML_O21 across all versions
-        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7] {
+        for version in [Version::V2_3, Version::V2_4, Version::V2_5, Version::V2_6, Version::V2_7, Version::V2_8] {
             let schema = load_schema(version, "OML", "O21").unwrap();
             assert_eq!(schema.message_type, "OML");
             assert_eq!(schema.trigger_event, "O21");
         }
+    }
+
+    #[test]
+    fn test_load_v28_schema_with_new_fields() {
+        let schema = load_schema(Version::V2_8, "ADT", "A01").unwrap();
+        assert_eq!(schema.version, "2.8");
+
+        // v2.8 MSH should have 25 fields (4 new: MSH-22 through MSH-25)
+        let msh = schema.segments.get("MSH").unwrap();
+        assert!(msh.fields.contains_key(&22)); // Sending Responsible Organization
+        assert!(msh.fields.contains_key(&25)); // Receiving Network Address
+
+        // v2.8 timestamps should use DTM instead of TS
+        assert_eq!(msh.fields.get(&7).unwrap().data_type, "DTM");
+
+        // v2.8 should have completed CE->CWE migration
+        let pid = schema.segments.get("PID").unwrap();
+        assert_eq!(pid.fields.get(&10).unwrap().data_type, "CWE"); // Race
+        assert_eq!(pid.fields.get(&15).unwrap().data_type, "CWE"); // Primary Language
+    }
+
+    #[test]
+    fn test_load_v28_oru_with_obx_new_fields() {
+        let schema = load_schema(Version::V2_8, "ORU", "R01").unwrap();
+        let obx = schema.segments.get("OBX").unwrap();
+
+        // OBX-20 through OBX-25 added in v2.8
+        assert!(obx.fields.contains_key(&20)); // Observation Site
+        assert!(obx.fields.contains_key(&23)); // Performing Organization Name
+        assert!(obx.fields.contains_key(&25)); // Performing Organization Medical Director
+        assert_eq!(obx.fields.len(), 25);
+    }
+
+    #[test]
+    fn test_v28_fallback_for_v281_v282() {
+        // v2.8.1 and v2.8.2 should use v2.8 schemas
+        let schema_281 = load_schema(Version::V2_8_1, "ADT", "A01").unwrap();
+        assert_eq!(schema_281.version, "2.8");
+
+        let schema_282 = load_schema(Version::V2_8_2, "ADT", "A01").unwrap();
+        assert_eq!(schema_282.version, "2.8");
     }
 }

@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 /// Supported HL7 versions exposed to JavaScript
-const SUPPORTED_VERSIONS: &[&str] = &["2.3", "2.4", "2.5", "2.6", "2.7"];
+const SUPPORTED_VERSIONS: &[&str] = &["2.3", "2.4", "2.5", "2.6", "2.7", "2.8"];
 
 /// Convert a version string like "2.5" to the rs7_core::Version enum
 fn parse_version(version: &str) -> Result<Version, JsValue> {
@@ -21,6 +21,7 @@ fn parse_version(version: &str) -> Result<Version, JsValue> {
         "2.5" => Ok(Version::V2_5),
         "2.6" => Ok(Version::V2_6),
         "2.7" => Ok(Version::V2_7),
+        "2.8" => Ok(Version::V2_8),
         _ => Err(JsValue::from_str(&format!(
             "Unsupported HL7 version: '{}'. Supported versions: {}",
             version,
@@ -96,7 +97,7 @@ fn get_message_description(message_type: &str, trigger_event: &str) -> &'static 
 ///
 /// # Returns
 ///
-/// A JavaScript array of version strings: `["2.3", "2.4", "2.5", "2.6", "2.7"]`
+/// A JavaScript array of version strings: `["2.3", "2.4", "2.5", "2.6", "2.7", "2.8"]`
 #[wasm_bindgen(js_name = listHL7Versions)]
 pub fn list_hl7_versions() -> Result<JsValue, JsValue> {
     serde_wasm_bindgen::to_value(&SUPPORTED_VERSIONS).map_err(|e| JsValue::from_str(&e.to_string()))
@@ -541,9 +542,9 @@ mod tests {
             ("2.5", true),
             ("2.6", true),
             ("2.7", true),
+            ("2.8", true),
             ("1.0", false),
             ("", false),
-            ("2.8", false),
         ];
 
         for (ver, should_exist) in version_map {
@@ -575,9 +576,10 @@ mod tests {
 
     #[test]
     fn test_supported_versions() {
-        assert_eq!(SUPPORTED_VERSIONS.len(), 5);
+        assert_eq!(SUPPORTED_VERSIONS.len(), 6);
         assert!(SUPPORTED_VERSIONS.contains(&"2.3"));
         assert!(SUPPORTED_VERSIONS.contains(&"2.7"));
+        assert!(SUPPORTED_VERSIONS.contains(&"2.8"));
     }
 
     #[test]

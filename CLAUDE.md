@@ -124,7 +124,7 @@ Message
                       └─ Subcomponent (separated by &)
 ```
 
-**Supported HL7 Versions:** v2.3, v2.3.1, v2.4, v2.5, v2.5.1, v2.6, v2.7, v2.7.1
+**Supported HL7 Versions:** v2.3, v2.3.1, v2.4, v2.5, v2.5.1, v2.6, v2.7, v2.7.1, v2.8, v2.8.1, v2.8.2
 
 **Message Types:** ADT (A01-A40), SIU (S12-S15), MDM (T01-T04), DFT (P03, P11), QRY (A19, Q01-Q02), BAR (P01-P02), Pharmacy (RDE, RAS, RDS, RGV, RRD, RRA), Laboratory (OUL, OML), ORM, ORU, ACK, MFN
 
@@ -196,7 +196,8 @@ crates/rs7-validator/schemas/
 ├── v2_4/
 ├── v2_5/
 ├── v2_6/
-└── v2_7/
+├── v2_7/
+└── v2_8/
 ```
 
 Each contains message-specific schemas (e.g., `ADT_A01.json`, `ORU_R01.json`).

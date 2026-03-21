@@ -10,7 +10,8 @@ schemas/
 ├── v2_4/     # HL7 version 2.4
 ├── v2_5/     # HL7 version 2.5 & 2.5.1
 ├── v2_6/     # HL7 version 2.6
-└── v2_7/     # HL7 version 2.7 & 2.7.1
+├── v2_7/     # HL7 version 2.7 & 2.7.1
+└── v2_8/     # HL7 version 2.8, 2.8.1 & 2.8.2
 ```
 
 ## Schema Format
@@ -46,7 +47,7 @@ Each schema is a JSON file with the following structure:
 
 ## Available Schemas
 
-All schemas are available for **HL7 v2.3, v2.4, v2.5, v2.6, and v2.7**.
+All schemas are available for **HL7 v2.3, v2.4, v2.5, v2.6, v2.7, and v2.8**.
 
 ### ADT (Admit/Discharge/Transfer) - 17 Schemas
 - ✅ ADT^A01 - Admit/Visit Notification
@@ -96,14 +97,17 @@ All schemas are available for **HL7 v2.3, v2.4, v2.5, v2.6, and v2.7**.
 ### ACK (Acknowledgment) - 1 Schema
 - ✅ ACK - General Acknowledgment
 
-**Total: 32 message schemas across 5 HL7 versions (160 schema files)**
+**Total: 43 message schemas across 6 HL7 versions (258 schema files)**
+
+Each schema includes complete field definitions with component definitions for composite data types (XPN, XAD, XTN, CX, XCN, HD, CE, CWE, PL, etc.).
 
 ### Version-Specific Differences
-- **V2.3**: Simpler data types, fewer optional fields
-- **V2.4**: Added support for more complex data types
-- **V2.5**: Enhanced security and internationalization
-- **V2.6**: Improved vocabulary support
-- **V2.7**: Enhanced conformance and implementation guides
+- **V2.3**: Simpler data types, fewer optional fields (PID: 30 fields, MSH: 19 fields)
+- **V2.4**: Added support for more complex data types (PID: 38 fields)
+- **V2.5**: Enhanced security and internationalization (PID: 39 fields, baseline)
+- **V2.6**: CE→CWE data type migration begins across many fields
+- **V2.7**: PID-40 added, continued CE→CWE migration
+- **V2.8**: Complete CE→CWE migration, TS→DTM migration, new fields (MSH-22..25, OBX-20..25, OBR-50..54, ORC-32..33)
 
 ## Data Type Definitions
 
@@ -155,7 +159,7 @@ Invalid JSON schemas will cause compilation errors.
 
 - HL7 v2.x Standard: https://www.hl7.org/implement/standards/product_brief.cfm?product_id=185
 - HL7 v2.5 Specification: Official HL7 documentation
-- HL7 v2.3-2.7 Implementation Guides
+- HL7 v2.3-2.8 Implementation Guides
 
 ## Notes
 

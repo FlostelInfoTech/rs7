@@ -6,9 +6,9 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 
 - **🖥️ GUI Test Panel**: Interactive workbench for parsing, building, validating, and testing HL7 messages
 - **✅ Parsing and Serialization**: Parse HL7 pipe-delimited messages into structured data and serialize back
-- **✅ Multiple HL7 Versions**: Support for HL7 v2.3, v2.4, v2.5, v2.6, v2.7, and v2.7.1
+- **✅ Multiple HL7 Versions**: Support for HL7 v2.3, v2.4, v2.5, v2.6, v2.7, v2.7.1, v2.8, v2.8.1, and v2.8.2
 - **✅ Message Validation**: Validate messages against HL7 standards with detailed error reporting
-- **✅ Schema-Based Validation**: Comprehensive schemas for all HL7 versions (2.3-2.7)
+- **✅ Schema-Based Validation**: Comprehensive schemas for all HL7 versions (2.3-2.8) with complete field and component definitions
 - **✅ Data Type Validation**: Format checking for all HL7 data types (dates, times, numerics, coded values, etc.)
 - **✅ Vocabulary Validation**: Code set validation against HL7 standard tables (gender, patient class, processing ID, etc.)
 - **✅ Conformance Profile Validation**: Validate messages against HL7 v2 conformance profiles (XML-based)
@@ -1051,7 +1051,7 @@ Contributions are welcome! Please:
 
 ## Roadmap
 
-- [x] Complete schema definitions for all HL7 versions (v2.3-2.7) ✅
+- [x] Complete schema definitions for all HL7 versions (v2.3-2.8) with full field and component definitions ✅
 - [x] Additional message type schemas (ADT A02-A40, SIU, MDM, DFT, QRY) ✅
 - [x] Message builders (ADT, ORM, ORU, SIU, MDM, DFT, QRY) ✅
 - [x] Enhanced data type validation (format checking) ✅

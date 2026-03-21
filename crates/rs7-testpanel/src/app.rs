@@ -486,7 +486,7 @@ impl eframe::App for Rs7TestPanel {
 
                     ui.vertical_centered(|ui| {
                         ui.label(RichText::new("Supported HL7 Versions").strong());
-                        ui.label("v2.3, v2.3.1, v2.4, v2.5, v2.5.1, v2.6, v2.7, v2.7.1");
+                        ui.label("v2.3, v2.3.1, v2.4, v2.5, v2.5.1, v2.6, v2.7, v2.7.1, v2.8, v2.8.1, v2.8.2");
                         ui.add_space(10.0);
 
                         ui.label(RichText::new("Message Types").weak());

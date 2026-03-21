@@ -54,6 +54,46 @@ pub enum DataType {
     CNE,
     /// Numeric Array (NA) - array of numeric values
     NA,
+    /// Coded Value for HL7 Defined Tables (IS)
+    IS,
+    /// Extended Composite ID Number and Name for Persons (XCN)
+    XCN,
+    /// Person Location (PL)
+    PL,
+    /// Version Identifier (VID)
+    VID,
+    /// Composite Price (CP)
+    CP,
+    /// Composite Quantity with Units (CQ)
+    CQ,
+    /// Date/Time Range (DR)
+    DR,
+    /// Entity Identifier Pair (EIP)
+    EIP,
+    /// Error Location and Description (ELD)
+    ELD,
+    /// Timing/Quantity (TQ)
+    TQ,
+    /// Variable Data Type (Varies) - context-dependent
+    Varies,
+    /// Structured Numeric (SN)
+    SN,
+    /// Extended Composite Name and ID for Organizations (XON)
+    XON,
+    /// Family Name (FN) - subcomponent of XPN/XCN
+    FN,
+    /// Money (MO)
+    MO,
+    /// Coded with Exceptions (CF)
+    CF,
+    /// Day Range (DIN)
+    DIN,
+    /// Discharge to Location (DLD)
+    DLD,
+    /// Financial Class (FC)
+    FC,
+    /// Job Code/Class (JCC)
+    JCC,
 }
 
 impl DataType {
@@ -82,6 +122,26 @@ impl DataType {
             DataType::PT => "PT",
             DataType::CNE => "CNE",
             DataType::NA => "NA",
+            DataType::IS => "IS",
+            DataType::XCN => "XCN",
+            DataType::PL => "PL",
+            DataType::VID => "VID",
+            DataType::CP => "CP",
+            DataType::CQ => "CQ",
+            DataType::DR => "DR",
+            DataType::EIP => "EIP",
+            DataType::ELD => "ELD",
+            DataType::TQ => "TQ",
+            DataType::Varies => "Varies",
+            DataType::SN => "SN",
+            DataType::XON => "XON",
+            DataType::FN => "FN",
+            DataType::MO => "MO",
+            DataType::CF => "CF",
+            DataType::DIN => "DIN",
+            DataType::DLD => "DLD",
+            DataType::FC => "FC",
+            DataType::JCC => "JCC",
         }
     }
 
@@ -114,6 +174,26 @@ impl DataType {
             "PT" => Some(DataType::PT),
             "CNE" => Some(DataType::CNE),
             "NA" => Some(DataType::NA),
+            "IS" => Some(DataType::IS),
+            "XCN" => Some(DataType::XCN),
+            "PL" => Some(DataType::PL),
+            "VID" => Some(DataType::VID),
+            "CP" => Some(DataType::CP),
+            "CQ" => Some(DataType::CQ),
+            "DR" => Some(DataType::DR),
+            "EIP" => Some(DataType::EIP),
+            "ELD" => Some(DataType::ELD),
+            "TQ" => Some(DataType::TQ),
+            "Varies" | "varies" => Some(DataType::Varies),
+            "SN" => Some(DataType::SN),
+            "XON" => Some(DataType::XON),
+            "FN" => Some(DataType::FN),
+            "MO" => Some(DataType::MO),
+            "CF" => Some(DataType::CF),
+            "DIN" => Some(DataType::DIN),
+            "DLD" => Some(DataType::DLD),
+            "FC" => Some(DataType::FC),
+            "JCC" => Some(DataType::JCC),
             _ => None,
         }
     }

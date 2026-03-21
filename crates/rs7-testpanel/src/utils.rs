@@ -1,6 +1,7 @@
 //! Utility functions for the RS7 Test Panel
 
 use rs7_core::{Message, Delimiters, Field, Repetition, Component};
+use rs7_validator::{MessageSchema, schema_loader};
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
 
@@ -537,7 +538,22 @@ pub fn get_field_name(segment_id: &str, field_num: usize) -> Option<&'static str
 }
 
 /// Format a message as a tree structure for display
+/// Try to load the schema for a parsed message
+pub fn load_message_schema(message: &Message) -> Option<MessageSchema> {
+    let version = message.get_version().unwrap_or(rs7_core::Version::V2_5);
+    message
+        .get_message_type()
+        .and_then(|(msg_type, trigger)| {
+            schema_loader::load_schema(version, &msg_type, &trigger).ok()
+        })
+}
+
 pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
+    let schema = load_message_schema(message);
+    format_message_tree_with_schema(message, schema.as_ref())
+}
+
+pub fn format_message_tree_with_schema(message: &Message, schema: Option<&MessageSchema>) -> Vec<TreeNode> {
     let mut nodes = Vec::new();
     let delimiters = &message.delimiters;
 
@@ -550,8 +566,16 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
         *seg_count += 1;
         let seg_instance = *seg_count;
 
+        // Get segment definition from schema
+        let seg_def = schema.and_then(|s| s.segments.get(&segment.id));
+
+        let seg_label = match seg_def {
+            Some(def) => format!("{} - {} (Segment {})", segment.id, def.name, seg_idx + 1),
+            None => format!("{} (Segment {})", segment.id, seg_idx + 1),
+        };
+
         let mut segment_node = TreeNode {
-            label: format!("{} (Segment {})", segment.id, seg_idx + 1),
+            label: seg_label,
             children: Vec::new(),
             expanded: seg_idx == 0, // Expand first segment by default
             path: None, // Segments don't have a direct Terser path
@@ -567,9 +591,13 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
                 // For other segments: fields[0] = SEG-1, fields[1] = SEG-2, etc.
                 let field_num = field_idx + 1;
 
-                // Get the field name if available
-                let field_name = get_field_name(&segment.id, field_num);
-                let field_label = if let Some(name) = field_name {
+                // Get field definition from schema first, fall back to hardcoded names
+                let schema_field_def = seg_def.and_then(|d| d.fields.get(&field_num));
+                let field_name: Option<String> = schema_field_def
+                    .map(|fd| fd.name.clone())
+                    .or_else(|| get_field_name(&segment.id, field_num).map(|s| s.to_string()));
+
+                let field_label = if let Some(ref name) = field_name {
                     format!(
                         "{}-{} ({}): {}",
                         segment.id,
@@ -607,8 +635,11 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
                     path: Some(field_path.clone()),
                 };
 
-                // Get the data type for this field (for component names)
-                let data_type = get_field_data_type(&segment.id, field_num);
+                // Get component definitions from schema, or fall back to data type lookup
+                let schema_components = schema_field_def.and_then(|fd| fd.components.as_ref());
+                let data_type = schema_field_def
+                    .map(|fd| fd.data_type.as_str())
+                    .or_else(|| get_field_data_type(&segment.id, field_num));
 
                 // Add repetitions if present
                 for (rep_idx, repetition) in field.repetitions.iter().enumerate() {
@@ -632,12 +663,12 @@ pub fn format_message_tree(message: &Message) -> Vec<TreeNode> {
                             };
 
                             // Add components with names
-                            add_component_nodes(&mut rep_node, repetition, &rep_path, data_type, delimiters);
+                            add_component_nodes(&mut rep_node, repetition, &rep_path, data_type, schema_components, delimiters);
                             field_node.children.push(rep_node);
                         }
                     } else {
                         // Single repetition - add components directly
-                        add_component_nodes(&mut field_node, repetition, &field_path, data_type, delimiters);
+                        add_component_nodes(&mut field_node, repetition, &field_path, data_type, schema_components, delimiters);
                     }
                 }
 
@@ -656,6 +687,7 @@ fn add_component_nodes(
     repetition: &rs7_core::Repetition,
     base_path: &str,
     data_type: Option<&str>,
+    schema_components: Option<&HashMap<String, rs7_validator::ComponentDefinition>>,
     delimiters: &rs7_core::Delimiters,
 ) {
     if repetition.components.len() > 1 {
@@ -668,11 +700,14 @@ fn add_component_nodes(
                 // Build component path (e.g., PID-5-1, OBX(1)-5-1)
                 let comp_path = format!("{}-{}", base_path, comp_num);
 
-                // Get component name if data type is known
-                let comp_name = data_type.and_then(|dt| get_component_name(dt, comp_num));
+                // Get component name: schema first, then hardcoded fallback
+                let comp_num_str = comp_num.to_string();
+                let comp_name: Option<String> = schema_components
+                    .and_then(|comps| comps.get(&comp_num_str).map(|c| c.name.clone()))
+                    .or_else(|| data_type.and_then(|dt| get_component_name(dt, comp_num)).map(|s| s.to_string()));
 
                 // Use Terser notation: SEG-F-C (e.g., MSH-9-1)
-                let comp_label = if let Some(name) = comp_name {
+                let comp_label = if let Some(ref name) = comp_name {
                     format!(
                         "{} ({}): {}",
                         comp_path,

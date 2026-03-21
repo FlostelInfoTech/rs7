@@ -4,7 +4,7 @@ use colored::Colorize;
 use rs7_core::Version;
 use rs7_parser::parse_message;
 use rs7_terser::Terser;
-use rs7_validator::Validator;
+use rs7_validator::{Validator, schema_loader};
 use serde_json::json;
 use std::fs;
 use std::io::{self, Read};
@@ -130,6 +130,16 @@ fn parse_command(input: &str, format: &str, detailed: bool) -> Result<()> {
     let content = read_input(input)?;
     let message = parse_message(&content).context("Failed to parse HL7 message")?;
 
+    // Try to load schema for field/component names
+    let schema = {
+        let version = message.get_version().unwrap_or(Version::V2_5);
+        message
+            .get_message_type()
+            .and_then(|(msg_type, trigger)| {
+                schema_loader::load_schema(version, &msg_type, &trigger).ok()
+            })
+    };
+
     match format {
         "json" => {
             let json = json!({
@@ -138,9 +148,51 @@ fn parse_command(input: &str, format: &str, detailed: bool) -> Result<()> {
                 "control_id": message.get_control_id(),
                 "segment_count": message.segments.len(),
                 "segments": message.segments.iter().map(|s| {
+                    let seg_def = schema.as_ref().and_then(|sc| sc.segments.get(&s.id));
                     json!({
                         "id": s.id,
+                        "name": seg_def.map(|d| d.name.as_str()),
                         "field_count": s.fields.len(),
+                        "fields": s.fields.iter().enumerate().filter_map(|(field_idx, field)| {
+                            let field_num = field_idx + 1;
+                            // MSH-1 (field separator) and MSH-2 (encoding characters)
+                            // contain delimiter chars - use raw value, not encode()
+                            let encoded = if s.id == "MSH" && field_num <= 2 {
+                                field.value().unwrap_or("").to_string()
+                            } else {
+                                field.encode(&message.delimiters)
+                            };
+                            if encoded.is_empty() {
+                                return None;
+                            }
+                            let field_def = seg_def.and_then(|d| d.fields.get(&field_num));
+                            let mut field_json = json!({
+                                "position": field_num,
+                                "value": encoded,
+                            });
+                            if let Some(fd) = field_def {
+                                field_json["name"] = json!(fd.name);
+                                field_json["data_type"] = json!(fd.data_type);
+                                // Add component names for composite values
+                                if let Some(components) = &fd.components {
+                                    let comp_parts: Vec<&str> = encoded.split('^').collect();
+                                    let comp_details: Vec<_> = comp_parts.iter().enumerate().filter_map(|(i, val)| {
+                                        if val.is_empty() { return None; }
+                                        let comp_num = format!("{}", i + 1);
+                                        let comp_name = components.get(&comp_num).map(|c| c.name.as_str());
+                                        Some(json!({
+                                            "position": i + 1,
+                                            "name": comp_name,
+                                            "value": val,
+                                        }))
+                                    }).collect();
+                                    if !comp_details.is_empty() {
+                                        field_json["components"] = json!(comp_details);
+                                    }
+                                }
+                            }
+                            Some(field_json)
+                        }).collect::<Vec<_>>(),
                     })
                 }).collect::<Vec<_>>(),
             });
@@ -156,11 +208,52 @@ fn parse_command(input: &str, format: &str, detailed: bool) -> Result<()> {
             if detailed {
                 println!();
                 for (idx, segment) in message.segments.iter().enumerate() {
-                    println!("  {}. {} ({} fields)", idx + 1, segment.id.bold(), segment.fields.len());
+                    let seg_def = schema.as_ref().and_then(|sc| sc.segments.get(&segment.id));
+                    let seg_label = match seg_def {
+                        Some(def) => format!("{} ({})", segment.id.bold(), def.name),
+                        None => format!("{}", segment.id.bold()),
+                    };
+                    println!("  {}. {} - {} fields", idx + 1, seg_label, segment.fields.len());
                     for (field_idx, field) in segment.fields.iter().enumerate() {
-                        let encoded = field.encode(&message.delimiters);
-                        if !encoded.is_empty() {
-                            println!("      [{}]: {}", field_idx, encoded.bright_black());
+                        let field_num = field_idx + 1;
+                        // MSH-1 (field separator) and MSH-2 (encoding characters)
+                        // contain delimiter chars - use raw value, not encode()
+                        let encoded = if segment.id == "MSH" && field_num <= 2 {
+                            field.value().unwrap_or("").to_string()
+                        } else {
+                            field.encode(&message.delimiters)
+                        };
+                        if encoded.is_empty() {
+                            continue;
+                        }
+                        let field_def = seg_def.and_then(|d| d.fields.get(&field_num));
+                        match field_def {
+                            Some(fd) => {
+                                println!("      {}-{} {} ({}): {}",
+                                    segment.id, field_num,
+                                    fd.name.yellow(), fd.data_type.bright_black(),
+                                    encoded.cyan());
+                                // Show component breakdown for composite types
+                                if let Some(components) = &fd.components {
+                                    let comp_parts: Vec<&str> = encoded.split('^').collect();
+                                    if comp_parts.len() > 1 {
+                                        for (i, val) in comp_parts.iter().enumerate() {
+                                            if val.is_empty() {
+                                                continue;
+                                            }
+                                            let comp_num = format!("{}", i + 1);
+                                            let comp_name = components.get(&comp_num)
+                                                .map(|c| c.name.as_str())
+                                                .unwrap_or("?");
+                                            println!("        .{} {}: {}",
+                                                i + 1, comp_name.bright_black(), val);
+                                        }
+                                    }
+                                }
+                            }
+                            None => {
+                                println!("      {}-{}: {}", segment.id, field_num, encoded.bright_black());
+                            }
                         }
                     }
                 }
@@ -177,7 +270,12 @@ fn parse_command(input: &str, format: &str, detailed: bool) -> Result<()> {
             if detailed {
                 println!("\nSegment Details:");
                 for segment in &message.segments {
-                    println!("  {} ({} fields)", segment.id, segment.fields.len());
+                    let seg_def = schema.as_ref().and_then(|sc| sc.segments.get(&segment.id));
+                    let seg_label = match seg_def {
+                        Some(def) => format!("{} - {}", segment.id, def.name),
+                        None => segment.id.clone(),
+                    };
+                    println!("  {} ({} fields)", seg_label, segment.fields.len());
                 }
             }
         }

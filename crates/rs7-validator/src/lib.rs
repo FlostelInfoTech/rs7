@@ -1,11 +1,11 @@
 //! Validation for HL7 messages
 //!
 //! This crate provides validation functionality for HL7 v2.x messages
-//! against their respective standards (v2.3, v2.4, v2.5, v2.6, v2.7).
+//! against their respective standards (v2.3, v2.4, v2.5, v2.6, v2.7, v2.8).
 //!
 //! ## Supported Message Schemas
 //!
-//! The validator includes 32 message schemas across 5 HL7 versions:
+//! The validator includes 43 message schemas across 6 HL7 versions:
 //! - **ADT** (17 schemas): A01-A13, A17, A28, A31, A40
 //! - **SIU** (4 schemas): S12-S15 (Scheduling)
 //! - **MDM** (3 schemas): T01, T02, T04 (Medical Documents)
@@ -21,8 +21,8 @@
 //! - Date/Time types (DT, TM, DTM, TS)
 //! - Numeric types (NM, SI)
 //! - String types (ST, TX, FT)
-//! - Coded elements (CE, CWE, CNE, ID)
-//! - Composite types (XPN, XAD, XTN, CX, EI, HD)
+//! - Coded elements (CE, CWE, CNE, ID, IS)
+//! - Composite types (XPN, XAD, XTN, CX, XCN, EI, HD, PL, VID, CP, CQ, DR, TQ, XON, MO, FC, SN)
 //!
 //! ## Vocabulary Validation
 //!
@@ -460,6 +460,21 @@ pub struct FieldDefinition {
     pub data_type: String,
     pub required: bool,
     pub repeating: bool,
+    pub max_length: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub table_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub components: Option<HashMap<String, ComponentDefinition>>,
+}
+
+/// Component definition for composite data types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComponentDefinition {
+    pub name: String,
+    pub data_type: String,
+    #[serde(default)]
+    pub required: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_length: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub table_id: Option<String>,

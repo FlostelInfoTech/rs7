@@ -57,6 +57,7 @@ fn create_schema_with_tables() -> MessageSchema {
             repeating: false,
             max_length: Some(3),
             table_id: Some("0103".to_string()), // Table 0103: Processing ID
+            components: None,
         },
     );
 
@@ -81,6 +82,7 @@ fn create_schema_with_tables() -> MessageSchema {
             repeating: false,
             max_length: Some(1),
             table_id: Some("0001".to_string()), // Table 0001: Administrative Sex
+            components: None,
         },
     );
 
@@ -105,6 +107,7 @@ fn create_schema_with_tables() -> MessageSchema {
             repeating: false,
             max_length: Some(1),
             table_id: Some("0004".to_string()), // Table 0004: Patient Class
+            components: None,
         },
     );
 

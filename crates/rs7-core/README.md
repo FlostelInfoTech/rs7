@@ -279,6 +279,9 @@ let encoded = file.encode("\r");
 - HL7 v2.6
 - HL7 v2.7
 - HL7 v2.7.1
+- HL7 v2.8
+- HL7 v2.8.1
+- HL7 v2.8.2
 
 ## Related Crates
 

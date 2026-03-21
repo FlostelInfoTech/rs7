@@ -16,7 +16,7 @@ Transform RS7 into the most comprehensive, performant, and feature-rich HL7 libr
 
 ### Completed Features ✅
 
-- **Core HL7 Parsing**: Delimiter-based parser, support for v2.3-v2.7.1
+- **Core HL7 Parsing**: Delimiter-based parser, support for v2.3-v2.8.2
 - **Terser API**: Path-based field access (e.g., `PID-5-1`, `OBX(2)-5`)
 - **Cached Terser**: 5-10x faster repeated field access
 - **Enhanced Terser**: Bulk extraction, pattern matching, field iteration, conditional queries ✨ v0.10.0
@@ -25,7 +25,7 @@ Transform RS7 into the most comprehensive, performant, and feature-rich HL7 libr
 - **Batch/File Support**: BatchBuilder, FileBuilder, parse_batch(), parse_file() ✨ v0.13.0
 - **Message Transformation**: Field mapping, 15 built-in transforms, YAML/JSON config ✨ v0.14.0
 - **Message Templates**: Template system with variable substitution, inheritance, 7 pre-built templates ✨ v0.15.0
-- **Schema Validation**: 32 message types across 5 HL7 versions
+- **Schema Validation**: 43 message types across 6 HL7 versions (v2.3-v2.8)
 - **Data Type Validation**: All HL7 data types (dates, times, numerics, coded values)
 - **Vocabulary Validation**: HL7 standard tables (13 tables)
 - **Conformance Profile Validation**: Phase 1 MVP (Usage, Cardinality, Length)

@@ -51,6 +51,26 @@ pub fn validate_data_type(value: &str, data_type: DataType) -> DataTypeValidatio
         DataType::MSG => validate_message_type(value),
         DataType::PT => validate_processing_type(value),
         DataType::NA => validate_numeric_array(value),
+        DataType::IS => validate_coded_value(value),
+        DataType::XCN => validate_composite_name(value),
+        DataType::PL => validate_person_location(value),
+        DataType::VID => validate_version_identifier(value),
+        DataType::CP => validate_composite_type(value),
+        DataType::CQ => validate_composite_type(value),
+        DataType::DR => validate_composite_type(value),
+        DataType::EIP => validate_composite_type(value),
+        DataType::ELD => validate_composite_type(value),
+        DataType::TQ => validate_composite_type(value),
+        DataType::Varies => DataTypeValidation::Valid,
+        DataType::SN => validate_structured_numeric(value),
+        DataType::XON => validate_composite_type(value),
+        DataType::FN => validate_composite_type(value),
+        DataType::MO => validate_composite_type(value),
+        DataType::CF => validate_coded_element(value),
+        DataType::DIN => validate_composite_type(value),
+        DataType::DLD => validate_composite_type(value),
+        DataType::FC => validate_composite_type(value),
+        DataType::JCC => validate_composite_type(value),
     }
 }
 
@@ -408,6 +428,58 @@ fn validate_numeric_array(value: &str) -> DataTypeValidation {
         }
     }
 
+    DataTypeValidation::Valid
+}
+
+/// Validate IS (Coded Value for HL7 Defined Tables) - similar to ID
+fn validate_coded_value(value: &str) -> DataTypeValidation {
+    if value.is_empty() {
+        return DataTypeValidation::Valid;
+    }
+    DataTypeValidation::Valid
+}
+
+/// Validate XCN (Extended Composite ID Number and Name)
+fn validate_composite_name(value: &str) -> DataTypeValidation {
+    // Format: ID^family^given^middle^suffix^prefix^degree^source table^...
+    if value.is_empty() {
+        return DataTypeValidation::Valid;
+    }
+    DataTypeValidation::Valid
+}
+
+/// Validate PL (Person Location)
+fn validate_person_location(value: &str) -> DataTypeValidation {
+    // Format: point of care^room^bed^facility^location status^...
+    if value.is_empty() {
+        return DataTypeValidation::Valid;
+    }
+    DataTypeValidation::Valid
+}
+
+/// Validate VID (Version Identifier)
+fn validate_version_identifier(value: &str) -> DataTypeValidation {
+    // Format: version ID^internationalization code^international version ID
+    if value.is_empty() {
+        return DataTypeValidation::Valid;
+    }
+    DataTypeValidation::Valid
+}
+
+/// Validate SN (Structured Numeric)
+fn validate_structured_numeric(value: &str) -> DataTypeValidation {
+    // Format: comparator^num1^separator/suffix^num2
+    if value.is_empty() {
+        return DataTypeValidation::Valid;
+    }
+    DataTypeValidation::Valid
+}
+
+/// Generic validation for composite types with component structure
+fn validate_composite_type(value: &str) -> DataTypeValidation {
+    if value.is_empty() {
+        return DataTypeValidation::Valid;
+    }
     DataTypeValidation::Valid
 }
 

@@ -12,8 +12,9 @@ Comprehensive HL7 v2.x message validation for Rust.
 - **Data Type Validation**: Verify field formats (dates, times, numbers, coded values)
 - **Vocabulary Validation**: Check codes against HL7 tables
 - **Business Rules Engine**: Custom validation rules with severity levels
-- **38 Message Schemas**: Support for ADT, ORU, ORM, SIU, MDM, DFT, QRY, BAR, RDE, RAS, RDS, RGV, RRA, RRD, OUL, OML, MFN message types
-- **HL7 Versions**: 2.3, 2.3.1, 2.4, 2.5, 2.5.1, 2.6, 2.7, 2.7.1
+- **43 Message Schemas**: Support for ADT, ORU, ORM, SIU, MDM, DFT, QRY, BAR, RDE, RAS, RDS, RGV, RRA, RRD, OUL, OML, MFN, ACK message types
+- **Complete Field Definitions**: All segment fields with component definitions for composite data types
+- **HL7 Versions**: 2.3, 2.3.1, 2.4, 2.5, 2.5.1, 2.6, 2.7, 2.7.1, 2.8, 2.8.1, 2.8.2
 
 ## Installation
 
