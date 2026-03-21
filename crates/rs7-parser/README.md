@@ -1,14 +1,14 @@
 # rs7-parser
 
-High-performance HL7 v2.x message parser for Rust, built with nom for zero-copy parsing.
+High-performance HL7 v2.x message parser for Rust with delimiter-based parsing.
 
 ## Overview
 
-`rs7-parser` provides fast, zero-copy parsing of HL7 v2.x messages into the rs7-core data structures. The parser uses the `nom` parser combinator library to achieve minimal allocations and maximum performance.
+`rs7-parser` provides fast, efficient parsing of HL7 v2.x messages into the rs7-core data structures. The parser uses delimiter-based splitting to achieve minimal allocations and maximum performance.
 
 ## Features
 
-- **Zero-Copy Parsing**: Minimizes memory allocations for optimal performance
+- **Efficient Parsing**: Minimizes memory allocations for optimal performance
 - **Complete HL7 Support**: Parse all HL7 v2.x message types and versions
 - **Escape Sequence Handling**: Proper handling of HL7 encoding characters
 - **Batch/File Parsing**: Parse FHS/BHS file and batch messages
@@ -229,14 +229,14 @@ Based on benchmarks with `cargo bench`:
 | Large (25+ segments) | 30-50 µs | ~30,000 msg/sec |
 
 Optimizations applied:
-- Zero-copy parsing (no string cloning)
+- Fast-path escape detection (skip decode for values without escape sequences)
 - Pre-allocation for repeated structures
 - Fast path for fields without escape sequences
 - Minimal allocations during parsing
 
 ## Parser Architecture
 
-The parser uses `nom` combinators for robust parsing:
+The parser uses delimiter-based splitting for robust parsing:
 
 1. **Delimiter Extraction**: Parse MSH/BHS/FHS to get field separators
 2. **Segment Parsing**: Split message into segments

@@ -91,8 +91,8 @@ pub(crate) fn parse_component_optimized(input: &str, delimiters: &Delimiters) ->
         let decoded = if input.contains(delimiters.escape_character) {
             Encoding::decode(input, delimiters)?
         } else {
-            // No escape sequences - avoid decoding overhead
-            input.to_string()
+            // No escape sequences - pass &str directly, avoiding decode overhead
+            input.into()
         };
         component.add_subcomponent(SubComponent::new(decoded));
         return Ok(component);
@@ -106,7 +106,7 @@ pub(crate) fn parse_component_optimized(input: &str, delimiters: &Delimiters) ->
         let decoded = if sub_str.contains(delimiters.escape_character) {
             Encoding::decode(sub_str, delimiters)?
         } else {
-            sub_str.to_string()
+            sub_str.into()
         };
         subcomponents.push(SubComponent::new(decoded));
     }

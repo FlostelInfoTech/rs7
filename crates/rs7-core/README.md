@@ -13,7 +13,7 @@ Core data structures and utilities for HL7 v2.x message processing in Rust.
 - **Message Builders**: Fluent API for creating HL7 messages programmatically
 - **Batch/File Support**: BHS/BTS (batch) and FHS/FTS (file) message structures
 - **Field Delimiters**: Configurable separators for segments, fields, and components
-- **Zero-Copy Design**: Efficient memory usage with minimal allocations
+- **Efficient Design**: Optimized memory usage with minimal allocations
 
 ## Message Hierarchy
 

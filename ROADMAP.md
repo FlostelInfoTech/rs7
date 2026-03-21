@@ -16,7 +16,7 @@ Transform RS7 into the most comprehensive, performant, and feature-rich HL7 libr
 
 ### Completed Features ✅
 
-- **Core HL7 Parsing**: Zero-copy parser with nom, support for v2.3-v2.7.1
+- **Core HL7 Parsing**: Delimiter-based parser, support for v2.3-v2.7.1
 - **Terser API**: Path-based field access (e.g., `PID-5-1`, `OBX(2)-5`)
 - **Cached Terser**: 5-10x faster repeated field access
 - **Enhanced Terser**: Bulk extraction, pattern matching, field iteration, conditional queries ✨ v0.10.0
@@ -51,7 +51,7 @@ All Phase 1 sprints have been successfully implemented:
 ```
 rs7/
 ├── rs7-core        - Core data structures (Message, Segment, Field)
-├── rs7-parser      - HL7 message parser using nom
+├── rs7-parser      - HL7 message parser (delimiter-based)
 ├── rs7-validator   - Message validation against HL7 standards
 ├── rs7-conformance - Conformance profile validation (XML-based)
 ├── rs7-terser      - Path-based field access API

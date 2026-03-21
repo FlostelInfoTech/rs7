@@ -61,6 +61,11 @@ impl Encoding {
 
     /// Decode a string by replacing escape sequences with their actual characters
     pub fn decode(input: &str, delimiters: &Delimiters) -> Result<String> {
+        // Fast path: no escape character means nothing to decode
+        if !input.contains(delimiters.escape_character) {
+            return Ok(input.to_string());
+        }
+
         let mut result = String::with_capacity(input.len());
         let mut chars = input.chars().peekable();
 

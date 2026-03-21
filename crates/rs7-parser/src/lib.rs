@@ -1,4 +1,4 @@
-//! HL7 message parser using nom
+//! HL7 message parser
 //!
 //! This crate provides parsing functionality for HL7 v2.x messages.
 //!
@@ -18,7 +18,6 @@ pub mod streaming;
 pub use config::{ParserConfig, ParseResult, ParseWarning, WarningCode};
 pub use streaming::{StreamingParser, StreamingMessageBuilder, SegmentEvent, SegmentHandler, parse_streaming, process_with_handler};
 
-// nom parser combinators (for future enhancements)
 use rs7_core::{
     batch::{Batch, BatchHeader, BatchTrailer, File, FileHeader, FileTrailer},
     delimiters::Delimiters,
@@ -485,6 +484,11 @@ fn parse_component(input: &str, delimiters: &Delimiters) -> Result<Component> {
 fn parse_subcomponent(input: &str, delimiters: &Delimiters) -> Result<SubComponent> {
     if input.is_empty() {
         return Ok(SubComponent::new(""));
+    }
+
+    // Fast path: skip decode when no escape sequences present (~95% of values)
+    if !input.contains(delimiters.escape_character) {
+        return Ok(SubComponent::new(input));
     }
 
     let decoded = Encoding::decode(input, delimiters)?;

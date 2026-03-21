@@ -524,7 +524,7 @@ This release completes Phase 4 of RS7's enhanced feature roadmap:
   - `FieldProfile.usage` changed from `Usage` to `ConditionalUsage`
   - Existing code using `FieldProfile::new()` continues to work (automatic conversion)
   - Pattern matching on `FieldProfile.usage` must use `ConditionalUsage` variants
-- **Performance**: Predicate evaluation uses zero-copy Terser for efficient field access
+- **Performance**: Predicate evaluation uses cached Terser for efficient field access
 - **LOC**: ~300 LOC for predicate engine, ~500 LOC total for Phase 2 structures
 - **Test Coverage**: 16 new tests for predicates, all existing conformance tests passing
 
@@ -1759,7 +1759,7 @@ This release completes the core FHIR R4 conversion functionality, providing prod
 
 ### Added
 - Core HL7 v2.x data structures (Message, Segment, Field, Component, Subcomponent)
-- Parser using nom for zero-copy parsing
+- Delimiter-based parser for efficient HL7 parsing
 - Support for HL7 v2.3, v2.3.1, v2.4, v2.5, v2.5.1, v2.6, v2.7, v2.7.1
 - Terser API for path-based field access
 - Message validation against HL7 standards

@@ -101,7 +101,7 @@ wasm-pack build --target nodejs
 ```
 rs7/
 ├── rs7-core       - Core data structures (Message, Segment, Field, Component, Subcomponent)
-├── rs7-parser     - HL7 message parser using nom (zero-copy parsing)
+├── rs7-parser     - HL7 message parser (delimiter-based parsing)
 ├── rs7-validator  - Schema-based validation, data type validation, vocabulary validation
 ├── rs7-terser     - Path-based field access API (similar to HAPI's Terser)
 ├── rs7-mllp       - MLLP protocol for intra-organization network transmission
@@ -150,7 +150,7 @@ Field access uses path notation (e.g., `PID-5-1`, `OBX(2)-5`). Two implementatio
 - `CachedTerser` - 5-10x faster for repeated access to same fields
 
 **Parser Design:**
-Uses `nom` parser combinators for zero-copy parsing with minimal allocations. The `optimized.rs` module contains pre-allocation strategies for common patterns.
+Uses delimiter-based splitting with minimal allocations. The `optimized.rs` module contains pre-allocation strategies for common patterns.
 
 ## Important Implementation Details
 
@@ -167,6 +167,21 @@ Path examples:
 - `PID-11(1)-1` - PID segment, field 11, second repetition, component 1
 
 **Note:** Repetition indexing remains 0-based internally (first repetition is index 0).
+
+### MSH Segment Field Numbering
+
+**IMPORTANT: The MSH segment has special field numbering.** Unlike all other segments, MSH-1 is the Field Separator character itself (typically `|`), and MSH-2 contains the four Encoding Characters (typically `^~\&`). This means:
+
+- `MSH|^~\&|...` — the `|` after `MSH` is MSH-1 (field separator), and `^~\&` is MSH-2 (encoding characters)
+- MSH-1 is NOT the first value after the first `|`; it IS the `|` delimiter itself
+- The remaining MSH fields (MSH-3 onward) follow normal counting: MSH-3 is the Sending Application, MSH-4 is the Sending Facility, etc.
+- When parsing MSH, field counting is offset by one compared to other segments because MSH-1 occupies the delimiter position
+
+For example, in: `MSH|^~\&|SendApp|SendFac|RecvApp|RecvFac|20230101||ADT^A01|123|P|2.5`
+- MSH-1 = `|` (field separator)
+- MSH-2 = `^~\&` (encoding characters)
+- MSH-3 = `SendApp`
+- MSH-9 = `ADT^A01` (message type)
 
 ### Workspace Dependencies
 

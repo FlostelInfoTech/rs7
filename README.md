@@ -35,7 +35,7 @@ A comprehensive Rust library for parsing, validating, and creating HL7 v2.x heal
 ```
 rs7/
 ├── rs7-core          - Core data structures (Message, Segment, Field)
-├── rs7-parser        - HL7 message parser using nom
+├── rs7-parser        - HL7 message parser (delimiter-based)
 ├── rs7-validator     - Message validation against HL7 standards
 ├── rs7-conformance   - Conformance profile validation (XML-based)
 ├── rs7-orchestration - Message routing, filtering, and workflow orchestration
@@ -1088,7 +1088,7 @@ at your option.
 |---------|-----|-------------|
 | Language | Rust | Java |
 | Memory Safety | Compile-time guaranteed | Runtime checked |
-| Parser | nom (zero-copy) | Custom |
+| Parser | Delimiter-based | Custom |
 | Async I/O | Tokio | Blocking/NIO |
 | Terser API | ✅ | ✅ |
 | Validation | ✅ | ✅ |
