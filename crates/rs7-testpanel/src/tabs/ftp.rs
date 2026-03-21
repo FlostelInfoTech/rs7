@@ -1234,7 +1234,7 @@ async fn run_ftp_server(
     shutdown: Arc<AtomicBool>,
     ctx: egui::Context,
 ) -> Result<(), String> {
-    use libunftp::Server;
+    use libunftp::ServerBuilder;
 
     // Mark server as running
     {
@@ -1258,7 +1258,7 @@ async fn run_ftp_server(
 
     // Build server with custom authenticator (supports both authenticated and anonymous modes)
     let authenticator = SimpleAuthenticator::new(username.to_string(), password.to_string());
-    let server = Server::with_authenticator(
+    let server = ServerBuilder::with_authenticator(
         Box::new(move || unftp_sbe_fs::Filesystem::new(root_path.clone())),
         std::sync::Arc::new(authenticator),
     )

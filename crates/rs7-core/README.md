@@ -221,16 +221,17 @@ fn process_message(msg: &Message) -> Result<(), Error> {
 ## HL7 Encoding
 
 ```rust
-use rs7_core::encoding::{encode_field, decode_field, Delimiters};
+use rs7_core::encoding::Encoding;
+use rs7_core::delimiters::Delimiters;
 
 let delimiters = Delimiters::default();
 
 // Encode special characters
-let encoded = encode_field("Value with | separator", &delimiters);
+let encoded = Encoding::encode("Value with | separator", &delimiters);
 // Result: "Value with \\F\\ separator"
 
 // Decode escape sequences
-let decoded = decode_field("Value with \\F\\ separator", &delimiters);
+let decoded = Encoding::decode("Value with \\F\\ separator", &delimiters).unwrap();
 // Result: "Value with | separator"
 ```
 

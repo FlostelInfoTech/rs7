@@ -107,11 +107,15 @@ impl Component {
 
     /// Encode the component
     pub fn encode(&self, delimiters: &Delimiters) -> String {
-        self.subcomponents
-            .iter()
-            .map(|sc| sc.encode(delimiters))
-            .collect::<Vec<_>>()
-            .join(&delimiters.subcomponent_separator.to_string())
+        let sep = delimiters.subcomponent_separator;
+        let mut result = String::new();
+        for (i, sc) in self.subcomponents.iter().enumerate() {
+            if i > 0 {
+                result.push(sep);
+            }
+            result.push_str(&sc.encode(delimiters));
+        }
+        result
     }
 }
 
@@ -196,11 +200,15 @@ impl Repetition {
 
     /// Encode the repetition
     pub fn encode(&self, delimiters: &Delimiters) -> String {
-        self.components
-            .iter()
-            .map(|c| c.encode(delimiters))
-            .collect::<Vec<_>>()
-            .join(&delimiters.component_separator.to_string())
+        let sep = delimiters.component_separator;
+        let mut result = String::new();
+        for (i, c) in self.components.iter().enumerate() {
+            if i > 0 {
+                result.push(sep);
+            }
+            result.push_str(&c.encode(delimiters));
+        }
+        result
     }
 }
 
@@ -261,11 +269,15 @@ impl Field {
 
     /// Encode the field
     pub fn encode(&self, delimiters: &Delimiters) -> String {
-        self.repetitions
-            .iter()
-            .map(|r| r.encode(delimiters))
-            .collect::<Vec<_>>()
-            .join(&delimiters.repetition_separator.to_string())
+        let sep = delimiters.repetition_separator;
+        let mut result = String::new();
+        for (i, r) in self.repetitions.iter().enumerate() {
+            if i > 0 {
+                result.push(sep);
+            }
+            result.push_str(&r.encode(delimiters));
+        }
+        result
     }
 
     /// Get component at path (e.g., \[0\]\[2\] for first repetition, third component)

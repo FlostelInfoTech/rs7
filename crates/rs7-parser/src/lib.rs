@@ -173,14 +173,18 @@ fn extract_delimiters_with_config(input: &str, config: &ParserConfig) -> Result<
     }
 
     if input.len() < 8 {
-        return Err(Error::parse("MSH segment too short"));
+        // In lenient mode, allow short encoding characters
+        if !config.allow_non_standard_encoding_chars {
+            return Err(Error::parse("MSH segment too short"));
+        }
     }
 
-    let field_sep = input.chars().nth(3).ok_or_else(|| {
-        Error::parse("Cannot extract field separator")
-    })?;
-
-    let encoding_chars: String = input.chars().skip(4).take(4).collect();
+    let field_sep = input.as_bytes()[3] as char;
+    let encoding_chars = if input.len() >= 8 {
+        &input[4..8]
+    } else {
+        &input[4..]
+    };
 
     // In lenient mode, allow non-standard encoding characters
     if encoding_chars.len() < 4 && !config.allow_non_standard_encoding_chars {
@@ -190,7 +194,7 @@ fn extract_delimiters_with_config(input: &str, config: &ParserConfig) -> Result<
         )));
     }
 
-    Delimiters::from_encoding_characters(field_sep, &encoding_chars)
+    Delimiters::from_encoding_characters(field_sep, encoding_chars)
 }
 
 /// Parse MSH segment with configuration
@@ -318,6 +322,9 @@ fn parse_field_with_config(input: &str, delimiters: &Delimiters, config: &Parser
         &repetition_strings[..]
     };
 
+    // Pre-allocate repetitions vector
+    let mut repetitions = Vec::with_capacity(repetition_strings.len());
+
     for rep_str in repetition_strings {
         // Apply max field length
         let rep_str = if config.max_field_length > 0 && rep_str.len() > config.max_field_length {
@@ -326,69 +333,11 @@ fn parse_field_with_config(input: &str, delimiters: &Delimiters, config: &Parser
             rep_str
         };
 
-        let repetition = parse_repetition(rep_str, delimiters)?;
-        field.add_repetition(repetition);
+        repetitions.push(parse_repetition(rep_str, delimiters)?);
     }
 
+    field.repetitions = repetitions;
     Ok(field)
-}
-
-/// Extract delimiters from MSH segment
-///
-/// MSH format: MSH|^~\&|...
-/// Position 3 is field separator (|)
-/// Positions 4-7 are encoding characters (^~\&)
-#[allow(dead_code)]
-fn extract_delimiters(input: &str) -> Result<Delimiters> {
-    if !input.starts_with("MSH") {
-        return Err(Error::parse("Message must start with MSH segment"));
-    }
-
-    if input.len() < 8 {
-        return Err(Error::parse("MSH segment too short"));
-    }
-
-    let field_sep = input.chars().nth(3).ok_or_else(|| {
-        Error::parse("Cannot extract field separator")
-    })?;
-
-    let encoding_chars: String = input.chars().skip(4).take(4).collect();
-
-    Delimiters::from_encoding_characters(field_sep, &encoding_chars)
-}
-
-/// Parse MSH segment (special handling)
-#[allow(dead_code)]
-fn parse_msh_segment(input: &str, delimiters: &Delimiters) -> Result<Segment> {
-    if !input.starts_with("MSH") {
-        return Err(Error::parse("MSH segment must start with 'MSH'"));
-    }
-
-    let mut segment = Segment::new("MSH");
-
-    // Add MSH-1 (field separator - not actually in the message text)
-    segment.add_field(Field::from_value(delimiters.field_separator.to_string()));
-
-    // Add MSH-2 (encoding characters - appears after MSH|)
-    segment.add_field(Field::from_value(delimiters.encoding_characters()));
-
-    // Parse the rest of the fields starting after "MSH|^~\&"
-    // Note: the character at position 8 is the field separator before MSH-3
-    let field_start = 9; // "MSH|^~\&|".len() - we want to start after the | following encoding chars
-    if input.len() <= field_start {
-        return Ok(segment);
-    }
-
-    let rest = &input[field_start..];
-    let field_strings: Vec<&str> = rest.split(delimiters.field_separator).collect();
-
-    // Add MSH-3 onwards
-    for field_str in field_strings {
-        let field = parse_field(field_str, delimiters)?;
-        segment.add_field(field);
-    }
-
-    Ok(segment)
 }
 
 /// Parse a regular segment
@@ -425,39 +374,29 @@ fn parse_segment(input: &str, delimiters: &Delimiters) -> Result<Segment> {
 
 /// Parse a field (can contain repetitions)
 fn parse_field(input: &str, delimiters: &Delimiters) -> Result<Field> {
-    let mut field = Field::new();
-
-    // Even empty fields should have one (empty) repetition
-    let repetition_strings: Vec<&str> = if input.is_empty() {
-        vec![""]
-    } else {
-        input.split(delimiters.repetition_separator).collect()
-    };
-
-    for rep_str in repetition_strings {
-        let repetition = parse_repetition(rep_str, delimiters)?;
-        field.add_repetition(repetition);
-    }
-
-    Ok(field)
+    parse_field_with_config(input, delimiters, &ParserConfig::strict())
 }
 
 /// Parse a repetition (can contain components)
 fn parse_repetition(input: &str, delimiters: &Delimiters) -> Result<Repetition> {
     let mut repetition = Repetition::new();
 
-    // Even empty repetitions should have one (empty) component
-    let component_strings: Vec<&str> = if input.is_empty() {
-        vec![""]
-    } else {
-        input.split(delimiters.component_separator).collect()
-    };
-
-    for comp_str in component_strings {
-        let component = parse_component(comp_str, delimiters)?;
-        repetition.add_component(component);
+    if input.is_empty() {
+        let mut comp = Component::new();
+        comp.add_subcomponent(SubComponent::new(""));
+        repetition.add_component(comp);
+        return Ok(repetition);
     }
 
+    // Pre-allocate based on delimiter count
+    let comp_count = input.matches(delimiters.component_separator).count() + 1;
+    let mut components = Vec::with_capacity(comp_count);
+
+    for comp_str in input.split(delimiters.component_separator) {
+        components.push(parse_component(comp_str, delimiters)?);
+    }
+
+    repetition.components = components;
     Ok(repetition)
 }
 
@@ -465,18 +404,26 @@ fn parse_repetition(input: &str, delimiters: &Delimiters) -> Result<Repetition> 
 fn parse_component(input: &str, delimiters: &Delimiters) -> Result<Component> {
     let mut component = Component::new();
 
-    // Even empty components should have one (empty) subcomponent
-    let subcomponent_strings: Vec<&str> = if input.is_empty() {
-        vec![""]
-    } else {
-        input.split(delimiters.subcomponent_separator).collect()
-    };
-
-    for sub_str in subcomponent_strings {
-        let subcomponent = parse_subcomponent(sub_str, delimiters)?;
-        component.add_subcomponent(subcomponent);
+    if input.is_empty() {
+        component.add_subcomponent(SubComponent::new(""));
+        return Ok(component);
     }
 
+    // Fast path: no subcomponents (most common case)
+    if !input.contains(delimiters.subcomponent_separator) {
+        component.add_subcomponent(parse_subcomponent(input, delimiters)?);
+        return Ok(component);
+    }
+
+    // Pre-allocate based on delimiter count
+    let sub_count = input.matches(delimiters.subcomponent_separator).count() + 1;
+    let mut subcomponents = Vec::with_capacity(sub_count);
+
+    for sub_str in input.split(delimiters.subcomponent_separator) {
+        subcomponents.push(parse_subcomponent(sub_str, delimiters)?);
+    }
+
+    component.subcomponents = subcomponents;
     Ok(component)
 }
 
@@ -637,42 +584,33 @@ pub fn parse_file(input: &str) -> Result<File> {
     Ok(file)
 }
 
-/// Extract delimiters from BHS segment (same format as MSH)
-fn extract_delimiters_from_bhs(input: &str) -> Result<Delimiters> {
-    if !input.starts_with("BHS") {
-        return Err(Error::parse("Expected BHS segment"));
+/// Extract delimiters from a segment with MSH-like structure (MSH, BHS, FHS)
+///
+/// All three segment types use the same encoding: position 3 is the field separator,
+/// positions 4-7 are encoding characters (e.g., `^~\&`).
+fn extract_delimiters_from_header(expected_prefix: &str, input: &str) -> Result<Delimiters> {
+    if !input.starts_with(expected_prefix) {
+        return Err(Error::parse(format!("Expected {} segment", expected_prefix)));
     }
 
     if input.len() < 8 {
-        return Err(Error::parse("BHS segment too short"));
+        return Err(Error::parse(format!("{} segment too short", expected_prefix)));
     }
 
-    let field_sep = input.chars().nth(3).ok_or_else(|| {
-        Error::parse("Cannot extract field separator from BHS")
-    })?;
+    let field_sep = input.as_bytes()[3] as char;
+    let encoding_chars = &input[4..8];
 
-    let encoding_chars: String = input.chars().skip(4).take(4).collect();
+    Delimiters::from_encoding_characters(field_sep, encoding_chars)
+}
 
-    Delimiters::from_encoding_characters(field_sep, &encoding_chars)
+/// Extract delimiters from BHS segment (same format as MSH)
+fn extract_delimiters_from_bhs(input: &str) -> Result<Delimiters> {
+    extract_delimiters_from_header("BHS", input)
 }
 
 /// Extract delimiters from FHS segment (same format as MSH)
 fn extract_delimiters_from_fhs(input: &str) -> Result<Delimiters> {
-    if !input.starts_with("FHS") {
-        return Err(Error::parse("Expected FHS segment"));
-    }
-
-    if input.len() < 8 {
-        return Err(Error::parse("FHS segment too short"));
-    }
-
-    let field_sep = input.chars().nth(3).ok_or_else(|| {
-        Error::parse("Cannot extract field separator from FHS")
-    })?;
-
-    let encoding_chars: String = input.chars().skip(4).take(4).collect();
-
-    Delimiters::from_encoding_characters(field_sep, &encoding_chars)
+    extract_delimiters_from_header("FHS", input)
 }
 
 /// Parse FHS (File Header Segment)
@@ -845,7 +783,7 @@ mod tests {
     #[test]
     fn test_extract_delimiters() {
         let msh = "MSH|^~\\&|SendApp|SendFac|RecApp|RecFac|20240315||ADT^A01|12345|P|2.5";
-        let delims = extract_delimiters(msh).unwrap();
+        let delims = extract_delimiters_with_config(msh, &ParserConfig::strict()).unwrap();
 
         assert_eq!(delims.field_separator, '|');
         assert_eq!(delims.component_separator, '^');
@@ -858,7 +796,8 @@ mod tests {
     fn test_parse_msh_segment() {
         let msh = "MSH|^~\\&|SendApp|SendFac|RecApp|RecFac";
         let delims = Delimiters::default();
-        let segment = parse_msh_segment(msh, &delims).unwrap();
+        let config = ParserConfig::strict();
+        let (segment, _warnings) = parse_msh_segment_with_config(msh, &delims, &config).unwrap();
 
         assert_eq!(segment.id, "MSH");
         assert_eq!(segment.get_field_value(3), Some("SendApp"));
