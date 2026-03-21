@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-03-21
+
+### Fixed
+
+- Fix middleware doctests for axum 0.8.8 Router type inference change
+- Sync rs7-transform regex dependency to workspace version (was pinned to 1.11, workspace uses 1.12)
+- Fix rs7-wasm package.json version (0.6.0 -> 1.0.0) and repository URL (GitLab -> GitHub)
+- Fix rs7-testpanel to use `version.workspace = true` instead of hardcoded version
+
 ## [1.0.0] - 2026-03-21
 
 ### Added - Healthcare-Grade Benchmark Framework
