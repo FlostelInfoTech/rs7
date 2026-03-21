@@ -1,6 +1,6 @@
 {
   "name": "rs7-wasm",
-  "version": "0.6.0",
+  "version": "1.0.0",
   "description": "WebAssembly bindings for RS7 - HL7 v2.x library for JavaScript/TypeScript",
   "main": "pkg/rs7_wasm.js",
   "types": "pkg/rs7_wasm.d.ts",
@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://gitlab.flostel.com/alexshao/rs7"
+    "url": "https://github.com/flostelinfotech/rs7"
   },
   "keywords": [
     "hl7",

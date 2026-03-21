@@ -19,7 +19,7 @@ serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 serde_yaml = { version = "0.9", optional = true }
 chrono.workspace = true
-regex = "1.11"
+regex.workspace = true
 
 [features]
 default = []
