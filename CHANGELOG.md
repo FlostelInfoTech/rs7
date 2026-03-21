@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-03-21
+
+### Fixed
+
+- Standardize all 9 benchmark reports to consistent 4-section format (Purpose, Methodology, Configuration, Results)
+- Add `run_all.sh` script to regenerate all benchmark reports in one pass
+- Fix transport bench: replace "mock server" terminology with accurate "RS7 MllpServer / HttpServer"
+- Clean criterion output: strip progress, warmup, outlier noise — keep only benchmark name + timing + throughput
+
 ## [1.0.1] - 2026-03-21
 
 ### Fixed

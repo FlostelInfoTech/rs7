@@ -573,9 +573,8 @@ fn print_section_1_purpose() {
     println!("    Client: TCP receive → deframe → parse ACK → return");
     println!();
     println!("  Test methodology follows standard HL7 interface engine benchmarking practices");
-    println!("  (T1 store-and-forward, T2 translation, T3 round-trip). All tests run on");
-    println!("  localhost with mock servers; results reflect RS7 library-level performance");
-    println!("  under controlled conditions.");
+    println!("  (T1 store-and-forward, T2 translation, T3 round-trip). Both client and server");
+    println!("  are RS7's own MLLP/HTTP implementations running on localhost.");
 }
 
 fn print_section_2_methodology() {
@@ -585,7 +584,7 @@ fn print_section_2_methodology() {
     println!("  Transport:     MLLP/TCP (intra-org, persistent connection, VT/FS/CR framing)");
     println!("                 HTTP/1.1 (inter-org, reqwest client, axum server, keep-alive)");
     println!("  Network:       localhost (127.0.0.1), auto-allocated ephemeral port");
-    println!("  Server:        MockMllpServer / MockHttpServer with ACK handler");
+    println!("  Server:        RS7 MllpServer / HttpServer with ACK handler");
     println!("  Messages:      3 types — ADT^A01 (admission), ORU^R01 (lab result), RDE^O11 (Rx)");
     println!("  Concurrency:   1, 4, 8 simultaneous clients (persistent connections)");
     println!("  Warmup:        1,000 messages discarded before measurement");
