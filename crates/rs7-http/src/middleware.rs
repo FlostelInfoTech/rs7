@@ -57,7 +57,7 @@ impl BasicAuthState {
 /// # async fn example() {
 /// let auth_state = BasicAuthState::new("admin", "secret");
 ///
-/// let app = Router::new()
+/// let app: Router = Router::new()
 ///     .route("/", post(handler))
 ///     .layer(axum::middleware::from_fn_with_state(
 ///         auth_state,
@@ -146,7 +146,7 @@ impl ApiKeyAuthState {
 /// # async fn example() {
 /// let auth_state = ApiKeyAuthState::new(vec!["secret-key".into()]);
 ///
-/// let app = Router::new()
+/// let app: Router = Router::new()
 ///     .route("/", post(handler))
 ///     .layer(axum::middleware::from_fn_with_state(
 ///         auth_state,
@@ -199,7 +199,7 @@ pub async fn api_key_middleware(
 /// # async fn example() {
 /// let auth_state = ApiKeyAuthState::new(vec!["token123".into()]);
 ///
-/// let app = Router::new()
+/// let app: Router = Router::new()
 ///     .route("/", post(handler))
 ///     .layer(axum::middleware::from_fn_with_state(
 ///         auth_state,
