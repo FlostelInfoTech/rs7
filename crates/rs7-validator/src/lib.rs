@@ -401,6 +401,101 @@ impl Validator {
                             }
                     }
                 }
+
+                // Validate components if the schema defines them
+                if let Some(components) = &field_def.components {
+                    self.validate_components(f, components, &field_location, result);
+                }
+            }
+        }
+    }
+
+    /// Validate components within a field against their definitions
+    fn validate_components(
+        &self,
+        field: &rs7_core::field::Field,
+        components: &HashMap<String, ComponentDefinition>,
+        field_location: &str,
+        result: &mut ValidationResult,
+    ) {
+        for repetition in &field.repetitions {
+            for (comp_key, comp_def) in components {
+                let comp_idx: usize = match comp_key.parse() {
+                    Ok(idx) => idx,
+                    Err(_) => continue,
+                };
+                // Components are 0-indexed in the repetition vec, 1-indexed in schema
+                let component = repetition.get_component(comp_idx - 1);
+                let comp_location = format!("{}-{}", field_location, comp_idx);
+
+                // Check required components
+                let comp_empty = component.is_none()
+                    || component.unwrap().is_empty();
+                if comp_def.required && comp_empty {
+                    result.add_error(ValidationError::new(
+                        comp_location.clone(),
+                        format!(
+                            "Required component {} ({}) is missing or empty",
+                            comp_idx, comp_def.name
+                        ),
+                        ValidationErrorType::MissingRequiredField,
+                    ));
+                }
+
+                if let Some(comp) = component {
+                    if comp.is_empty() {
+                        continue;
+                    }
+
+                    let comp_value = comp.value().unwrap_or("");
+
+                    // Validate component max length
+                    if let Some(max_len) = comp_def.max_length {
+                        if comp_value.len() > max_len {
+                            result.add_error(ValidationError::new(
+                                comp_location.clone(),
+                                format!(
+                                    "Component {} ({}) exceeds maximum length ({} > {})",
+                                    comp_idx, comp_def.name, comp_value.len(), max_len
+                                ),
+                                ValidationErrorType::InvalidLength,
+                            ));
+                        }
+                    }
+
+                    // Validate component data type
+                    if let Some(data_type) = DataType::from_str(&comp_def.data_type) {
+                        let validation = datatype::validate_data_type(comp_value, data_type);
+                        if !validation.is_valid() {
+                            result.add_error(ValidationError::new(
+                                comp_location.clone(),
+                                format!(
+                                    "Invalid {} format in component {} ({}): {}",
+                                    comp_def.data_type,
+                                    comp_idx,
+                                    comp_def.name,
+                                    validation.error_message().unwrap_or("unknown error")
+                                ),
+                                ValidationErrorType::InvalidDataType,
+                            ));
+                        }
+                    }
+
+                    // Validate component vocabulary/code set
+                    if let Some(table_id) = &comp_def.table_id {
+                        let vocab_validation =
+                            self.table_registry.validate(table_id, comp_value);
+                        if !vocab_validation.is_valid()
+                            && let Some(err_msg) = vocab_validation.error_message()
+                        {
+                            result.add_error(ValidationError::new(
+                                comp_location.clone(),
+                                err_msg.to_string(),
+                                ValidationErrorType::InvalidValue,
+                            ));
+                        }
+                    }
+                }
             }
         }
     }
@@ -543,5 +638,317 @@ mod tests {
         let result = validator.validate(&msg);
 
         assert!(!result.is_valid());
+    }
+
+    /// Helper to build a schema with component definitions for testing
+    fn create_schema_with_components() -> MessageSchema {
+        let mut components = HashMap::new();
+        components.insert(
+            "1".to_string(),
+            ComponentDefinition {
+                name: "ID Number".to_string(),
+                data_type: "ST".to_string(),
+                required: true,
+                max_length: Some(15),
+                table_id: None,
+            },
+        );
+        components.insert(
+            "2".to_string(),
+            ComponentDefinition {
+                name: "Check Digit".to_string(),
+                data_type: "ST".to_string(),
+                required: false,
+                max_length: Some(1),
+                table_id: None,
+            },
+        );
+        components.insert(
+            "3".to_string(),
+            ComponentDefinition {
+                name: "Check Digit Scheme".to_string(),
+                data_type: "ID".to_string(),
+                required: false,
+                max_length: Some(3),
+                table_id: Some("0061".to_string()),
+            },
+        );
+        components.insert(
+            "5".to_string(),
+            ComponentDefinition {
+                name: "Identifier Type Code".to_string(),
+                data_type: "ID".to_string(),
+                required: false,
+                max_length: Some(5),
+                table_id: Some("0203".to_string()),
+            },
+        );
+
+        let mut fields = HashMap::new();
+        fields.insert(
+            3,
+            FieldDefinition {
+                name: "Patient Identifier List".to_string(),
+                data_type: "CX".to_string(),
+                required: true,
+                repeating: true,
+                max_length: Some(250),
+                table_id: None,
+                components: Some(components),
+            },
+        );
+
+        let mut segments = HashMap::new();
+        segments.insert(
+            "PID".to_string(),
+            SegmentDefinition {
+                name: "Patient Identification".to_string(),
+                required: true,
+                repeating: false,
+                fields,
+            },
+        );
+        // Add minimal MSH to avoid unrelated errors
+        segments.insert(
+            "MSH".to_string(),
+            SegmentDefinition {
+                name: "Message Header".to_string(),
+                required: true,
+                repeating: false,
+                fields: HashMap::new(),
+            },
+        );
+
+        MessageSchema {
+            message_type: "ADT".to_string(),
+            trigger_event: "A01".to_string(),
+            version: "2.5".to_string(),
+            segments,
+        }
+    }
+
+    fn create_message_with_pid3(pid3_value: &str) -> Message {
+        use rs7_core::field::{Component, Repetition, SubComponent};
+
+        let mut msg = Message::new();
+
+        let mut msh = Segment::new("MSH");
+        msh.add_field(Field::from_value("^~\\&"));
+        msg.add_segment(msh);
+
+        let mut pid = Segment::new("PID");
+        // PID-1 (Set ID)
+        pid.add_field(Field::from_value("1"));
+        // PID-2 (empty)
+        pid.add_field(Field::from_value(""));
+        // PID-3 (Patient Identifier List) - build from components
+        let components: Vec<&str> = pid3_value.split('^').collect();
+        let mut rep = Repetition::new();
+        for comp_val in components {
+            let mut comp = Component::new();
+            comp.add_subcomponent(SubComponent::new(comp_val));
+            rep.add_component(comp);
+        }
+        let mut field = Field::new();
+        field.add_repetition(rep);
+        pid.add_field(field);
+
+        msg.add_segment(pid);
+        msg
+    }
+
+    #[test]
+    fn test_component_validation_required_present() {
+        // PID-3 with required component 1 (ID Number) present
+        let msg = create_message_with_pid3("12345^^^AUTH^MR");
+        let schema = create_schema_with_components();
+        let validator = Validator::with_schema(Version::V2_5, schema);
+        let result = validator.validate(&msg);
+
+        // No errors for required component being present
+        let comp_errors: Vec<_> = result
+            .errors
+            .iter()
+            .filter(|e| e.location.contains("PID") && e.location.contains("-3-"))
+            .collect();
+        assert!(
+            comp_errors.is_empty(),
+            "Expected no component errors, got: {:?}",
+            comp_errors
+        );
+    }
+
+    #[test]
+    fn test_component_validation_required_missing() {
+        // PID-3 with component 1 (ID Number) empty - should error
+        let msg = create_message_with_pid3("^^^AUTH^MR");
+        let schema = create_schema_with_components();
+        let validator = Validator::with_schema(Version::V2_5, schema);
+        let result = validator.validate(&msg);
+
+        let required_errors: Vec<_> = result
+            .errors
+            .iter()
+            .filter(|e| {
+                e.location.contains("-3-1")
+                    && e.error_type == ValidationErrorType::MissingRequiredField
+            })
+            .collect();
+        assert_eq!(
+            required_errors.len(),
+            1,
+            "Expected 1 required component error for PID-3-1, got: {:?}",
+            required_errors
+        );
+        assert!(required_errors[0].message.contains("ID Number"));
+    }
+
+    #[test]
+    fn test_component_validation_max_length() {
+        // PID-3 component 1 max_length is 15, give it 20 chars
+        let msg = create_message_with_pid3("12345678901234567890^^^AUTH^MR");
+        let schema = create_schema_with_components();
+        let validator = Validator::with_schema(Version::V2_5, schema);
+        let result = validator.validate(&msg);
+
+        let length_errors: Vec<_> = result
+            .errors
+            .iter()
+            .filter(|e| {
+                e.location.contains("-3-1")
+                    && e.error_type == ValidationErrorType::InvalidLength
+            })
+            .collect();
+        assert_eq!(
+            length_errors.len(),
+            1,
+            "Expected 1 length error for PID-3-1, got: {:?}",
+            length_errors
+        );
+    }
+
+    #[test]
+    fn test_component_validation_data_type() {
+        // Use a schema with a DT-typed component, then provide invalid date
+        let mut components = HashMap::new();
+        components.insert(
+            "1".to_string(),
+            ComponentDefinition {
+                name: "Effective Date".to_string(),
+                data_type: "DT".to_string(),
+                required: false,
+                max_length: Some(8),
+                table_id: None,
+            },
+        );
+
+        let mut fields = HashMap::new();
+        fields.insert(
+            3,
+            FieldDefinition {
+                name: "Test Field".to_string(),
+                data_type: "CX".to_string(),
+                required: false,
+                repeating: false,
+                max_length: None,
+                table_id: None,
+                components: Some(components),
+            },
+        );
+
+        let mut segments = HashMap::new();
+        segments.insert(
+            "PID".to_string(),
+            SegmentDefinition {
+                name: "Patient Identification".to_string(),
+                required: false,
+                repeating: false,
+                fields,
+            },
+        );
+        segments.insert(
+            "MSH".to_string(),
+            SegmentDefinition {
+                name: "Message Header".to_string(),
+                required: true,
+                repeating: false,
+                fields: HashMap::new(),
+            },
+        );
+
+        let schema = MessageSchema {
+            message_type: "ADT".to_string(),
+            trigger_event: "A01".to_string(),
+            version: "2.5".to_string(),
+            segments,
+        };
+
+        // "NOTADATE" is not a valid DT
+        let msg = create_message_with_pid3("NOTADATE");
+        let validator = Validator::with_schema(Version::V2_5, schema);
+        let result = validator.validate(&msg);
+
+        let dt_errors: Vec<_> = result
+            .errors
+            .iter()
+            .filter(|e| {
+                e.location.contains("-3-1")
+                    && e.error_type == ValidationErrorType::InvalidDataType
+            })
+            .collect();
+        assert_eq!(
+            dt_errors.len(),
+            1,
+            "Expected 1 data type error for invalid date, got: {:?}",
+            dt_errors
+        );
+    }
+
+    #[test]
+    fn test_component_validation_with_loaded_schema() {
+        // Test with a real loaded schema (ADT^A01 v2.5) to verify
+        // component validation works end-to-end with actual HL7 definitions
+        let schema = schema_loader::load_schema(Version::V2_5, "ADT", "A01").unwrap();
+
+        // Verify MSH-9 components (Message Code, Trigger Event, Message Structure)
+        // are defined and required
+        let msh_def = schema.segments.get("MSH").unwrap();
+        let msh9 = msh_def.fields.get(&9).unwrap();
+        let components = msh9.components.as_ref().unwrap();
+        assert!(components.get("1").unwrap().required, "MSH-9-1 should be required");
+        assert!(components.get("2").unwrap().required, "MSH-9-2 should be required");
+
+        // Verify PID-3 components exist
+        let pid_def = schema.segments.get("PID").unwrap();
+        let pid3 = pid_def.fields.get(&3).unwrap();
+        let pid3_comps = pid3.components.as_ref().unwrap();
+        assert_eq!(pid3_comps.len(), 10, "PID-3 (CX) should have 10 components");
+        assert!(pid3_comps.get("1").unwrap().required, "PID-3-1 (ID Number) should be required");
+        assert_eq!(pid3_comps.get("5").unwrap().data_type, "ID");
+        assert_eq!(
+            pid3_comps.get("5").unwrap().table_id.as_deref(),
+            Some("0203"),
+            "PID-3-5 should reference Table 0203"
+        );
+    }
+
+    #[test]
+    fn test_component_validation_optional_empty() {
+        // All optional components empty should produce no errors
+        let msg = create_message_with_pid3("12345");
+        let schema = create_schema_with_components();
+        let validator = Validator::with_schema(Version::V2_5, schema);
+        let result = validator.validate(&msg);
+
+        let comp_errors: Vec<_> = result
+            .errors
+            .iter()
+            .filter(|e| e.location.contains("-3-"))
+            .collect();
+        assert!(
+            comp_errors.is_empty(),
+            "Optional empty components should not error: {:?}",
+            comp_errors
+        );
     }
 }
