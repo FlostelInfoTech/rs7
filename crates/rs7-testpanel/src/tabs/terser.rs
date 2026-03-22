@@ -331,7 +331,7 @@ impl TerserTab {
             match terser.set(&self.terser_path, &self.new_value) {
                 Ok(_) => {
                     // Update the input with the modified message
-                    self.input_message = message.encode();
+                    self.input_message = message.encode_with_separator("\n");
                     self.terser_result = Some(format!("Set {} = {}", self.terser_path, self.new_value));
                     self.terser_error = None;
                     // Re-parse to update internal state

@@ -170,7 +170,7 @@ impl ParserTab {
                                 if self.show_raw {
                                     // Raw encoded output
                                     ui.label(RichText::new("Encoded Output:").strong());
-                                    let encoded = message.encode();
+                                    let encoded = message.encode_with_separator("\n");
                                     egui::ScrollArea::vertical()
                                         .id_salt("raw_scroll")
                                         .auto_shrink([false, false])

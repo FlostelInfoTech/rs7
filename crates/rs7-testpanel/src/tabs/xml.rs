@@ -344,7 +344,7 @@ impl XmlTab {
 
         match decoder.decode(&self.xml_input) {
             Ok(message) => {
-                self.er7_output = message.encode();
+                self.er7_output = message.encode_with_separator("\n");
             }
             Err(e) => {
                 self.xml_to_er7_error = Some(format!("XML decode error: {}", e));

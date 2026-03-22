@@ -377,9 +377,8 @@ impl eframe::App for Rs7TestPanel {
         egui::TopBottomPanel::bottom("status_bar").show(ctx, |ui| {
             ui.add_space(2.0);
             ui.horizontal(|ui| {
-                // Company logo in status bar (small text version for status bar)
-                logo::show_text_logo(ui, 14.0);
-                ui.add_space(-4.0);
+                // Company logo in status bar
+                logo::show_logo(ui, 14.0);
                 ui.label(RichText::new("FLOSTEL INFOTECH").weak().small());
                 ui.separator();
                 ui.label(RichText::new(format!("{} {}", self.active_tab.icon(), self.active_tab.label())).weak());

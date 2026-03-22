@@ -415,6 +415,6 @@ impl BuilderTab {
             }
         };
 
-        Ok(message.encode())
+        Ok(message.encode_with_separator("\n"))
     }
 }
