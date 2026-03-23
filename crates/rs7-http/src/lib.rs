@@ -113,7 +113,7 @@ pub mod middleware;
 #[cfg(feature = "websocket")]
 pub mod websocket;
 
-pub use client::HttpClient;
+pub use client::{AuthConfig, HttpClient};
 pub use error::{Error, Result};
 pub use server::{HttpServer, MessageHandler};
 

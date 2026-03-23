@@ -70,6 +70,8 @@ enum AuthType {
     #[default]
     None,
     Basic,
+    ApiKey,
+    Bearer,
 }
 
 /// Load test message count options
@@ -113,6 +115,9 @@ pub struct HttpTab {
     client_auth_type: AuthType,
     client_username: String,
     client_password: String,
+    client_api_key_header: String,
+    client_api_key: String,
+    client_bearer_token: String,
     client_headers: Vec<(String, String)>,
     new_header_key: String,
     new_header_value: String,
@@ -147,6 +152,9 @@ impl Default for HttpTab {
             client_auth_type: AuthType::None,
             client_username: String::new(),
             client_password: String::new(),
+            client_api_key_header: "X-API-Key".to_string(),
+            client_api_key: String::new(),
+            client_bearer_token: String::new(),
             client_headers: vec![(
                 "Content-Type".to_string(),
                 "x-application/hl7-v2+er7".to_string(),
@@ -245,6 +253,8 @@ impl HttpTab {
                     .selected_text(match self.client_auth_type {
                         AuthType::None => "None",
                         AuthType::Basic => "Basic",
+                        AuthType::ApiKey => "API Key",
+                        AuthType::Bearer => "Bearer",
                     })
                     .show_ui(ui, |ui| {
                         ui.selectable_value(&mut self.client_auth_type, AuthType::None, "None");
@@ -253,22 +263,59 @@ impl HttpTab {
                             AuthType::Basic,
                             "Basic Auth",
                         );
+                        ui.selectable_value(
+                            &mut self.client_auth_type,
+                            AuthType::ApiKey,
+                            "API Key",
+                        );
+                        ui.selectable_value(
+                            &mut self.client_auth_type,
+                            AuthType::Bearer,
+                            "Bearer Token",
+                        );
                     });
             });
 
-            if self.client_auth_type == AuthType::Basic {
-                ui.label("User:");
-                ui.add_enabled(
-                    !is_sending,
-                    egui::TextEdit::singleline(&mut self.client_username).desired_width(80.0),
-                );
-                ui.label("Pass:");
-                ui.add_enabled(
-                    !is_sending,
-                    egui::TextEdit::singleline(&mut self.client_password)
-                        .password(true)
-                        .desired_width(80.0),
-                );
+            match self.client_auth_type {
+                AuthType::Basic => {
+                    ui.label("User:");
+                    ui.add_enabled(
+                        !is_sending,
+                        egui::TextEdit::singleline(&mut self.client_username).desired_width(80.0),
+                    );
+                    ui.label("Pass:");
+                    ui.add_enabled(
+                        !is_sending,
+                        egui::TextEdit::singleline(&mut self.client_password)
+                            .password(true)
+                            .desired_width(80.0),
+                    );
+                }
+                AuthType::ApiKey => {
+                    ui.label("Header:");
+                    ui.add_enabled(
+                        !is_sending,
+                        egui::TextEdit::singleline(&mut self.client_api_key_header)
+                            .desired_width(80.0),
+                    );
+                    ui.label("Key:");
+                    ui.add_enabled(
+                        !is_sending,
+                        egui::TextEdit::singleline(&mut self.client_api_key)
+                            .password(true)
+                            .desired_width(150.0),
+                    );
+                }
+                AuthType::Bearer => {
+                    ui.label("Token:");
+                    ui.add_enabled(
+                        !is_sending,
+                        egui::TextEdit::singleline(&mut self.client_bearer_token)
+                            .password(true)
+                            .desired_width(200.0),
+                    );
+                }
+                AuthType::None => {}
             }
         });
 
@@ -632,6 +679,9 @@ impl HttpTab {
         let auth_type = self.client_auth_type;
         let username = self.client_username.clone();
         let password = self.client_password.clone();
+        let api_key_header = self.client_api_key_header.clone();
+        let api_key = self.client_api_key.clone();
+        let bearer_token = self.client_bearer_token.clone();
         let headers = self.client_headers.clone();
         let state = self.state.clone();
 
@@ -653,6 +703,9 @@ impl HttpTab {
                     auth_type,
                     &username,
                     &password,
+                    &api_key_header,
+                    &api_key,
+                    &bearer_token,
                     &headers,
                 )
                 .await
@@ -735,6 +788,9 @@ impl HttpTab {
         let auth_type = self.client_auth_type;
         let username = self.client_username.clone();
         let password = self.client_password.clone();
+        let api_key_header = self.client_api_key_header.clone();
+        let api_key = self.client_api_key.clone();
+        let bearer_token = self.client_bearer_token.clone();
         let headers = self.client_headers.clone();
         let count = self.load_test_count.value();
         let state = self.state.clone();
@@ -765,6 +821,9 @@ impl HttpTab {
                     auth_type,
                     username,
                     password,
+                    api_key_header,
+                    api_key,
+                    bearer_token,
                     headers,
                     count,
                     state,
@@ -804,6 +863,9 @@ async fn send_http_request(
     auth_type: AuthType,
     username: &str,
     password: &str,
+    api_key_header: &str,
+    api_key: &str,
+    bearer_token: &str,
     headers: &[(String, String)],
 ) -> Result<HttpResponse, String> {
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -846,11 +908,26 @@ async fn send_http_request(
     );
 
     // Add authentication
-    if auth_type == AuthType::Basic && !username.is_empty() {
-        use base64::Engine;
-        let credentials = format!("{}:{}", username, password);
-        let encoded = base64::engine::general_purpose::STANDARD.encode(credentials.as_bytes());
-        request.push_str(&format!("Authorization: Basic {}\r\n", encoded));
+    match auth_type {
+        AuthType::Basic if !username.is_empty() => {
+            use base64::Engine;
+            let credentials = format!("{}:{}", username, password);
+            let encoded =
+                base64::engine::general_purpose::STANDARD.encode(credentials.as_bytes());
+            request.push_str(&format!("Authorization: Basic {}\r\n", encoded));
+        }
+        AuthType::ApiKey if !api_key.is_empty() => {
+            let header_name = if api_key_header.is_empty() {
+                "X-API-Key"
+            } else {
+                api_key_header
+            };
+            request.push_str(&format!("{}: {}\r\n", header_name, api_key));
+        }
+        AuthType::Bearer if !bearer_token.is_empty() => {
+            request.push_str(&format!("Authorization: Bearer {}\r\n", bearer_token));
+        }
+        _ => {}
     }
 
     // Add custom headers
@@ -1220,6 +1297,9 @@ async fn run_http_load_test(
     auth_type: AuthType,
     username: String,
     password: String,
+    api_key_header: String,
+    api_key: String,
+    bearer_token: String,
     headers: Vec<(String, String)>,
     count: u32,
     state: Arc<Mutex<HttpState>>,
@@ -1276,11 +1356,26 @@ async fn run_http_load_test(
     );
 
     // Add authentication
-    if auth_type == AuthType::Basic && !username.is_empty() {
-        use base64::Engine;
-        let credentials = format!("{}:{}", username, password);
-        let encoded = base64::engine::general_purpose::STANDARD.encode(credentials.as_bytes());
-        base_request.push_str(&format!("Authorization: Basic {}\r\n", encoded));
+    match auth_type {
+        AuthType::Basic if !username.is_empty() => {
+            use base64::Engine;
+            let credentials = format!("{}:{}", username, password);
+            let encoded =
+                base64::engine::general_purpose::STANDARD.encode(credentials.as_bytes());
+            base_request.push_str(&format!("Authorization: Basic {}\r\n", encoded));
+        }
+        AuthType::ApiKey if !api_key.is_empty() => {
+            let header_name = if api_key_header.is_empty() {
+                "X-API-Key"
+            } else {
+                &api_key_header
+            };
+            base_request.push_str(&format!("{}: {}\r\n", header_name, api_key));
+        }
+        AuthType::Bearer if !bearer_token.is_empty() => {
+            base_request.push_str(&format!("Authorization: Bearer {}\r\n", bearer_token));
+        }
+        _ => {}
     }
 
     // Add custom headers

@@ -9,6 +9,17 @@ use std::time::Duration;
 #[cfg(feature = "tls")]
 use crate::tls::TlsClientConfig;
 
+/// Authentication configuration for the HTTP client
+#[derive(Clone, Debug)]
+pub enum AuthConfig {
+    /// HTTP Basic Authentication (username, password)
+    Basic(String, String),
+    /// API key sent in a custom header (header_name, api_key)
+    ApiKey(String, String),
+    /// Bearer token sent in the Authorization header
+    Bearer(String),
+}
+
 /// HTTP client for sending HL7 v2.x messages
 ///
 /// # Example
@@ -35,7 +46,7 @@ use crate::tls::TlsClientConfig;
 pub struct HttpClient {
     endpoint: String,
     client: Client,
-    auth: Option<(String, String)>,
+    auth: Option<AuthConfig>,
     #[cfg(feature = "tls")]
     tls_config: Option<TlsClientConfig>,
     http2_only: bool,
@@ -145,7 +156,58 @@ impl HttpClient {
     /// * `username` - Username for authentication
     /// * `password` - Password for authentication
     pub fn with_auth(mut self, username: String, password: String) -> Self {
-        self.auth = Some((username, password));
+        self.auth = Some(AuthConfig::Basic(username, password));
+        self
+    }
+
+    /// Set API key authentication via a custom header
+    ///
+    /// The API key will be sent as-is in the specified header on every request.
+    ///
+    /// # Arguments
+    /// * `header_name` - The header name (e.g., "X-API-Key")
+    /// * `api_key` - The API key value
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use rs7_http::HttpClient;
+    ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = HttpClient::new("https://api.example.com/hl7")?
+    ///     .with_api_key("X-API-Key", "my-secret-key");
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn with_api_key(
+        mut self,
+        header_name: impl Into<String>,
+        api_key: impl Into<String>,
+    ) -> Self {
+        self.auth = Some(AuthConfig::ApiKey(header_name.into(), api_key.into()));
+        self
+    }
+
+    /// Set Bearer token authentication
+    ///
+    /// The token will be sent in the `Authorization: Bearer <token>` header.
+    ///
+    /// # Arguments
+    /// * `token` - The bearer token value
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use rs7_http::HttpClient;
+    ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = HttpClient::new("https://api.example.com/hl7")?
+    ///     .with_bearer_token("my-jwt-or-api-token");
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn with_bearer_token(mut self, token: impl Into<String>) -> Self {
+        self.auth = Some(AuthConfig::Bearer(token.into()));
         self
     }
 
@@ -218,8 +280,17 @@ impl HttpClient {
             .body(hl7_text.to_string());
 
         // Add authentication if configured
-        if let Some((username, password)) = &self.auth {
-            request = request.basic_auth(username, Some(password));
+        match &self.auth {
+            Some(AuthConfig::Basic(username, password)) => {
+                request = request.basic_auth(username, Some(password));
+            }
+            Some(AuthConfig::ApiKey(header_name, api_key)) => {
+                request = request.header(header_name.as_str(), api_key.as_str());
+            }
+            Some(AuthConfig::Bearer(token)) => {
+                request = request.bearer_auth(token);
+            }
+            None => {}
         }
 
         // Send request
@@ -278,7 +349,41 @@ mod tests {
             .unwrap()
             .with_auth("user".to_string(), "pass".to_string());
 
-        assert!(client.auth.is_some());
-        assert_eq!(client.auth.unwrap(), ("user".to_string(), "pass".to_string()));
+        assert!(matches!(client.auth, Some(AuthConfig::Basic(ref u, ref p)) if u == "user" && p == "pass"));
+    }
+
+    #[test]
+    fn test_with_api_key() {
+        let client = HttpClient::new("http://example.com")
+            .unwrap()
+            .with_api_key("X-API-Key", "secret-123");
+
+        assert!(matches!(
+            client.auth,
+            Some(AuthConfig::ApiKey(ref h, ref k)) if h == "X-API-Key" && k == "secret-123"
+        ));
+    }
+
+    #[test]
+    fn test_with_bearer_token() {
+        let client = HttpClient::new("http://example.com")
+            .unwrap()
+            .with_bearer_token("my-token");
+
+        assert!(matches!(
+            client.auth,
+            Some(AuthConfig::Bearer(ref t)) if t == "my-token"
+        ));
+    }
+
+    #[test]
+    fn test_auth_override() {
+        // Setting a new auth method should replace the previous one
+        let client = HttpClient::new("http://example.com")
+            .unwrap()
+            .with_auth("user".to_string(), "pass".to_string())
+            .with_api_key("X-API-Key", "key-456");
+
+        assert!(matches!(client.auth, Some(AuthConfig::ApiKey(_, _))));
     }
 }
