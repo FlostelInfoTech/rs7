@@ -15,6 +15,31 @@ use rs7_fhir::converters::reverse::{
 };
 use rs7_core::Delimiters;
 use crate::samples;
+use std::sync::{Arc, Mutex};
+
+/// State shared between UI and async FHIR send task
+#[derive(Default)]
+struct FhirSendState {
+    sending: bool,
+    response: Option<FhirSendResponse>,
+    error: Option<String>,
+}
+
+#[derive(Clone)]
+struct FhirSendResponse {
+    status_code: u16,
+    status_text: String,
+    body: String,
+}
+
+#[derive(Clone, Copy, PartialEq, Default)]
+enum FhirAuthType {
+    #[default]
+    None,
+    Basic,
+    ApiKey,
+    Bearer,
+}
 
 pub struct FhirTab {
     // HL7 to FHIR
@@ -31,6 +56,17 @@ pub struct FhirTab {
 
     // UI state
     active_direction: ConversionDirection,
+
+    // FHIR send settings
+    fhir_server_url: String,
+    fhir_auth_type: FhirAuthType,
+    fhir_username: String,
+    fhir_password: String,
+    fhir_api_key_header: String,
+    fhir_api_key: String,
+    fhir_bearer_token: String,
+    fhir_send_state: Arc<Mutex<FhirSendState>>,
+    fhir_runtime: Option<tokio::runtime::Runtime>,
 }
 
 #[derive(Default, PartialEq, Clone, Copy)]
@@ -94,6 +130,15 @@ impl Default for FhirTab {
             fhir_to_hl7_error: None,
             reverse_resource: ReverseResourceType::Patient,
             active_direction: ConversionDirection::Hl7ToFhir,
+            fhir_server_url: "https://localhost:8443/fhir/R4".to_string(),
+            fhir_auth_type: FhirAuthType::None,
+            fhir_username: String::new(),
+            fhir_password: String::new(),
+            fhir_api_key_header: "X-API-Key".to_string(),
+            fhir_api_key: String::new(),
+            fhir_bearer_token: String::new(),
+            fhir_send_state: Arc::new(Mutex::new(FhirSendState::default())),
+            fhir_runtime: tokio::runtime::Runtime::new().ok(),
         }
     }
 }
@@ -267,10 +312,133 @@ impl FhirTab {
                             }
 
                             if !self.fhir_output.is_empty() {
-                                if ui.button("Copy to Clipboard").clicked() {
-                                    ui.ctx().copy_text(self.fhir_output.clone());
-                                }
+                                ui.horizontal(|ui| {
+                                    if ui.button("Copy to Clipboard").clicked() {
+                                        ui.ctx().copy_text(self.fhir_output.clone());
+                                    }
+                                });
                             }
+
+                            // Send to FHIR Server section
+                            ui.add_space(5.0);
+                            ui.collapsing("Send to FHIR Server", |ui| {
+                                let is_sending = {
+                                    let state = self.fhir_send_state.lock().unwrap();
+                                    state.sending
+                                };
+
+                                ui.horizontal(|ui| {
+                                    ui.label("URL:");
+                                    ui.add_enabled(
+                                        !is_sending,
+                                        egui::TextEdit::singleline(&mut self.fhir_server_url)
+                                            .desired_width(250.0),
+                                    );
+                                });
+
+                                ui.horizontal(|ui| {
+                                    ui.label("Auth:");
+                                    ui.add_enabled_ui(!is_sending, |ui| {
+                                        egui::ComboBox::from_id_salt("fhir_auth_type")
+                                            .selected_text(match self.fhir_auth_type {
+                                                FhirAuthType::None => "None",
+                                                FhirAuthType::Basic => "Basic",
+                                                FhirAuthType::ApiKey => "API Key",
+                                                FhirAuthType::Bearer => "Bearer",
+                                            })
+                                            .show_ui(ui, |ui| {
+                                                ui.selectable_value(&mut self.fhir_auth_type, FhirAuthType::None, "None");
+                                                ui.selectable_value(&mut self.fhir_auth_type, FhirAuthType::Basic, "Basic Auth");
+                                                ui.selectable_value(&mut self.fhir_auth_type, FhirAuthType::ApiKey, "API Key");
+                                                ui.selectable_value(&mut self.fhir_auth_type, FhirAuthType::Bearer, "Bearer Token");
+                                            });
+                                    });
+
+                                    match self.fhir_auth_type {
+                                        FhirAuthType::Basic => {
+                                            ui.label("User:");
+                                            ui.add_enabled(
+                                                !is_sending,
+                                                egui::TextEdit::singleline(&mut self.fhir_username).desired_width(80.0),
+                                            );
+                                            ui.label("Pass:");
+                                            ui.add_enabled(
+                                                !is_sending,
+                                                egui::TextEdit::singleline(&mut self.fhir_password)
+                                                    .password(true)
+                                                    .desired_width(80.0),
+                                            );
+                                        }
+                                        FhirAuthType::ApiKey => {
+                                            ui.label("Header:");
+                                            ui.add_enabled(
+                                                !is_sending,
+                                                egui::TextEdit::singleline(&mut self.fhir_api_key_header)
+                                                    .desired_width(80.0),
+                                            );
+                                            ui.label("Key:");
+                                            ui.add_enabled(
+                                                !is_sending,
+                                                egui::TextEdit::singleline(&mut self.fhir_api_key)
+                                                    .password(true)
+                                                    .desired_width(150.0),
+                                            );
+                                        }
+                                        FhirAuthType::Bearer => {
+                                            ui.label("Token:");
+                                            ui.add_enabled(
+                                                !is_sending,
+                                                egui::TextEdit::singleline(&mut self.fhir_bearer_token)
+                                                    .password(true)
+                                                    .desired_width(200.0),
+                                            );
+                                        }
+                                        FhirAuthType::None => {}
+                                    }
+                                });
+
+                                ui.horizontal(|ui| {
+                                    if is_sending {
+                                        ui.spinner();
+                                        ui.label("Sending...");
+                                    } else if ui.add_enabled(
+                                        !self.fhir_output.is_empty(),
+                                        egui::Button::new(RichText::new("Send FHIR Resource").strong()),
+                                    ).clicked() {
+                                        self.send_fhir_resource();
+                                    }
+                                });
+
+                                // Show response
+                                let state = self.fhir_send_state.lock().unwrap();
+                                if let Some(ref error) = state.error {
+                                    ui.colored_label(Color32::RED, format!("Error: {}", error));
+                                }
+                                if let Some(ref resp) = state.response {
+                                    let status_color = if resp.status_code >= 200 && resp.status_code < 300 {
+                                        Color32::GREEN
+                                    } else {
+                                        Color32::RED
+                                    };
+                                    ui.colored_label(
+                                        status_color,
+                                        format!("Status: {} {}", resp.status_code, resp.status_text),
+                                    );
+                                    if !resp.body.is_empty() {
+                                        ui.label("Response:");
+                                        let body_preview = resp.body.clone();
+                                        ui.add(
+                                            egui::TextEdit::multiline(&mut body_preview.as_str())
+                                                .font(egui::TextStyle::Monospace)
+                                                .desired_width(f32::INFINITY)
+                                                .desired_rows(4)
+                                                .interactive(false),
+                                        );
+                                    }
+                                }
+                            });
+
+                            ui.add_space(5.0);
 
                             egui::ScrollArea::vertical()
                                 .id_salt("fhir_output")
@@ -280,7 +448,7 @@ impl FhirTab {
                                         egui::TextEdit::multiline(&mut self.fhir_output.as_str())
                                             .font(egui::TextStyle::Monospace)
                                             .desired_width(f32::INFINITY)
-                                            .desired_rows(28)
+                                            .desired_rows(20)
                                             .interactive(false)
                                     );
                                 });
@@ -566,4 +734,109 @@ impl FhirTab {
             }
         }
     }
+
+    fn send_fhir_resource(&mut self) {
+        let url = self.fhir_server_url.clone();
+        let body = self.fhir_output.clone();
+        let auth_type = self.fhir_auth_type;
+        let username = self.fhir_username.clone();
+        let password = self.fhir_password.clone();
+        let api_key_header = self.fhir_api_key_header.clone();
+        let api_key = self.fhir_api_key.clone();
+        let bearer_token = self.fhir_bearer_token.clone();
+        let state = self.fhir_send_state.clone();
+
+        // Clear previous results
+        {
+            let mut s = state.lock().unwrap();
+            s.sending = true;
+            s.response = None;
+            s.error = None;
+        }
+
+        if let Some(ref runtime) = self.fhir_runtime {
+            runtime.spawn(async move {
+                let result = send_fhir_request(
+                    &url, &body, auth_type, &username, &password,
+                    &api_key_header, &api_key, &bearer_token,
+                ).await;
+                let mut s = state.lock().unwrap();
+                s.sending = false;
+                match result {
+                    Ok(resp) => s.response = Some(resp),
+                    Err(e) => s.error = Some(e),
+                }
+            });
+        }
+    }
+}
+
+/// Send a FHIR resource to a FHIR server via HTTP/HTTPS POST
+async fn send_fhir_request(
+    url: &str,
+    body: &str,
+    auth_type: FhirAuthType,
+    username: &str,
+    password: &str,
+    api_key_header: &str,
+    api_key: &str,
+    bearer_token: &str,
+) -> Result<FhirSendResponse, String> {
+    let url = url.trim();
+    if !url.starts_with("http://") && !url.starts_with("https://") {
+        return Err("URL must start with http:// or https://".to_string());
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .danger_accept_invalid_certs(true)
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+
+    let mut req = client
+        .post(url)
+        .header("Content-Type", "application/fhir+json")
+        .header("Accept", "application/fhir+json");
+
+    match auth_type {
+        FhirAuthType::Basic if !username.is_empty() => {
+            req = req.basic_auth(username, Some(password));
+        }
+        FhirAuthType::ApiKey if !api_key.is_empty() => {
+            let header_name = if api_key_header.is_empty() {
+                "X-API-Key"
+            } else {
+                api_key_header
+            };
+            req = req.header(header_name, api_key);
+        }
+        FhirAuthType::Bearer if !bearer_token.is_empty() => {
+            req = req.bearer_auth(bearer_token);
+        }
+        _ => {}
+    }
+
+    let response = req
+        .body(body.to_string())
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+
+    let status_code = response.status().as_u16();
+    let status_text = response
+        .status()
+        .canonical_reason()
+        .unwrap_or("")
+        .to_string();
+
+    let resp_body = response
+        .text()
+        .await
+        .map_err(|e| format!("Failed to read response: {}", e))?;
+
+    Ok(FhirSendResponse {
+        status_code,
+        status_text,
+        body: resp_body,
+    })
 }

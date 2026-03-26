@@ -175,7 +175,7 @@ impl Default for HttpTab {
 impl HttpTab {
     pub fn ui(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         ui.heading("HTTP Client/Server");
-        ui.label("Send and receive HL7 messages using HTTP (HL7-over-HTTP specification).");
+        ui.label("Send and receive HL7 messages using HTTP/HTTPS (HL7-over-HTTP specification).");
         ui.add_space(10.0);
 
         // Get available height for full-height panels
@@ -209,7 +209,7 @@ impl HttpTab {
 
     fn client_ui(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         ui.heading("HTTP Client");
-        ui.label("Send HL7 messages via HTTP POST.");
+        ui.label("Send HL7 messages via HTTP/HTTPS POST.");
         ui.add_space(10.0);
 
         let is_sending = {
@@ -854,7 +854,7 @@ impl HttpTab {
     }
 }
 
-/// Send an HTTP request with HL7 message
+/// Send an HTTP/HTTPS request with HL7 message using reqwest
 async fn send_http_request(
     url: &str,
     method: HttpMethod,
@@ -868,53 +868,31 @@ async fn send_http_request(
     bearer_token: &str,
     headers: &[(String, String)],
 ) -> Result<HttpResponse, String> {
-    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-    use tokio::net::TcpStream;
-    use tokio::time::{Duration, timeout};
-
-    // Parse URL
     let url = url.trim();
-    if !url.starts_with("http://") {
-        return Err(
-            "Only http:// URLs are supported (use HTTPS tab for secure connections)".to_string(),
-        );
+    if !url.starts_with("http://") && !url.starts_with("https://") {
+        return Err("URL must start with http:// or https://".to_string());
     }
-
-    let url_without_scheme = &url[7..]; // Remove "http://"
-    let (host_port, path) = match url_without_scheme.find('/') {
-        Some(i) => (&url_without_scheme[..i], &url_without_scheme[i..]),
-        None => (url_without_scheme, "/"),
-    };
-
-    let (host, port) = match host_port.rfind(':') {
-        Some(i) => {
-            let port_str = &host_port[i + 1..];
-            let port: u16 = port_str.parse().map_err(|_| "Invalid port number")?;
-            (&host_port[..i], port)
-        }
-        None => (host_port, 80),
-    };
 
     // Normalize line endings to CR for HL7
     let normalized_message = message.replace("\r\n", "\r").replace('\n', "\r");
 
-    // Build HTTP request
-    let mut request = format!(
-        "{} {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\nContent-Length: {}\r\n",
-        method.as_str(),
-        path,
-        host_port,
-        normalized_message.len()
-    );
+    // Build reqwest client (accepts any TLS certificate for flexibility)
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(timeout_secs as u64))
+        .danger_accept_invalid_certs(true)
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+
+    // Build request
+    let mut req = match method {
+        HttpMethod::Post => client.post(url),
+        HttpMethod::Put => client.put(url),
+    };
 
     // Add authentication
     match auth_type {
         AuthType::Basic if !username.is_empty() => {
-            use base64::Engine;
-            let credentials = format!("{}:{}", username, password);
-            let encoded =
-                base64::engine::general_purpose::STANDARD.encode(credentials.as_bytes());
-            request.push_str(&format!("Authorization: Basic {}\r\n", encoded));
+            req = req.basic_auth(username, Some(password));
         }
         AuthType::ApiKey if !api_key.is_empty() => {
             let header_name = if api_key_header.is_empty() {
@@ -922,10 +900,10 @@ async fn send_http_request(
             } else {
                 api_key_header
             };
-            request.push_str(&format!("{}: {}\r\n", header_name, api_key));
+            req = req.header(header_name, api_key);
         }
         AuthType::Bearer if !bearer_token.is_empty() => {
-            request.push_str(&format!("Authorization: Bearer {}\r\n", bearer_token));
+            req = req.bearer_auth(bearer_token);
         }
         _ => {}
     }
@@ -933,102 +911,40 @@ async fn send_http_request(
     // Add custom headers
     for (key, value) in headers {
         if !key.is_empty() {
-            request.push_str(&format!("{}: {}\r\n", key, value));
+            req = req.header(key.as_str(), value.as_str());
         }
     }
 
-    // End headers and add body
-    request.push_str("\r\n");
-    request.push_str(&normalized_message);
-
-    // Connect with timeout
-    let connect_timeout = Duration::from_secs(timeout_secs as u64);
-    let addr = format!("{}:{}", host, port);
-    let stream = timeout(connect_timeout, TcpStream::connect(&addr))
+    // Send request with body
+    let response = req
+        .body(normalized_message)
+        .send()
         .await
-        .map_err(|_| format!("Connection timeout after {} seconds", timeout_secs))?
-        .map_err(|e| format!("Connection failed: {}", e))?;
+        .map_err(|e| format!("Request failed: {}", e))?;
 
-    let (reader, mut writer) = stream.into_split();
+    // Extract response details
+    let status_code = response.status().as_u16();
+    let status_text = response
+        .status()
+        .canonical_reason()
+        .unwrap_or("")
+        .to_string();
 
-    // Send the request
-    writer
-        .write_all(request.as_bytes())
-        .await
-        .map_err(|e| format!("Failed to send request: {}", e))?;
-    writer
-        .flush()
-        .await
-        .map_err(|e| format!("Failed to flush: {}", e))?;
-
-    // Read response with timeout
-    let read_timeout = Duration::from_secs(timeout_secs as u64);
-    let mut buf_reader = BufReader::new(reader);
-    let mut response_lines = Vec::new();
-
-    let result = timeout(read_timeout, async {
-        // Read status line
-        let mut status_line = String::new();
-        buf_reader.read_line(&mut status_line).await?;
-        response_lines.push(status_line.clone());
-
-        // Read headers
-        loop {
-            let mut line = String::new();
-            buf_reader.read_line(&mut line).await?;
-            if line.trim().is_empty() {
-                break;
-            }
-            response_lines.push(line);
-        }
-
-        // Read body (simplified - read until connection closes)
-        let mut body = String::new();
-        loop {
-            let mut line = String::new();
-            match buf_reader.read_line(&mut line).await {
-                Ok(0) => break, // EOF
-                Ok(_) => body.push_str(&line),
-                Err(e) => return Err(e),
-            }
-        }
-        response_lines.push(body);
-
-        Ok::<_, std::io::Error>(())
-    })
-    .await
-    .map_err(|_| format!("Read timeout after {} seconds", timeout_secs))?
-    .map_err(|e| format!("Failed to read response: {}", e));
-
-    if let Err(e) = result {
-        return Err(e);
-    }
-
-    // Parse response
-    if response_lines.is_empty() {
-        return Err("Empty response from server".to_string());
-    }
-
-    // Parse status line (HTTP/1.1 200 OK)
-    let status_line = &response_lines[0];
-    let parts: Vec<&str> = status_line.splitn(3, ' ').collect();
-    let status_code: u16 = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
-    let status_text = parts.get(2).unwrap_or(&"").trim().to_string();
-
-    // Parse headers
-    let mut response_headers = Vec::new();
-    for line in response_lines
+    let response_headers: Vec<(String, String)> = response
+        .headers()
         .iter()
-        .skip(1)
-        .take(response_lines.len().saturating_sub(2))
-    {
-        if let Some((key, value)) = line.split_once(':') {
-            response_headers.push((key.trim().to_string(), value.trim().to_string()));
-        }
-    }
+        .map(|(k, v)| {
+            (
+                k.as_str().to_string(),
+                v.to_str().unwrap_or("").to_string(),
+            )
+        })
+        .collect();
 
-    // Body is the last element
-    let body = response_lines.last().cloned().unwrap_or_default();
+    let body = response
+        .text()
+        .await
+        .map_err(|e| format!("Failed to read response body: {}", e))?;
 
     Ok(HttpResponse {
         status_code,
@@ -1288,7 +1204,7 @@ fn generate_ack(message: &str) -> String {
     )
 }
 
-/// Run HTTP load test - send messages as fast as possible
+/// Run HTTP/HTTPS load test - send messages as fast as possible using reqwest
 async fn run_http_load_test(
     url: String,
     method: HttpMethod,
@@ -1306,137 +1222,76 @@ async fn run_http_load_test(
     shutdown: Arc<AtomicBool>,
     ctx: egui::Context,
 ) {
-    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-    use tokio::net::TcpStream;
-    use tokio::time::{Duration, timeout};
-
-    // Parse URL once
-    let url_trimmed = url.trim();
-    let is_http = url_trimmed.starts_with("http://");
-    if !is_http {
+    let url_trimmed = url.trim().to_string();
+    if !url_trimmed.starts_with("http://") && !url_trimmed.starts_with("https://") {
         let mut s = state.lock().unwrap();
         s.load_test_running = false;
         s.load_test_errors = count;
         return;
     }
 
-    let url_without_scheme = &url_trimmed[7..];
-    let (host_port, path) = match url_without_scheme.find('/') {
-        Some(i) => (&url_without_scheme[..i], &url_without_scheme[i..]),
-        None => (url_without_scheme, "/"),
-    };
-
-    let (host, port) = match host_port.rfind(':') {
-        Some(i) => {
-            let port_str = &host_port[i + 1..];
-            let port: u16 = match port_str.parse() {
-                Ok(p) => p,
-                Err(_) => {
-                    let mut s = state.lock().unwrap();
-                    s.load_test_running = false;
-                    s.load_test_errors = count;
-                    return;
-                }
-            };
-            (&host_port[..i], port)
+    // Build reqwest client with connection pooling
+    let client = match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(timeout_secs as u64))
+        .danger_accept_invalid_certs(true)
+        .pool_max_idle_per_host(4)
+        .build()
+    {
+        Ok(c) => c,
+        Err(_) => {
+            let mut s = state.lock().unwrap();
+            s.load_test_running = false;
+            s.load_test_errors = count;
+            return;
         }
-        None => (host_port, 80),
     };
 
     // Normalize message once
     let normalized_message = message.replace("\r\n", "\r").replace('\n', "\r");
 
-    // Build base request (headers that don't change per request)
-    let mut base_request = format!(
-        "{} {} HTTP/1.1\r\nHost: {}\r\nConnection: keep-alive\r\nContent-Length: {}\r\n",
-        method.as_str(),
-        path,
-        host_port,
-        normalized_message.len()
-    );
-
-    // Add authentication
-    match auth_type {
-        AuthType::Basic if !username.is_empty() => {
-            use base64::Engine;
-            let credentials = format!("{}:{}", username, password);
-            let encoded =
-                base64::engine::general_purpose::STANDARD.encode(credentials.as_bytes());
-            base_request.push_str(&format!("Authorization: Basic {}\r\n", encoded));
-        }
-        AuthType::ApiKey if !api_key.is_empty() => {
-            let header_name = if api_key_header.is_empty() {
-                "X-API-Key"
-            } else {
-                &api_key_header
-            };
-            base_request.push_str(&format!("{}: {}\r\n", header_name, api_key));
-        }
-        AuthType::Bearer if !bearer_token.is_empty() => {
-            base_request.push_str(&format!("Authorization: Bearer {}\r\n", bearer_token));
-        }
-        _ => {}
-    }
-
-    // Add custom headers
-    for (key, value) in &headers {
-        if !key.is_empty() {
-            base_request.push_str(&format!("{}: {}\r\n", key, value));
-        }
-    }
-
-    // End headers and add body
-    base_request.push_str("\r\n");
-    base_request.push_str(&normalized_message);
-
-    let addr = format!("{}:{}", host, port);
-    let connect_timeout = Duration::from_secs(timeout_secs as u64);
-    let read_timeout = Duration::from_secs(timeout_secs as u64);
-
     // Throughput tracking
     let start_time = std::time::Instant::now();
     let mut last_update = start_time;
 
-    // Connection pooling - maintain a connection and reuse it
-    let mut stream_opt: Option<TcpStream> = None;
-
     for i in 0..count {
-        // Check for shutdown
         if shutdown.load(Ordering::SeqCst) {
             break;
         }
 
-        // Get or create connection
-        let stream = match stream_opt.take() {
-            Some(s) => s,
-            None => match timeout(connect_timeout, TcpStream::connect(&addr)).await {
-                Ok(Ok(s)) => s,
-                Ok(Err(_)) | Err(_) => {
-                    let mut s = state.lock().unwrap();
-                    s.load_test_errors += 1;
-                    ctx.request_repaint();
-                    continue;
-                }
-            },
+        // Build request
+        let mut req = match method {
+            HttpMethod::Post => client.post(&url_trimmed),
+            HttpMethod::Put => client.put(&url_trimmed),
         };
 
-        let (reader, mut writer) = stream.into_split();
-
-        // Send request
-        let send_result = writer.write_all(base_request.as_bytes()).await;
-        if send_result.is_err() {
-            let mut s = state.lock().unwrap();
-            s.load_test_errors += 1;
-            ctx.request_repaint();
-            continue;
+        // Add authentication
+        match auth_type {
+            AuthType::Basic if !username.is_empty() => {
+                req = req.basic_auth(&username, Some(&password));
+            }
+            AuthType::ApiKey if !api_key.is_empty() => {
+                let header_name = if api_key_header.is_empty() {
+                    "X-API-Key"
+                } else {
+                    &api_key_header
+                };
+                req = req.header(header_name, &api_key);
+            }
+            AuthType::Bearer if !bearer_token.is_empty() => {
+                req = req.bearer_auth(&bearer_token);
+            }
+            _ => {}
         }
 
-        if writer.flush().await.is_err() {
-            let mut s = state.lock().unwrap();
-            s.load_test_errors += 1;
-            ctx.request_repaint();
-            continue;
+        // Add custom headers
+        for (key, value) in &headers {
+            if !key.is_empty() {
+                req = req.header(key.as_str(), value.as_str());
+            }
         }
+
+        // Send
+        let result = req.body(normalized_message.clone()).send().await;
 
         // Update sent count
         {
@@ -1444,39 +1299,10 @@ async fn run_http_load_test(
             s.load_test_sent = i + 1;
         }
 
-        // Read response (simplified - just check for success)
-        let mut buf_reader = BufReader::new(reader);
-        let read_result = timeout(read_timeout, async {
-            let mut status_line = String::new();
-            buf_reader.read_line(&mut status_line).await?;
-
-            // Check for 2xx status
-            let is_success = status_line.contains(" 2");
-
-            // Read headers
-            loop {
-                let mut line = String::new();
-                buf_reader.read_line(&mut line).await?;
-                if line.trim().is_empty() {
-                    break;
-                }
-            }
-
-            // For keep-alive, we should read content-length bytes
-            // For simplicity, just drain what's available
-            let mut _body = Vec::new();
-            let _ = tokio::time::timeout(
-                Duration::from_millis(10),
-                tokio::io::AsyncReadExt::read_to_end(&mut buf_reader, &mut _body),
-            )
-            .await;
-
-            Ok::<bool, std::io::Error>(is_success)
-        })
-        .await;
-
-        match read_result {
-            Ok(Ok(true)) => {
+        match result {
+            Ok(resp) if resp.status().is_success() => {
+                // Consume the body to allow connection reuse
+                let _ = resp.bytes().await;
                 let mut s = state.lock().unwrap();
                 s.load_test_received += 1;
             }
@@ -1486,7 +1312,7 @@ async fn run_http_load_test(
             }
         }
 
-        // Update throughput every 100ms or so
+        // Update throughput every 100ms
         let now = std::time::Instant::now();
         if now.duration_since(last_update).as_millis() >= 100 {
             let elapsed = now.duration_since(start_time).as_secs_f64();
@@ -1504,10 +1330,6 @@ async fn run_http_load_test(
             last_update = now;
             ctx.request_repaint();
         }
-
-        // Try to reconnect the stream for next iteration
-        // Since we split it, we can't easily reuse. Just create new connection.
-        // For true keep-alive, we'd need a more sophisticated approach.
     }
 
     // Final update
