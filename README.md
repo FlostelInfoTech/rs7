@@ -1,5 +1,10 @@
 # rs7 - HL7 v2.x Library for Rust
 
+> **Unmaintained.** Development of rs7 continues privately and is no longer
+> published here. This repository remains available under its existing terms —
+> MIT or Apache-2.0, at your option — but will not receive updates, and issues
+> and pull requests are not monitored.
+
 A comprehensive Rust library for parsing, validating, and creating HL7 v2.x healthcare messages, inspired by the Java HAPI library.
 
 ## Features
